@@ -117,8 +117,29 @@ Context содержит обезличенный профиль, цель, ве
 
 HTTP статусы: `ok/oleg`, `unavailable/oleg`, `not_configured/none`, `no_candidates/none`, `no_target/none`; stale — отдельный boolean. Python RecommendationResult не расширялся no_target: без цели/кандидатов backend не вызывает AI. Никакой LLM-интеграции, внешней отправки данных или отдельного AI-сервера эта ветка не добавляет.
 
+## Подключение реализации Олега из PR #3
+
+AI реализован в [PR #3](https://github.com/BAITC-Hacks/hack-d59a47be-67/pull/3); backend-дополнения не копируют и не меняют его код. Для совместного запуска нужны обе порции изменений после review. Одно наличие настроек в backend-ветке без модуля по-прежнему даёт `not_configured/none`.
+
+Runtime `requirements.lock` теперь включает те же проверенные HTTP transport pins, что AI requirements Олега: httpx0.28.1, httpcore1.0.9, certifi2026.7.22. Docker использует этот единый runtime lock: дополнительный COPY отсутствующего AI requirements не нужен, Dockerfile не требует наличия optional AI при установке зависимостей; запуск без модуля сохраняет not_configured. `.dockerignore` разрешает только Python-файлы модуля и requirements.txt; AI fixtures/отчёты/README, данные и секреты в контекст не включаются.
+
+Локальные настройки `.env` после подключения PR #3:
+
+```dotenv
+AI_ENABLED=true
+OPENAI_API_KEY=<local secret supplied by the operator>
+OPENAI_MODEL=gpt-4.1-mini-2025-04-14
+AI_TIMEOUT_SECONDS=6.0
+```
+
+Compose передаёт только эти явно перечисленные переменные в runtime; ключ не используется как build arg и не копируется в образ. По умолчанию `AI_ENABLED=false`, ключ пуст. Не публикуйте вывод `docker compose config` с реальным ключом: подстановка environment может его показать. Наличие `configured/oleg` подтверждает загрузку async-модуля, а не доступность провайдера/ключа. AI timeout6 s вложен в backend7 s. Ошибка провайдера — `unavailable/oleg`; frontend отличает это от отсутствия кандидатов.
+
+Backend дополнил facts критичными навыками именно выбранной цели и отдельными непересекающимися history-выборками для события и других событий того же type+format. Counts/даты/sample/provenance получены сервером, нулевые выборки не интерпретируются как предпочтения. Python- и HTTP-схемы неизменны; детали — `contracts/AI_CONTRACT.md`. Расширенные синтетические примеры — `contracts/examples/ai_enriched_context.synthetic.json` и `ai_enriched_result.synthetic.json`; прежний минимальный пример сохранён для потребителей и тестов Олега.
+
+Обычные проверки не отправляют данные в OpenAI. Реальный ключ с другой рабочей машины не переносился. Live-результат Олега 3/3 относится к его синтетическим evaluation fixtures; качество на новом backend-контексте здесь ещё не измерялось. Docker по-прежнему отсутствует: allowlist/config/dependencies подготовлены, но container build/Compose runtime не заявлены проверенными.
+
 ## Время, навыки и ограничения
 
 Дата demo из metadata: 2026-10-01. Исторический date — proxy завершения, `completed_at=null`, `date_source=historical_proxy`. Начисляется каждый completed строго после last_review_date и до среза включительно; значения baseline не меняются. Новые completed_at используют серверные demo-часы Asia/Almaty, реальные UTC-часы сохраняются отдельно в recorded_at. На одинаковую дату новые факты сортируются по completed_at, не случайному ID. Gain/cap/0–5 никогда не снижают навык. Цель не расширяет текущую аудиторию события. Lead без явной цели — no_target.
 
-AI-ядро/frontend остаются отдельной работой; публичного деплоя нет. Проверенные результаты и ограничения среды — `VERIFICATION.md`. Исходные файлы/ZIP/жюри/БД/.env/секреты в Git и Docker image не входят.
+AI-ядро принадлежит Олегу и передано отдельным PR #3, frontend принадлежит Батыру; публичного деплоя нет. Проверенные результаты и ограничения среды — `VERIFICATION.md`. Исходные файлы/ZIP/жюри/БД/.env/секреты в Git и Docker image не входят.

@@ -1,3 +1,23 @@
+# Backend-передача AI PR #3 — 2026-09-23
+
+Ветка `codex/backend-ai-handoff` от `origin/codex/architecture-foundation` (`e3dfc7e`, уже содержит опубликованный ранее PR #2). AI PR #3 (`8f0dc05`) проверен в отдельной detached working copy `/private/tmp/career-quest-pr3-integration`; поверх скопированы только изменения backend/инфраструктуры и новые тесты. AI-код и собственные тесты Олега не менялись, PR не сливались.
+
+- `make check` в backend-ветке: **244 passed, 1 skipped**, 21 исходный unit test, 9 проверок контрактов, Ruff PASS. Skip — только сквозной тест optional AI, которого в этой ветке пока нет.
+- `make check VENV_PYTHON=<absolute path to project .venv/bin/python>` в изолированной копии PR #3 с backend-дополнениями: **413 passed**, 21 исходный unit test, 9 проверок контрактов, Ruff PASS. Сетевой selection подменён; ни ключ, ни OpenAI для этих тестов не нужны.
+- `.venv/bin/ruff format --check backend scripts/smoke.py scripts/check_contracts.py`:29 files formatted; `git diff --check`:PASS. Одно известное upstream warning Starlette/httpx.
+- Чистый `/private/tmp/career-quest-ai-runtime-venv`: установка **только requirements.lock**, `pip check` без ошибок; импорт настоящего async AI PR #3, capability configured при enabled и not_configured при disabled. Провайдер не вызывался; dev-зависимостей нет.
+- Локальный read-only аудит контекстов исходного кита в временной БД:200 профилей,159 actionable контекстов проходят `backend.app.ai.validation.validate_context`; максимальный JSON контекста21089 bytes. Исходные записи и prepared contexts никуда не отправлялись и не печатались.
+
+Новые проверки доказывают выбор critical_skills из целевой роли/грейда (явной или следующей), отсутствие выдуманной критичности, сохранение всех ID большого списка, отдельные history-выборки события и других событий с теми же type+format, counts/даты/provenance/повторы/cutoff/нулевой sample, отсутствие личных идентификаторов. HTTP-тест использует профиль, где самый низкий навык некритичен, а меньший разрыв критичен; настоящий AI-модуль получает этот backend-контекст, затем проверяются resolved evidence, полные карточки, latest после restart и чужой доступ403. Подменённый selector доказывает совместимость и передачу фактов, **не качество live-ранжирования**.
+
+Минимальные общие fixtures сохранены: их структура используется тестами Олега. Расширенные примеры добавлены отдельно и проверяются теми же Pydantic-моделями. `backend/app/contracts.py`, OpenAPI, JSON Schema, frontend/ и backend/app/ai/ не менялись.
+
+Ограничения: Docker отсутствует, поэтому подготовленные allowlist/Compose/runtime pins не выдаются за проверенный container build. AI выключен по умолчанию, ключ задаётся оператором в runtime и не входит в образ/Git. Реальных LLM-вызовов на этой машине не было; сообщённые Олегом3/3 относятся к его прежним синтетическим fixtures. GitHub CI по-прежнему billing-blocked. Для рабочего совместного запуска после review нужны изменения и PR #3, и этой backend-ветки.
+
+Ниже сохранена приёмка предыдущего backend-этапа.
+
+---
+
 # Приёмка предметного backend — 2026-09-23
 
 Командная ветка `origin/codex/architecture-foundation` получена по URL пользователя. Её история присоединена локально; исходное ТЗ, подготовка/аудит данных, frontend и документы сохранены. Работа/PR — отдельная `codex/backend-foundation`; main/base не обновлялись напрямую.

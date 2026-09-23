@@ -381,46 +381,126 @@ class CareerService:
             )
             return response
 
-    def _context(self, snap, candidates, limit):
-        facts = [
+    @staticmethod
+    def _history_evidence(evidence_id, subject_id, rows, as_of, *, scope, **cohort):
+        dates = [domain.effective_date(row) for row in rows]
+        statuses = dict.fromkeys(("completed", "in_progress", "dropped", "no_show", "declined", "overdue"), 0)
+        date_sources = {"historical_proxy": 0, "completed_at": 0}
+        for row in rows:
+            statuses[row["status"]] += 1
+            date_sources["completed_at" if row.get("completed_at") else "historical_proxy"] += 1
+        summary = {
+            "scope": scope,
+            **cohort,
+            "as_of": as_of.isoformat(),
+            "observed_from": min(dates).isoformat() if dates else None,
+            "observed_to": max(dates).isoformat() if dates else None,
+            "sample_size": len(rows),
+            "status_counts": statuses,
+            "date_sources": date_sources,
+        }
+        return c.EvidenceFact(
+            evidence_id=evidence_id,
+            kind="history",
+            subject_id=subject_id,
+            fact="Recorded participation: "
+            + encoded(summary)
+            + ". Observed dates are not a coverage guarantee; imported dates are proxies, not proof of "
+            "timeliness. Counts, including zero samples, do not establish stable preferences.",
+        )
+
+    @staticmethod
+    def _goal_evidence(snap, target):
+        # Normally one compact fact. Large valid catalogs are split without losing
+        # identifiers or exceeding EvidenceFact's bound; the model sees every part.
+        parts, current = [], []
+        for skill_id in target["critical_skills"]:
+            if current and len(encoded([*current, skill_id])) > 600:
+                parts.append(current)
+                current = []
+            current.append(skill_id)
+        parts.append(current)
+        return [
             c.EvidenceFact(
-                evidence_id="profile-grade",
+                evidence_id="profile-grade" if index == 0 else f"profile-goal-part-{index + 1}",
                 kind="goal",
                 subject_id="profile",
-                fact=f"Current grade: {snap['employee']['grade']}; target grade: {snap['goal']['target_grade']}.",
+                fact="Resolved career goal: "
+                + encoded(
+                    {
+                        "current_role": snap["employee"]["role"],
+                        "current_grade": snap["employee"]["grade"],
+                        "target_role": target["role"],
+                        "target_grade": target["grade"],
+                        "critical_skills": skills,
+                        "critical_skills_part": index + 1,
+                        "critical_skills_parts": len(parts),
+                    }
+                )
+                + ". Criticality comes from the target role/grade catalog; all parts form the full list.",
             )
+            for index, skills in enumerate(parts)
         ]
+
+    def _context(self, snap, candidates, limit):
+        target = next(
+            profile
+            for profile in snap["catalog"]["role_profiles"]
+            if (profile["role"], profile["grade"])
+            == (snap["goal"]["target_role"], snap["goal"]["target_grade"])
+        )
+        facts = self._goal_evidence(snap, target)
         for gap in snap["gaps"]:
             facts.append(
                 c.EvidenceFact(
                     evidence_id="gap-" + hashlib.sha256(gap["skill_id"].encode()).hexdigest()[:24],
                     kind="gap",
                     subject_id=gap["skill_id"],
-                    fact=f"Current level {gap['current_level']}; target {gap['target_level']}; gap {gap['gap']}.",
+                    fact=f"Skill {gap['skill_id']}: current level {gap['current_level']}; "
+                    f"target {gap['target_level']}; gap {gap['gap']}; "
+                    f"critical for target: {gap['skill_id'] in target['critical_skills']}.",
                 )
             )
-        statuses = {}
-        for row in snap["history"]:
-            statuses[row["status"]] = statuses.get(row["status"], 0) + 1
+        history = [row for row in snap["history"] if domain.effective_date(row) <= snap["as_of"]]
         facts.append(
-            c.EvidenceFact(
-                evidence_id="history-summary",
-                kind="history",
-                subject_id="profile",
-                fact="Participation counts: "
-                + encoded(statuses)
-                + "; imported dates are approximate, not proof of timeliness.",
-            )
+            self._history_evidence("history-summary", "profile", history, snap["as_of"], scope="profile")
         )
         prepared = []
         for event in candidates:
-            evidence_id = "candidate-" + hashlib.sha256(event["event_id"].encode()).hexdigest()[:24]
+            suffix = hashlib.sha256(event["event_id"].encode()).hexdigest()[:24]
+            evidence_id = "candidate-" + suffix
+            same_event = [row for row in history if row["event_id"] == event["event_id"]]
+            comparable = [
+                row
+                for row in history
+                if row["event_id"] != event["event_id"]
+                and (snap["events"][row["event_id"]]["type"], snap["events"][row["event_id"]]["format"])
+                == (event["type"], event["format"])
+            ]
+            facts.extend(
+                [
+                    self._history_evidence(
+                        "history-event-" + suffix, event["event_id"], same_event, snap["as_of"], scope="event"
+                    ),
+                    self._history_evidence(
+                        "history-format-" + suffix,
+                        event["event_id"],
+                        comparable,
+                        snap["as_of"],
+                        scope="same_type_format_other_events",
+                        event_type=event["type"],
+                        event_format=event["format"],
+                    ),
+                ]
+            )
             facts.append(
                 c.EvidenceFact(
                     evidence_id=evidence_id,
                     kind="candidate",
                     subject_id=event["event_id"],
-                    fact=f"Eligible {event['format']} event; duration {event['duration_hours']} hours; projected effects calculated by backend.",
+                    fact=f"Eligible {event['type']} / {event['format']} event; "
+                    f"duration {event['duration_hours']} hours. Backend checked current role/grade, "
+                    "prerequisites, schedule and history; projected effects calculated by backend.",
                 )
             )
             prepared.append(

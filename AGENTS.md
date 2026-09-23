@@ -61,6 +61,9 @@
 - 2026-09-23, инфраструктура AI: ветка codex/backend-ai-handoff создана от актуальной architecture-foundation, которая уже содержит PR #2. PR #3 не сливался, AI/frontend не менялись. Docker allowlist разрешает Python/requirements AI, Compose передаёт только явные runtime-настройки с AI выключенным по умолчанию; ключ не добавляется в образ.
 - HTTP transport pins Олега перенесены из dev в единый runtime lock. Проверено: чистый временный venv только с requirements.lock, pip check, импорт async AI из изолированной копии PR #3 и configured/not_configured без вызова провайдера. Docker отсутствует; build/Compose runtime не проверены. Следующий шаг — обогащение backend facts и совместная HTTP-приёмка без изменения контракта.
 
+- 2026-09-23, факты/приёмка AI: backend добавляет target critical_skills и раздельные history counts/event/type+format с sample, периодом, provenance и cutoff. Python/HTTP-схемы неизменны. Старые минимальные fixtures сохранены для тестов Олега, новые расширенные примеры проверяются теми же моделями.
+- Проверено: backend244 passed/1 optional skip; совместно с неизменённым PR #3 —413 passed, плюс21 исходный тест,9 schema checks,Ruff/format. Все159 actionable контекстов кита проходят AI validator локально, без сетевых запросов/вывода данных. Сквозной тест конфликтующего профиля подтверждает facts/evidence/latest/403; качество live-модели не заявляется. Следующий шаг: отдельный PR в architecture-foundation, проверить совместимость Git с PR #3; review команды, Docker/live evaluation в подходящей среде.
+
 ## Журнал — предметный backend
 
 - 2026-09-23, порция 1: добавлены чистые расчёты replay/caps, целей, прогресса и кандидатов; исходные JSON/CSV валидируются и импортируются через preview/token и атомарный commit. Каждая history-запись сохраняется по record_id; рост рассчитывается только для completed после review и до даты кита. Повторные mandatory не теряются.

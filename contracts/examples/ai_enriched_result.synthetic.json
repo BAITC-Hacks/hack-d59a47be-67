@@ -1,0 +1,18 @@
+{
+  "status": "ok",
+  "engine": "oleg",
+  "recommendations": [
+    {
+      "event_id": "SYNTHETIC_EVENT_001",
+      "explanation": {
+        "text": "Synthetic skill SYNTHETIC_SKILL_001: current level 1; target 3; gap 2; critical for target: True. Synthetic eligible course / self_paced event; duration 2 hours. Backend checked current role/grade, prerequisites, schedule and history; projected effects calculated by backend. Resolved career goal: {\"critical_skills\":[\"SYNTHETIC_SKILL_001\"],\"critical_skills_part\":1,\"critical_skills_parts\":1,\"current_grade\":\"Junior\",\"current_role\":\"Synthetic Analyst\",\"target_grade\":\"Middle\",\"target_role\":\"Synthetic Analyst\"}. Criticality comes from the target role/grade catalog; all parts form the full list. Recorded participation: {\"as_of\":\"2026-10-01\",\"date_sources\":{\"completed_at\":0,\"historical_proxy\":0},\"observed_from\":null,\"observed_to\":null,\"sample_size\":0,\"scope\":\"event\",\"status_counts\":{\"completed\":0,\"declined\":0,\"dropped\":0,\"in_progress\":0,\"no_show\":0,\"overdue\":0}}. Observed dates are not a coverage guarantee; imported dates are proxies, not proof of timeliness. Counts, including zero samples, do not establish stable preferences.",
+        "evidence_ids": [
+          "synthetic-gap-001",
+          "synthetic-event-001",
+          "synthetic-goal-001",
+          "synthetic-history-001"
+        ]
+      }
+    }
+  ]
+}
