@@ -81,6 +81,13 @@
 - Финальная committed-проверка: `scripts/verify-integration --backend-ref HEAD --ai-ref origin/codex/ai-recommendations` на backend1723fb2 + AI f10006a — **468 passed**,21 исходный тест,9 schema checks,Ruff и два TCP-запуска PASS. Виртуальное tree1e1acb9 без конфликтов; русские cards/evidence/latest, completion/restart/точный idempotency replay и logout проверены без live-провайдера. После прерывания повторили команду до полученного exit0.
 - `scripts/check-container --require-ai`: exit2/NOT RUN (Docker отсутствует здесь). Переданный Docker-отчёт Олега сохранён как отдельная проверка предыдущих refs с patch; не подменяет container build текущей версии. Изменения ограничены backend/docs/инфраструктурой, diff AI/frontend/общих схем пустой. Следующий шаг — review PR #4 и повторный --container актуальных refs на Docker-хосте; merge не выполняется.
 
+## Backend — повторная проверка приложенного case_1
+
+- 2026-09-23: kit из Downloads/case_1/career_quest_dataset содержит все7 файлов; SHA256 четырёх источников совпадают с прежним аудитом.64 508 проверок/0 нарушений;200 сотрудников,40 мероприятий,60 навыков,32 role/grade,2743 history. Сохранённый source baseline/история/каталоги установленной БД полностью совпали с kit, integrity/FK/checksums4 миграций PASS; revision1/срез2026-10-01.
+- В отдельной временной БД: validation без записи предметных данных, import3075, повтор0/revision1, повтор миграций,200 HTTP-профилей,HR pagination/summary,employee403 на чужого/HR,login/logout/CSRF,preview и HTTP no-op import PASS. Проверка replay с независимым аудитом200 из200;159 actionable/10 no_target/31 no_candidates. Реальные записи не печатались и не отправлялись внешним сервисам; рабочие профили/учётки не менялись.
+- Текущий backend3b85bab + AI f10006a:468 passed+21 исходный тест+9 schema checks+Ruff и два TCP-запуска PASS. API был остановлен; запущен scripts/dev с AI_ENABLED=false на127.0.0.1:8000. Health/readiness/version/docs/OpenAPI200, me401; dataset loaded1.0:r1. Это запуск backend, а не собранный frontend/AI demo.
+- Ограничения текущей рабочей копии:0 операторских accounts, нет.env/AI-модуля/настройки провайдера, Docker отсутствует. Авторизация проверялась временными учётками в изолированной БД. Следующий шаг полного demo — создание серверных учёток, командное подключение PR#3/#4 и frontend после review; реальные данные нельзя отправлять в LLM без разрешения. Merge/public deploy не выполнялись.
+
 ## Журнал — предметный backend
 
 - 2026-09-23, порция 1: добавлены чистые расчёты replay/caps, целей, прогресса и кандидатов; исходные JSON/CSV валидируются и импортируются через preview/token и атомарный commit. Каждая history-запись сохраняется по record_id; рост рассчитывается только для completed после review и до даты кита. Повторные mandatory не теряются.
@@ -185,3 +192,5 @@
 ## Финальная доработка по ТЗ — текущая задача
 
 - 2026-09-23: пользователь поручил самостоятельно завершить проект строго по первичному ТЗ, создать PR в main и отчёт. Это разрешает необходимые изменения backend/frontend/контрактов/инфраструктуры вне прежнего разделения ролей. Работа ведётся в codex/tz-ready от общей feat/product-ready fa4c7ad; в неё интегрированы актуальные AI-отчёты db41961 с сохранением обеих частей AGENTS. Main и исходные PR не сливаются; deploy не запрошен. Следующие шаги: исправить HR-состояния рекомендаций и quota/replay, проверить must-have/живой AI/контейнер и подготовить проверенный README.
+
+- Интегрирована свежая backend-запись 0b609ec: только AGENTS.md/docs/VERIFICATION.md, runtime не изменён; прежняя локальная проверка кита сохранена как факт участника, не выдана за новый прогон. Следующий шаг — исправления текущего задания и общая приёмка.
