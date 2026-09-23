@@ -965,6 +965,7 @@ svg {
   color: #6a8a45;
 }
 .why-details {
+  min-width: 0;
   border-top: 1px solid #edf0e7;
   padding-top: 14px;
   margin-bottom: 19px;
@@ -991,6 +992,7 @@ svg {
   transform: rotate(90deg);
 }
 .why-details p {
+  overflow-wrap: anywhere;
   line-height: 1.9;
   margin-top: 12px;
   color: #88977a;
