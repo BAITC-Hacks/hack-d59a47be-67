@@ -1,0 +1,17 @@
+{
+  "code": "NOT_IMPLEMENTED",
+  "message": "This domain endpoint is planned for a later step.",
+  "request_id": "synthetic-request-001",
+  "details": {
+    "capabilities": {
+      "ai": {
+        "status": "not_configured",
+        "engine": "none"
+      },
+      "dataset": {
+        "status": "not_loaded",
+        "version": null
+      }
+    }
+  }
+}

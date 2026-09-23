@@ -1,0 +1,61 @@
+{
+  "data_version": "synthetic-fixture-v1",
+  "proficiency_scale": {
+    "0": "Синтетическое описание уровня 0",
+    "1": "Синтетическое описание уровня 1",
+    "2": "Синтетическое описание уровня 2",
+    "3": "Синтетическое описание уровня 3",
+    "4": "Синтетическое описание уровня 4",
+    "5": "Синтетическое описание уровня 5"
+  },
+  "skills": [
+    {
+      "skill_id": "SYNTHETIC_SKILL_001",
+      "name": "Синтетический навык",
+      "type": "hard",
+      "category": "Синтетическая категория",
+      "description": "Вымышленный навык только для проверки контракта."
+    }
+  ],
+  "role_profiles": [
+    {
+      "role": "Synthetic Analyst",
+      "grade": "Middle",
+      "required_skills": {
+        "SYNTHETIC_SKILL_001": 3.0
+      },
+      "critical_skills": [
+        "SYNTHETIC_SKILL_001"
+      ]
+    }
+  ],
+  "events": [
+    {
+      "event_id": "SYNTHETIC_EVENT_001",
+      "title": "Синтетический самостоятельный курс",
+      "description": "Вымышленное мероприятие команды для проверки контракта.",
+      "type": "course",
+      "format": "self_paced",
+      "duration_hours": 4.0,
+      "mandatory": false,
+      "target_roles": [
+        "Synthetic Analyst"
+      ],
+      "target_grades": [
+        "Junior",
+        "Middle"
+      ],
+      "develops_skills": [
+        {
+          "skill_id": "SYNTHETIC_SKILL_001",
+          "gain": 1.0,
+          "max_level": 3.0
+        }
+      ],
+      "prerequisites": {
+        "SYNTHETIC_SKILL_001": 1.0
+      },
+      "upcoming_sessions": []
+    }
+  ]
+}

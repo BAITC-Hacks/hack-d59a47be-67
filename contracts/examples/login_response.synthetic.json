@@ -1,0 +1,10 @@
+{
+  "user": {
+    "id": "synthetic-user-001",
+    "username": "synthetic.employee",
+    "role": "employee",
+    "employee_id": "SYNTHETIC_EMPLOYEE_001"
+  },
+  "csrf_token": "synthetic-not-a-real-csrf-token",
+  "expires_at": "2026-10-01T18:00:00Z"
+}

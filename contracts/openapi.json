@@ -1,0 +1,3071 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Career Quest API",
+    "description": "Career Quest demo backend: protected profiles, progression, atomic import, idempotent completions and persisted recommendations. AI is optional and explicitly disabled by default. Preview is a team addition. All arithmetic is performed by the backend.",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/api/health": {
+      "get": {
+        "tags": [
+          "implemented"
+        ],
+        "summary": "Health",
+        "operationId": "health_api_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-implementation-status": "implemented"
+      }
+    },
+    "/api/health/ready": {
+      "get": {
+        "tags": [
+          "implemented"
+        ],
+        "summary": "Ready",
+        "operationId": "ready_api_health_ready_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReadinessResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service Unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-implementation-status": "implemented"
+      }
+    },
+    "/api/version": {
+      "get": {
+        "tags": [
+          "implemented"
+        ],
+        "summary": "Version",
+        "operationId": "version_api_version_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VersionResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-implementation-status": "implemented"
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "tags": [
+          "implemented"
+        ],
+        "summary": "Sign In",
+        "operationId": "sign_in_api_auth_login_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service Unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-implementation-status": "implemented",
+        "parameters": [
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "description": "Exact allowlisted origin; browsers send this automatically.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/auth/logout": {
+      "post": {
+        "tags": [
+          "implemented"
+        ],
+        "summary": "Sign Out",
+        "operationId": "sign_out_api_auth_logout_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LogoutResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service Unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-implementation-status": "implemented",
+        "security": [
+          {
+            "DemoSession": [],
+            "CsrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "description": "Exact allowlisted origin; browsers send this automatically.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/me": {
+      "get": {
+        "tags": [
+          "implemented"
+        ],
+        "summary": "Me",
+        "operationId": "me_api_me_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserIdentity"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service Unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-implementation-status": "implemented",
+        "security": [
+          {
+            "DemoSession": []
+          }
+        ]
+      }
+    },
+    "/api/catalog": {
+      "get": {
+        "tags": [
+          "implemented"
+        ],
+        "summary": "Catalog",
+        "operationId": "catalog_api_catalog_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CatalogResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service Unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-implementation-status": "implemented",
+        "security": [
+          {
+            "DemoSession": []
+          }
+        ]
+      }
+    },
+    "/api/employees": {
+      "get": {
+        "tags": [
+          "implemented"
+        ],
+        "summary": "Employees",
+        "operationId": "employees_api_employees_get",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmployeeListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "x-implementation-status": "implemented",
+        "security": [
+          {
+            "DemoSession": []
+          }
+        ]
+      }
+    },
+    "/api/employees/{employee_id}": {
+      "get": {
+        "tags": [
+          "implemented"
+        ],
+        "summary": "Employee",
+        "operationId": "employee_api_employees__employee_id__get",
+        "parameters": [
+          {
+            "name": "employee_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Employee Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmployeeDetailResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "x-implementation-status": "implemented",
+        "security": [
+          {
+            "DemoSession": []
+          }
+        ]
+      }
+    },
+    "/api/employees/{employee_id}/goal": {
+      "patch": {
+        "tags": [
+          "implemented"
+        ],
+        "summary": "Goal",
+        "operationId": "goal_api_employees__employee_id__goal_patch",
+        "parameters": [
+          {
+            "name": "employee_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Employee Id"
+            }
+          },
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "description": "Exact allowlisted origin; browsers send this automatically.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GoalUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmployeeDetailResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "x-implementation-status": "implemented",
+        "security": [
+          {
+            "DemoSession": [],
+            "CsrfToken": []
+          }
+        ]
+      }
+    },
+    "/api/employees/{employee_id}/recommendations": {
+      "post": {
+        "tags": [
+          "implemented"
+        ],
+        "summary": "Recommendations",
+        "operationId": "recommendations_api_employees__employee_id__recommendations_post",
+        "parameters": [
+          {
+            "name": "employee_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Employee Id"
+            }
+          },
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "description": "Exact allowlisted origin; browsers send this automatically.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecommendationRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecommendationResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "x-implementation-status": "implemented",
+        "security": [
+          {
+            "DemoSession": [],
+            "CsrfToken": []
+          }
+        ]
+      }
+    },
+    "/api/employees/{employee_id}/recommendations/latest": {
+      "get": {
+        "tags": [
+          "implemented"
+        ],
+        "summary": "Latest",
+        "operationId": "latest_api_employees__employee_id__recommendations_latest_get",
+        "parameters": [
+          {
+            "name": "employee_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Employee Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecommendationResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "x-implementation-status": "implemented",
+        "security": [
+          {
+            "DemoSession": []
+          }
+        ]
+      }
+    },
+    "/api/employees/{employee_id}/preview": {
+      "post": {
+        "tags": [
+          "implemented"
+        ],
+        "summary": "Preview",
+        "operationId": "preview_api_employees__employee_id__preview_post",
+        "parameters": [
+          {
+            "name": "employee_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Employee Id"
+            }
+          },
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "description": "Exact allowlisted origin; browsers send this automatically.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PreviewRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreviewResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "x-implementation-status": "implemented",
+        "security": [
+          {
+            "DemoSession": [],
+            "CsrfToken": []
+          }
+        ]
+      }
+    },
+    "/api/employees/{employee_id}/completions": {
+      "post": {
+        "tags": [
+          "implemented"
+        ],
+        "summary": "Completions",
+        "operationId": "completions_api_employees__employee_id__completions_post",
+        "parameters": [
+          {
+            "name": "employee_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Employee Id"
+            }
+          },
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "description": "Exact allowlisted origin; browsers send this automatically.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            },
+            "description": "Reuse with the identical body after a lost response; checked after authorization and before revision."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompletionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompletionResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "x-implementation-status": "implemented",
+        "security": [
+          {
+            "DemoSession": [],
+            "CsrfToken": []
+          }
+        ]
+      }
+    },
+    "/api/hr/summary": {
+      "get": {
+        "tags": [
+          "implemented"
+        ],
+        "summary": "Summary",
+        "operationId": "summary_api_hr_summary_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HRSummaryResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service Unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-implementation-status": "implemented",
+        "security": [
+          {
+            "DemoSession": []
+          }
+        ]
+      }
+    },
+    "/api/hr/import": {
+      "post": {
+        "tags": [
+          "implemented"
+        ],
+        "summary": "Import Data",
+        "operationId": "import_data_api_hr_import_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/ImportRequest"
+                  },
+                  {
+                    "$ref": "#/components/schemas/BatchImportRequest"
+                  }
+                ],
+                "title": "Payload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service Unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-implementation-status": "implemented",
+        "security": [
+          {
+            "DemoSession": [],
+            "CsrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "description": "Exact allowlisted origin; browsers send this automatically.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AICapability": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "not_configured",
+              "configured"
+            ],
+            "title": "Status"
+          },
+          "engine": {
+            "type": "string",
+            "enum": [
+              "none",
+              "oleg"
+            ],
+            "title": "Engine"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "status",
+          "engine"
+        ],
+        "title": "AICapability"
+      },
+      "ActivityRecord": {
+        "properties": {
+          "record_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Record Id"
+          },
+          "event_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Event Id"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "completed",
+              "in_progress",
+              "dropped",
+              "no_show",
+              "declined",
+              "overdue"
+            ],
+            "title": "Status"
+          },
+          "activity_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Activity Date"
+          },
+          "date_source": {
+            "type": "string",
+            "enum": [
+              "historical_proxy",
+              "completed_at"
+            ],
+            "title": "Date Source"
+          },
+          "completed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed At"
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "import",
+              "completion",
+              "demo_simulation"
+            ],
+            "title": "Mode",
+            "default": "import"
+          },
+          "effects": {
+            "items": {
+              "$ref": "#/components/schemas/SkillEffect"
+            },
+            "type": "array",
+            "title": "Effects"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "record_id",
+          "event_id",
+          "status",
+          "activity_date",
+          "date_source"
+        ],
+        "title": "ActivityRecord"
+      },
+      "BatchImportRequest": {
+        "properties": {
+          "dry_run": {
+            "type": "boolean",
+            "title": "Dry Run",
+            "default": true
+          },
+          "files": {
+            "items": {
+              "$ref": "#/components/schemas/SourceFile"
+            },
+            "type": "array",
+            "maxItems": 4,
+            "minItems": 1,
+            "title": "Files"
+          },
+          "preview_token": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 128,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Preview Token"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "files"
+        ],
+        "title": "BatchImportRequest"
+      },
+      "Capabilities": {
+        "properties": {
+          "ai": {
+            "$ref": "#/components/schemas/AICapability"
+          },
+          "dataset": {
+            "$ref": "#/components/schemas/DatasetCapability"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "ai",
+          "dataset"
+        ],
+        "title": "Capabilities"
+      },
+      "CatalogEvent": {
+        "properties": {
+          "event_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Event Id"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Title"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 4000,
+            "title": "Description"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "compliance",
+              "onboarding",
+              "course",
+              "workshop",
+              "mentoring",
+              "certification",
+              "meetup"
+            ],
+            "title": "Type"
+          },
+          "format": {
+            "type": "string",
+            "enum": [
+              "online",
+              "offline",
+              "self_paced"
+            ],
+            "title": "Format"
+          },
+          "duration_hours": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Duration Hours"
+          },
+          "mandatory": {
+            "type": "boolean",
+            "title": "Mandatory"
+          },
+          "target_roles": {
+            "items": {
+              "type": "string",
+              "maxLength": 128,
+              "minLength": 1
+            },
+            "type": "array",
+            "title": "Target Roles"
+          },
+          "target_grades": {
+            "items": {
+              "type": "string",
+              "enum": [
+                "Junior",
+                "Middle",
+                "Senior",
+                "Lead"
+              ]
+            },
+            "type": "array",
+            "title": "Target Grades"
+          },
+          "develops_skills": {
+            "items": {
+              "$ref": "#/components/schemas/CatalogSkillGain"
+            },
+            "type": "array",
+            "title": "Develops Skills"
+          },
+          "prerequisites": {
+            "additionalProperties": {
+              "type": "number",
+              "maximum": 5.0,
+              "minimum": 0.0
+            },
+            "propertyNames": {
+              "maxLength": 128,
+              "minLength": 1
+            },
+            "type": "object",
+            "title": "Prerequisites"
+          },
+          "upcoming_sessions": {
+            "items": {
+              "type": "string",
+              "format": "date"
+            },
+            "type": "array",
+            "title": "Upcoming Sessions"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "event_id",
+          "title",
+          "description",
+          "type",
+          "format",
+          "duration_hours",
+          "mandatory",
+          "target_roles",
+          "target_grades",
+          "develops_skills",
+          "prerequisites",
+          "upcoming_sessions"
+        ],
+        "title": "CatalogEvent"
+      },
+      "CatalogResponse": {
+        "properties": {
+          "data_version": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Data Version"
+          },
+          "proficiency_scale": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Proficiency Scale"
+          },
+          "skills": {
+            "items": {
+              "$ref": "#/components/schemas/CatalogSkill"
+            },
+            "type": "array",
+            "title": "Skills"
+          },
+          "role_profiles": {
+            "items": {
+              "$ref": "#/components/schemas/CatalogRole"
+            },
+            "type": "array",
+            "title": "Role Profiles"
+          },
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/CatalogEvent"
+            },
+            "type": "array",
+            "title": "Events"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "data_version",
+          "proficiency_scale",
+          "skills",
+          "role_profiles"
+        ],
+        "title": "CatalogResponse"
+      },
+      "CatalogRole": {
+        "properties": {
+          "role": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Role"
+          },
+          "grade": {
+            "type": "string",
+            "enum": [
+              "Junior",
+              "Middle",
+              "Senior",
+              "Lead"
+            ],
+            "title": "Grade"
+          },
+          "required_skills": {
+            "additionalProperties": {
+              "type": "number",
+              "maximum": 5.0,
+              "minimum": 0.0
+            },
+            "propertyNames": {
+              "maxLength": 128,
+              "minLength": 1
+            },
+            "type": "object",
+            "title": "Required Skills"
+          },
+          "critical_skills": {
+            "items": {
+              "type": "string",
+              "maxLength": 128,
+              "minLength": 1
+            },
+            "type": "array",
+            "title": "Critical Skills"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "role",
+          "grade",
+          "required_skills",
+          "critical_skills"
+        ],
+        "title": "CatalogRole"
+      },
+      "CatalogSkill": {
+        "properties": {
+          "skill_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Skill Id"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "hard",
+              "soft"
+            ],
+            "title": "Type"
+          },
+          "category": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Category"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 1000,
+            "title": "Description"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "skill_id",
+          "name",
+          "type",
+          "category",
+          "description"
+        ],
+        "title": "CatalogSkill"
+      },
+      "CatalogSkillGain": {
+        "properties": {
+          "skill_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Skill Id"
+          },
+          "gain": {
+            "type": "number",
+            "maximum": 5.0,
+            "minimum": 0.0,
+            "title": "Gain"
+          },
+          "max_level": {
+            "type": "number",
+            "maximum": 5.0,
+            "minimum": 0.0,
+            "title": "Max Level"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "skill_id",
+          "gain",
+          "max_level"
+        ],
+        "title": "CatalogSkillGain"
+      },
+      "CompletionRecord": {
+        "properties": {
+          "completion_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Completion Id"
+          },
+          "event_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Event Id"
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "completion",
+              "demo_simulation"
+            ],
+            "title": "Mode"
+          },
+          "completed_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Completed At"
+          },
+          "effects": {
+            "items": {
+              "$ref": "#/components/schemas/SkillEffect"
+            },
+            "type": "array",
+            "title": "Effects"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "completion_id",
+          "event_id",
+          "mode",
+          "completed_at",
+          "effects"
+        ],
+        "title": "CompletionRecord"
+      },
+      "CompletionRequest": {
+        "properties": {
+          "expected_state_version": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Expected State Version"
+          },
+          "event_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Event Id"
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "completion",
+              "demo_simulation"
+            ],
+            "title": "Mode"
+          },
+          "record_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 128,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Record Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "expected_state_version",
+          "event_id",
+          "mode"
+        ],
+        "title": "CompletionRequest"
+      },
+      "CompletionResponse": {
+        "properties": {
+          "state_version": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "State Version"
+          },
+          "completion": {
+            "$ref": "#/components/schemas/CompletionRecord"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "state_version",
+          "completion"
+        ],
+        "title": "CompletionResponse"
+      },
+      "DatasetCapability": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "not_loaded",
+              "loaded"
+            ],
+            "title": "Status"
+          },
+          "version": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 128,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Version"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "DatasetCapability"
+      },
+      "EmployeeDetailResponse": {
+        "properties": {
+          "data_version": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Data Version"
+          },
+          "state_version": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "State Version"
+          },
+          "profile": {
+            "$ref": "#/components/schemas/EmployeeProfile"
+          },
+          "goal": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Goal"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "current_skills": {
+            "items": {
+              "$ref": "#/components/schemas/SkillLevel"
+            },
+            "type": "array",
+            "title": "Current Skills"
+          },
+          "gaps": {
+            "items": {
+              "$ref": "#/components/schemas/SkillGap"
+            },
+            "type": "array",
+            "title": "Gaps"
+          },
+          "history": {
+            "items": {
+              "$ref": "#/components/schemas/ActivityRecord"
+            },
+            "type": "array",
+            "title": "History"
+          },
+          "scenario_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Scenario Date",
+            "default": "2026-10-01"
+          },
+          "target_status": {
+            "type": "string",
+            "enum": [
+              "explicit",
+              "next_grade",
+              "no_target"
+            ],
+            "title": "Target Status",
+            "default": "explicit"
+          },
+          "progress": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Progress"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "data_version",
+          "state_version",
+          "profile",
+          "goal",
+          "current_skills",
+          "gaps",
+          "history"
+        ],
+        "title": "EmployeeDetailResponse"
+      },
+      "EmployeeListResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/EmployeeProfile"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Total"
+          },
+          "limit": {
+            "type": "integer",
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Limit"
+          },
+          "offset": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Offset"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "title": "EmployeeListResponse"
+      },
+      "EmployeeProfile": {
+        "properties": {
+          "employee_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Employee Id"
+          },
+          "full_name": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Full Name"
+          },
+          "department": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Department"
+          },
+          "role": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Role"
+          },
+          "grade": {
+            "type": "string",
+            "enum": [
+              "Junior",
+              "Middle",
+              "Senior",
+              "Lead"
+            ],
+            "title": "Grade"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "employee_id",
+          "full_name",
+          "department",
+          "role",
+          "grade"
+        ],
+        "title": "EmployeeProfile"
+      },
+      "ErrorResponse": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Code"
+          },
+          "message": {
+            "type": "string",
+            "maxLength": 240,
+            "minLength": 1,
+            "title": "Message"
+          },
+          "request_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Request Id"
+          },
+          "details": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JsonValue"
+            },
+            "type": "object",
+            "title": "Details"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "code",
+          "message",
+          "request_id"
+        ],
+        "title": "ErrorResponse"
+      },
+      "Explanation": {
+        "properties": {
+          "text": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Text"
+          },
+          "evidence_ids": {
+            "items": {
+              "type": "string",
+              "maxLength": 128,
+              "minLength": 1
+            },
+            "type": "array",
+            "maxItems": 50,
+            "minItems": 1,
+            "title": "Evidence Ids"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "text",
+          "evidence_ids"
+        ],
+        "title": "Explanation"
+      },
+      "Goal": {
+        "properties": {
+          "target_role": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Target Role"
+          },
+          "target_grade": {
+            "type": "string",
+            "enum": [
+              "Junior",
+              "Middle",
+              "Senior",
+              "Lead"
+            ],
+            "title": "Target Grade"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "target_role",
+          "target_grade"
+        ],
+        "title": "Goal"
+      },
+      "GoalUpdateRequest": {
+        "properties": {
+          "expected_state_version": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Expected State Version"
+          },
+          "goal": {
+            "$ref": "#/components/schemas/Goal"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "expected_state_version",
+          "goal"
+        ],
+        "title": "GoalUpdateRequest"
+      },
+      "HRSummaryResponse": {
+        "properties": {
+          "data_version": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Data Version"
+          },
+          "employee_count": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Employee Count"
+          },
+          "employees_with_goal": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Employees With Goal"
+          },
+          "completion_count": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Completion Count"
+          },
+          "demo_simulation_count": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Demo Simulation Count"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "data_version",
+          "employee_count",
+          "employees_with_goal",
+          "completion_count",
+          "demo_simulation_count"
+        ],
+        "title": "HRSummaryResponse"
+      },
+      "HealthResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "const": "ok",
+            "title": "Status",
+            "default": "ok"
+          },
+          "capabilities": {
+            "$ref": "#/components/schemas/Capabilities"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "capabilities"
+        ],
+        "title": "HealthResponse"
+      },
+      "ImportRequest": {
+        "properties": {
+          "source_filename": {
+            "type": "string",
+            "enum": [
+              "skills.json",
+              "employees.json",
+              "events.json",
+              "activity_history.csv"
+            ],
+            "title": "Source Filename"
+          },
+          "source_format": {
+            "type": "string",
+            "enum": [
+              "json",
+              "csv"
+            ],
+            "title": "Source Format"
+          },
+          "content": {
+            "type": "string",
+            "maxLength": 2000000,
+            "minLength": 1,
+            "title": "Content"
+          },
+          "dry_run": {
+            "type": "boolean",
+            "title": "Dry Run",
+            "default": true
+          },
+          "preview_token": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 128,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Preview Token"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "source_filename",
+          "source_format",
+          "content"
+        ],
+        "title": "ImportRequest"
+      },
+      "ImportResponse": {
+        "properties": {
+          "dry_run": {
+            "type": "boolean",
+            "title": "Dry Run"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "validated",
+              "imported"
+            ],
+            "title": "Status"
+          },
+          "data_version": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 128,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data Version"
+          },
+          "imported_records": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Imported Records"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings"
+          },
+          "preview_token": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 128,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Preview Token"
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Revision",
+            "default": 0
+          },
+          "counts": {
+            "additionalProperties": {
+              "type": "integer",
+              "minimum": 0.0
+            },
+            "type": "object",
+            "title": "Counts"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "dry_run",
+          "status",
+          "data_version",
+          "imported_records"
+        ],
+        "title": "ImportResponse"
+      },
+      "JsonValue": {},
+      "LoginRequest": {
+        "properties": {
+          "username": {
+            "type": "string",
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Username"
+          },
+          "password": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1,
+            "format": "password",
+            "title": "Password",
+            "writeOnly": true
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "username",
+          "password"
+        ],
+        "title": "LoginRequest"
+      },
+      "LogoutResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "const": "logged_out",
+            "title": "Status",
+            "default": "logged_out"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "LogoutResponse"
+      },
+      "PreviewRequest": {
+        "properties": {
+          "expected_state_version": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Expected State Version"
+          },
+          "scenario_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Scenario Date"
+          },
+          "event_ids": {
+            "items": {
+              "type": "string",
+              "maxLength": 128,
+              "minLength": 1
+            },
+            "type": "array",
+            "maxItems": 3,
+            "minItems": 1,
+            "title": "Event Ids"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "expected_state_version",
+          "scenario_date",
+          "event_ids"
+        ],
+        "title": "PreviewRequest"
+      },
+      "PreviewResponse": {
+        "properties": {
+          "data_version": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Data Version"
+          },
+          "state_version": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "State Version"
+          },
+          "scenario_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Scenario Date"
+          },
+          "persisted": {
+            "type": "boolean",
+            "const": false,
+            "title": "Persisted",
+            "default": false
+          },
+          "effects": {
+            "items": {
+              "$ref": "#/components/schemas/SkillEffect"
+            },
+            "type": "array",
+            "title": "Effects"
+          },
+          "projected_skills": {
+            "items": {
+              "$ref": "#/components/schemas/SkillLevel"
+            },
+            "type": "array",
+            "title": "Projected Skills"
+          },
+          "projected_gaps": {
+            "items": {
+              "$ref": "#/components/schemas/SkillGap"
+            },
+            "type": "array",
+            "title": "Projected Gaps"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "data_version",
+          "state_version",
+          "scenario_date",
+          "effects",
+          "projected_skills",
+          "projected_gaps"
+        ],
+        "title": "PreviewResponse"
+      },
+      "Progress": {
+        "properties": {
+          "percent": {
+            "type": "number",
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Percent"
+          },
+          "met_skills": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Met Skills"
+          },
+          "total_skills": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Total Skills"
+          },
+          "critical_met": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Critical Met"
+          },
+          "critical_total": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Critical Total"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "percent",
+          "met_skills",
+          "total_skills",
+          "critical_met",
+          "critical_total"
+        ],
+        "title": "Progress"
+      },
+      "ReadinessResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "ready",
+              "not_ready"
+            ],
+            "title": "Status"
+          },
+          "database": {
+            "type": "string",
+            "enum": [
+              "ready",
+              "unavailable",
+              "migration_required"
+            ],
+            "title": "Database"
+          },
+          "capabilities": {
+            "$ref": "#/components/schemas/Capabilities"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "status",
+          "database",
+          "capabilities"
+        ],
+        "title": "ReadinessResponse"
+      },
+      "RecommendationRequest": {
+        "properties": {
+          "scenario_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Scenario Date"
+          },
+          "limit": {
+            "type": "integer",
+            "maximum": 3.0,
+            "minimum": 1.0,
+            "title": "Limit",
+            "default": 3
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "scenario_date"
+        ],
+        "title": "RecommendationRequest"
+      },
+      "RecommendationResponse": {
+        "properties": {
+          "data_version": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Data Version"
+          },
+          "state_version": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "State Version"
+          },
+          "scenario_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Scenario Date"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "no_candidates",
+              "no_target",
+              "not_configured",
+              "unavailable"
+            ],
+            "title": "Status"
+          },
+          "engine": {
+            "type": "string",
+            "enum": [
+              "none",
+              "oleg"
+            ],
+            "title": "Engine"
+          },
+          "recommendations": {
+            "items": {
+              "$ref": "#/components/schemas/RecommendedEvent"
+            },
+            "type": "array",
+            "maxItems": 3,
+            "title": "Recommendations"
+          },
+          "recommendation_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 128,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recommendation Id"
+          },
+          "stale": {
+            "type": "boolean",
+            "title": "Stale",
+            "default": false
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "data_version",
+          "state_version",
+          "scenario_date",
+          "status",
+          "engine",
+          "recommendations"
+        ],
+        "title": "RecommendationResponse"
+      },
+      "RecommendedEvent": {
+        "properties": {
+          "event_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Event Id"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Title"
+          },
+          "effects": {
+            "items": {
+              "$ref": "#/components/schemas/SkillEffect"
+            },
+            "type": "array",
+            "title": "Effects"
+          },
+          "explanation": {
+            "$ref": "#/components/schemas/Explanation"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "event_id",
+          "title",
+          "effects",
+          "explanation"
+        ],
+        "title": "RecommendedEvent"
+      },
+      "SessionResponse": {
+        "properties": {
+          "user": {
+            "$ref": "#/components/schemas/UserIdentity"
+          },
+          "csrf_token": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Csrf Token"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Expires At"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "user",
+          "csrf_token",
+          "expires_at"
+        ],
+        "title": "SessionResponse"
+      },
+      "SkillEffect": {
+        "properties": {
+          "skill_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Skill Id"
+          },
+          "before": {
+            "type": "number",
+            "maximum": 5.0,
+            "minimum": 0.0,
+            "title": "Before"
+          },
+          "after": {
+            "type": "number",
+            "maximum": 5.0,
+            "minimum": 0.0,
+            "title": "After"
+          },
+          "delta": {
+            "type": "number",
+            "maximum": 5.0,
+            "minimum": -5.0,
+            "title": "Delta"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "skill_id",
+          "before",
+          "after",
+          "delta"
+        ],
+        "title": "SkillEffect"
+      },
+      "SkillGap": {
+        "properties": {
+          "skill_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Skill Id"
+          },
+          "current_level": {
+            "type": "number",
+            "maximum": 5.0,
+            "minimum": 0.0,
+            "title": "Current Level"
+          },
+          "target_level": {
+            "type": "number",
+            "maximum": 5.0,
+            "minimum": 0.0,
+            "title": "Target Level"
+          },
+          "gap": {
+            "type": "number",
+            "maximum": 5.0,
+            "minimum": 0.0,
+            "title": "Gap"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "skill_id",
+          "current_level",
+          "target_level",
+          "gap"
+        ],
+        "title": "SkillGap"
+      },
+      "SkillLevel": {
+        "properties": {
+          "skill_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Skill Id"
+          },
+          "level": {
+            "type": "number",
+            "maximum": 5.0,
+            "minimum": 0.0,
+            "title": "Level"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "skill_id",
+          "level"
+        ],
+        "title": "SkillLevel"
+      },
+      "SourceFile": {
+        "properties": {
+          "source_filename": {
+            "type": "string",
+            "enum": [
+              "skills.json",
+              "employees.json",
+              "events.json",
+              "activity_history.csv"
+            ],
+            "title": "Source Filename"
+          },
+          "source_format": {
+            "type": "string",
+            "enum": [
+              "json",
+              "csv"
+            ],
+            "title": "Source Format"
+          },
+          "content": {
+            "type": "string",
+            "maxLength": 2000000,
+            "minLength": 1,
+            "title": "Content"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "source_filename",
+          "source_format",
+          "content"
+        ],
+        "title": "SourceFile",
+        "description": "Transport for an original source file; its content is validated by the importer."
+      },
+      "UserIdentity": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Id"
+          },
+          "username": {
+            "type": "string",
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Username"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "employee",
+              "hr"
+            ],
+            "title": "Role"
+          },
+          "employee_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 128,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Employee Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "username",
+          "role",
+          "employee_id"
+        ],
+        "title": "UserIdentity"
+      },
+      "VersionResponse": {
+        "properties": {
+          "api_version": {
+            "type": "string",
+            "const": "1.0.0",
+            "title": "Api Version",
+            "default": "1.0.0"
+          },
+          "commit_sha": {
+            "type": "string",
+            "pattern": "^(unknown|[0-9a-f]{7,64})$",
+            "title": "Commit Sha"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "commit_sha"
+        ],
+        "title": "VersionResponse"
+      }
+    },
+    "securitySchemes": {
+      "DemoSession": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "cq_session"
+      },
+      "CsrfToken": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-CSRF-Token",
+        "description": "Use csrf_token from login for every authenticated mutation."
+      }
+    }
+  }
+}

@@ -1,5 +1,13 @@
 # Модель данных и инварианты
 
+> **Актуальный приоритет (2026-09-23).** Действующие согласованные контракты: [API v1](../contracts/API.md), [AI v1](../contracts/AI_CONTRACT.md); единственные схемы — [backend/app/contracts.py](../backend/app/contracts.py). Изменения [согласованы владельцем задачи](../docs/CONTRACT_CHANGE_PROPOSAL.md). Prefix — `/api`, версия состояния — `state_version` / `expected_state_version`, дата сценария — `scenario_date`; ответ AI — `RecommendationResult`, HTTP-карточки — `RecommendationResponse`. История имеет `date_source`, импорт — один endpoint `/api/hr/import` с preview token, завершение — `/api/employees/{id}/completions` с `Idempotency-Key`. Старые `data_revision`, `/api/v1`, participation endpoints, fallback и дополнительные поля ниже не являются действующим контрактом или обещанием реализации. Проверенные команды и ограничения — [HANDOFF](../docs/HANDOFF.md) и [VERIFICATION](../docs/VERIFICATION.md).
+
+Алихан — backend, данные, API, права, интеграция и деплой (`backend/`, кроме `backend/app/ai/`, общие `contracts/` и инфраструктура); Олег — AI-ядро `backend/app/ai/` и его тесты; Батыр — `frontend/`.
+
+## Историческое предложение
+
+Следующий текст сохранён для контекста проектирования; он не переопределяет ссылки и владельцев выше. Названия таблиц, будущая структура, состояния и приёмочные предложения нужно сверять с действующим кодом и контрактом.
+
 Проект схемы, не применённая SQL-миграция. SQLite для demo, SQLAlchemy/Alembic при реализации. Имена ниже нормативны для обсуждения; миграция и Pydantic-модели должны закрепить их до UI-интеграции.
 
 | Таблица | Ключ / поля | Инвариант |

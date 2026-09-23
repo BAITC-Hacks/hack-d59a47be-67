@@ -1,0 +1,13 @@
+{
+  "dry_run": true,
+  "status": "validated",
+  "data_version": null,
+  "imported_records": 2,
+  "warnings": [],
+  "preview_token": "SYNTHETIC_PREVIEW_TOKEN_001",
+  "revision": 1,
+  "counts": {
+    "employees": 1,
+    "activity_history": 1
+  }
+}

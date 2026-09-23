@@ -1,0 +1,7 @@
+{
+  "expected_state_version": 0,
+  "scenario_date": "2026-10-01",
+  "event_ids": [
+    "SYNTHETIC_EVENT_001"
+  ]
+}

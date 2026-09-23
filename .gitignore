@@ -1,3 +1,46 @@
+# Local configuration and databases
+.env
+.env.*
+!.env.example
+*.db
+*.db-*
+*.sqlite
+*.sqlite3
+
+# Python environments and generated files
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Editor and operating-system files
+.DS_Store
+.idea/
+.vscode/
+
+# Preserved concurrent draft, local data, credentials and SQLite sidecars
+.local-legacy/
+var/
+data/
+datasets/
+career_quest_dataset/
+*.zip
+judge-data/
+data/raw/
+*.sqlite3-*
+*.sqlite-*
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Preserved team ignores
 # Local source kit: restricted to the hackathon, never publish records by default.
 /career_quest_dataset.zip
 *.zip

@@ -1,0 +1,18 @@
+# Allowlist: real datasets, local archives, credentials and .env never enter context.
+**
+!Dockerfile
+!requirements.lock
+!backend/
+!backend/__init__.py
+!backend/app/
+!backend/app/*.py
+!backend/migrations/
+!backend/migrations/*.sql
+backend/app/**/__pycache__/
+backend/app/**/*.pyc
+backend/app/**/.env*
+backend/app/**/*.db
+backend/app/**/*.sqlite*
+backend/app/**/*.pem
+backend/app/**/*.key
+backend/app/ai/

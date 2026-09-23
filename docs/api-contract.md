@@ -1,5 +1,13 @@
 # HTTP-контракт v1
 
+> **Актуальный приоритет (2026-09-23).** Действующие согласованные контракты: [API v1](../contracts/API.md), [AI v1](../contracts/AI_CONTRACT.md); единственные схемы — [backend/app/contracts.py](../backend/app/contracts.py). Изменения [согласованы владельцем задачи](../docs/CONTRACT_CHANGE_PROPOSAL.md). Prefix — `/api`, версия состояния — `state_version` / `expected_state_version`, дата сценария — `scenario_date`; ответ AI — `RecommendationResult`, HTTP-карточки — `RecommendationResponse`. История имеет `date_source`, импорт — один endpoint `/api/hr/import` с preview token, завершение — `/api/employees/{id}/completions` с `Idempotency-Key`. Старые `data_revision`, `/api/v1`, participation endpoints, fallback и дополнительные поля ниже не являются действующим контрактом или обещанием реализации. Проверенные команды и ограничения — [HANDOFF](../docs/HANDOFF.md) и [VERIFICATION](../docs/VERIFICATION.md).
+
+Алихан — backend, данные, API, права, интеграция и деплой (`backend/`, кроме `backend/app/ai/`, общие `contracts/` и инфраструктура); Олег — AI-ядро `backend/app/ai/` и его тесты; Батыр — `frontend/`.
+
+## Историческое предложение
+
+Следующий текст сохранён для контекста проектирования; он не переопределяет ссылки и владельцев выше. Названия таблиц, будущая структура, состояния и приёмочные предложения нужно сверять с действующим кодом и контрактом.
+
 Проект интерфейса для согласования до реализации. Сейчас HTTP-сервер отсутствует. Prefix `/api/v1`, JSON UTF-8, ISO даты, UTC timestamp с offset. Dataset clock передаётся как `as_of_date`. AI contract — отдельные машиночитаемые схемы в `contracts/`; полную OpenAPI генерирует FastAPI после реализации DTO, затем фиксирует в `contracts/openapi.json`.
 
 ## Общие правила
@@ -29,7 +37,7 @@
 | `GET /hr/overview` | HR | date_from,date_to,department optional | skill_gaps, no_step_counts, recommendation_state_counts, participation counts + meta |
 | `GET /hr/employees-without-step` | HR | reason,cursor,limit<=100 | доступный только HR список с причинами; decision engine без вызова LLM |
 
-Опциональное изменение career_goal не входит в первый vertical slice. Для Lead без цели UI пока сообщает no_target; если цель задаётся из UI, участник 2 добавляет `PATCH /employees/{id}/goal` с той же auth/revision/idempotency семантикой и обновляет контракт.
+Опциональное изменение career_goal не входит в первый vertical slice. Для Lead без цели UI пока сообщает no_target; если цель задаётся из UI, Алихан добавляет `PATCH /employees/{id}/goal` с той же auth/revision/idempotency семантикой и обновляет контракт.
 
 ## Подготовленный AI-контекст и объяснения
 
@@ -67,6 +75,6 @@ Validation response:
 
 ## Что фиксируем перед стартом командной интеграции
 
-1. Owner Backend реализует DTO этого API и добавляет OpenAPI; owner AI сохраняет семантику двух JSON Schema; owner Frontend использует общий fixture.
+1. Алихан ведёт общие Pydantic-схемы API и OpenAPI; Олег использует эти схемы для AI; Батыр использует общий fixture.
 2. На контрактные изменения обновляются пример ответа и AGENTS.md в том же PR. Новое обязательное поле требует согласования всех трёх владельцев.
 3. HTTP statuses, no-step state и revision проверяются contract tests backend; live LLM не нужен для CI frontend/backend.

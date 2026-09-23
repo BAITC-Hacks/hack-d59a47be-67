@@ -11,10 +11,10 @@
 - Не коммить секреты, .env, локальную БД, исходные архивы и записи датасета. Данные стартового кита хранятся локально; репозиторий содержит код, документацию, агрегированный аудит и синтетические fixtures.
 - Не делай force push, не удаляй чужие изменения и не публикуй данные без явного запроса пользователя.
 
-## Текущее состояние
+## Архитектурный этап — сохранённая история
 
 - 2026-09-23: подготовлена архитектурная база для команды из трёх человек. Приложение ещё не реализовано.
-- Роль владельца: AI / логика рекомендаций / приёмка. Участник 2: Backend / Data / интеграция. Участник 3: Frontend / UX.
+- Действующие роли: Алихан — backend, данные, API, доступ, интеграция, деплой; Олег — backend/app/ai/ и собственные тесты; Батыр — frontend/. Не менять чужие каталоги.
 - Оригинал ТЗ (RU/KZ/EN) сохранён в docs/requirements/original-spec.txt. Архив career_quest_dataset.zip находится в корне локально.
 - `origin`: `https://github.com/BAITC-Hacks/hack-d59a47be-67.git`, приватный репозиторий, доступ WRITE проверен. Локальная main отслеживает origin/main; исходный коммит и история сохранены.
 - Принято: FastAPI modular monolith + React/TypeScript + SQLite для demo; расчёт навыков и допустимости на сервере, LLM выбирает event/evidence IDs. Это проектирование, не готовое приложение.
@@ -40,3 +40,37 @@
 | 2026-09-23 | По независимому review уточнены idempotency-before-revision, persistent explanations и ключ истории record_id; приёмка расширена до 31 сценария | Противоречия между API, моделью, AI и историей устранены; семантика зафиксирована документами | Реализовать и проверить эти инварианты в backend |
 | 2026-09-23 | Финальная проверка архитектурной базы, безопасного prepare и QA-инструментов; исправлены ZIP alias и non-finite JSON по review | `make check`: 21 synthetic unit test + 16 групп AI fixture checks PASS; аудит: 64 508 проверок, 0 нарушений; JSON отчёта валиден; ссылки проверены; guard отклоняет коммит без AGENTS.md; raw/ZIP/env исключены из Git | Отправить архитектурную ветку; затем участнику 1 реализовать AI validator/adapter/fallback, участнику 2 domain/import/API, участнику 3 UI на fixtures |
 | 2026-09-23 | Архитектурная ветка отправлена, создан draft PR #1, сохранено исходное форматирование ТЗ через .gitattributes | Push успешен; main сохранена; PR journal guard локально PASS; GitHub job не начат из-за подтверждённой billing lock (annotations check-run 107117871991) | Команда может начинать реализацию; владельцу GitHub устранить billing lock для запуска CI |
+
+## Backend — актуальные границы и журнал
+
+
+- Алихан: backend, данные, API, права, интеграция, миграции, деплой; `backend/` кроме `backend/app/ai/`, `contracts/`, `scripts/`, инфраструктурные документы.
+- Олег: AI-ядро `backend/app/ai/` и его собственные тесты. Backend не реализует LLM и не меняет эти файлы.
+- Батыр: `frontend/`. Backend не меняет интерфейс.
+- Единственный источник схем: `backend/app/contracts.py`; контракт v1 — `contracts/API.md` и `contracts/AI_CONTRACT.md`. Изменения согласовывать через эти файлы, не копировать схемы в AI.
+- Приоритет: последнее указание пользователя о ролях, первичное ТЗ, README исходных данных, затем рабочий план и прежние архитектурные предложения.
+- Проверки: `scripts/test`; запуск: `scripts/dev`; миграции: `.venv/bin/python -m backend.app.cli migrate`; OpenAPI: `scripts/export-openapi`.
+- Первый демо: один backend, процесс и реплика, SQLite на постоянном локальном volume; WAL только при явном подтверждении локального диска одного хоста.
+- Не коммитить `.env`, пароли, токены, БД, SSH-ключи, реальные профили и датасет. Не отправлять реальные данные внешним сервисам/в логи без разрешения.
+- Не удалять чужие изменения, не сбрасывать данные при запуске, не использовать force-push. Не заменять origin, не создавать другой репозиторий. Push/merge только по явному разрешению.
+- Перед checkpoint проверить затронутые сценарии, показать результат и ограничения. Docker build нельзя считать проверенным без фактического запуска.
+- `.local-legacy/` хранит неизменённый параллельный черновик локально; он не часть приложения, коммита или образа. Его не удалять автоматически.
+
+## Журнал — предметный backend
+
+- 2026-09-23, порция 1: добавлены чистые расчёты replay/caps, целей, прогресса и кандидатов; исходные JSON/CSV валидируются и импортируются через preview/token и атомарный commit. Каждая history-запись сохраняется по record_id; рост рассчитывается только для completed после review и до даты кита. Повторные mandatory не теряются.
+- Решения: один глобальный revision; baseline не перезаписывается завершениями; историческая дата помечена proxy; изменённые существующие employee_id/record_id конфликтуют; каталоги обновляются через preview/commit с предупреждением о пересчёте и проверкой всех сохранённых ссылок. Batch проверяет новых сотрудников и их историю совместно. ZIP/raw/judge-data не коммитятся.
+- Проверено локально: pytest domain/import/database — 96 passed, включая review границ и BOM; Ruff профильных модулей passed. GitHub Actions заблокирован billing, CI зелёным не заявляется.
+- Найден выданный origin `https://github.com/BAITC-Hacks/hack-d59a47be-67.git`, ветка `codex/architecture-foundation` получена fetch. В ней найдены первичное ТЗ и план. Следующий шаг: сохранить её историю/документы, подключить HTTP/completions/recommendations и пройти acceptance.
+
+- 2026-09-23, интеграция истории: присоединена выданная ветка origin/codex/architecture-foundation без force-push и удаления истории. Исходное ТЗ, инструменты аудита, frontend/README.md и документы сохранены. Конфликты README/AGENTS/.gitignore разрешены с сохранением командного содержания и последними ролями. Следующий шаг — консолидировать единственный контракт и закончить HTTP acceptance.
+
+- 2026-09-23, порция 2 — единый контракт: владелец задачи явно согласовал docs/CONTRACT_CHANGE_PROPOSAL.md. Сохранён Python-интерфейс Олега; добавлены HTTP history/date_source/progress, no_target/stale/latest, обязательный Idempotency-Key и batch import с preview_token. Старые проектные JSON Schema теперь генерируются из тех же Python-моделей, без второй несовместимой схемы. Командные документы сохранены с отметкой текущего контракта и уточнёнными владельцами.
+- Проверено: 55 контрактных тестов, 9 artifact checks и Ruff passed. Следующий шаг: полный HTTP acceptance и сверка свежего remote перед push/PR; GitHub CI по-прежнему billing-blocked.
+
+- 2026-09-23, порция 3 — HTTP/транзакции: подключены профили, каталог, цель/progress, preview, completions с идемпотентным replay до revision, import preview/atomic commit и latest рекомендаций. Сохранены исходные source_record/source_json отдельно от локальных действий. Новые завершения упорядочены по completed_at; EV_036 выбирает следующую незавершённую сессию. Backend проверяет evidence и сохраняет полные карточки; LLM await выполняется вне DB-транзакции.
+- Проверено локально: make check = 21 исходный unit test + 234 backend tests +9 schema checks + Ruff PASS. TCP smoke с повторным запуском/потерей ответа PASS; оригинальный кит3075 записей,200 валидных profile projections, reimport0/revision1,159 actionable/10 no_target/31 no_candidates. Данные не отправлялись наружу и не коммитились. Олег/Батыр код не затронут. Следующий шаг: свежий fetch, проверка diff владельцев, push своей ветки и PR в architecture-foundation без merge. CI billing-blocked, Docker/AI live не проверены.
+
+- Финальная переносимость: tzdata==2026.4 закреплена для Asia/Almaty без системной zoneinfo; проверка с PYTHONTZPATH пустым. Уточнена политика каталога: полная замена skills/events требует preview/commit, предупреждает о пересчёте, обновляет revision; профили и record_id не перезаписываются. Отдельный review подтвердил пустой diff frontend/AI/исходного ТЗ и транзакционные инварианты.
+
+- 2026-09-23, публикация: codex/backend-foundation отправлена обычным push; PR #2 https://github.com/BAITC-Hacks/hack-d59a47be-67/pull/2 открыт в codex/architecture-foundation. GitHub подтвердил mergeable=true, merged=false; main/base не изменены. Локальный API на 127.0.0.1:8000: health/readiness/version/OpenAPI 200, анонимный me401, kit loaded revision1, AI not_configured/none. Следующий шаг: командный review PR, подключение модуля Олега и UI Батыра; устранение billing CI и отдельная проверка Docker.

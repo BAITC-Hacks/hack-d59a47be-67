@@ -1,5 +1,13 @@
 # Архитектура Career Quest
 
+> **Актуальный приоритет (2026-09-23).** Действующие согласованные контракты: [API v1](../contracts/API.md), [AI v1](../contracts/AI_CONTRACT.md); единственные схемы — [backend/app/contracts.py](../backend/app/contracts.py). Изменения [согласованы владельцем задачи](../docs/CONTRACT_CHANGE_PROPOSAL.md). Prefix — `/api`, версия состояния — `state_version` / `expected_state_version`, дата сценария — `scenario_date`; ответ AI — `RecommendationResult`, HTTP-карточки — `RecommendationResponse`. История имеет `date_source`, импорт — один endpoint `/api/hr/import` с preview token, завершение — `/api/employees/{id}/completions` с `Idempotency-Key`. Старые `data_revision`, `/api/v1`, participation endpoints, fallback и дополнительные поля ниже не являются действующим контрактом или обещанием реализации. Проверенные команды и ограничения — [HANDOFF](../docs/HANDOFF.md) и [VERIFICATION](../docs/VERIFICATION.md).
+
+Алихан — backend, данные, API, права, интеграция и деплой (`backend/`, кроме `backend/app/ai/`, общие `contracts/` и инфраструктура); Олег — AI-ядро `backend/app/ai/` и его тесты; Батыр — `frontend/`.
+
+## Историческое предложение
+
+Следующий текст сохранён для контекста проектирования; он не переопределяет ссылки и владельцев выше. Названия таблиц, будущая структура, состояния и приёмочные предложения нужно сверять с действующим кодом и контрактом.
+
 Статус: проект архитектуры v1 от 2026-09-23 для реализации на хакатоне. Приложение, HTTP API, БД и вызов LLM пока не реализованы. Факты о данных: [аудит](data-audit.md). Нормативные требования: [ТЗ](requirements/original-spec.txt) и README стартового кита. Решения ниже — инженерный выбор команды, если явно не сказано обратное.
 
 ## 1. Граница продукта
@@ -10,9 +18,9 @@
 
 | Владелец | Модуль | Что передаёт остальным |
 |---|---|---|
-| Вы: AI / приёмка | `backend/app/recommendations/`, `contracts/`, сценарии оценки | `recommend(context) -> result`; порядок event_id, доказательства, fallback; проверенные demo-сценарии |
-| Участник 2: Backend / Data | `backend/app/domain/`, `repositories/`, `api/`, `imports/` | Current skills, trajectory, eligible candidates, факты, HTTP API, транзакции, права |
-| Участник 3: Frontend / UX | `frontend/` | Кабинет, карточки с основаниями, прогресс, HR, импорт и состояния ожидания/ошибки |
+| Олег: AI | `backend/app/ai/`, собственные тесты | `recommend(context) -> result`; порядок event_id, доказательства, fallback; проверенные demo-сценарии |
+| Алихан: Backend / Data | `backend/` кроме `backend/app/ai/`, `contracts/`, инфраструктура | Current skills, trajectory, eligible candidates, факты, HTTP API, транзакции, права |
+| Батыр: Frontend / UX | `frontend/` | Кабинет, карточки с основаниями, прогресс, HR, импорт и состояния ожидания/ошибки |
 
 Каталоги модулей — целевая структура; до начала реализации границы закреплены в README соответствующих директорий. Не создавать пустые реализации ради дерева файлов.
 
@@ -93,7 +101,7 @@ flowchart LR
 
 ## 4. AI и объяснимость
 
-Модуль пользователя получает готовый контекст без БД и HTTP: [спецификация AI](ai-recommendations.md), [JSON Schema](../contracts/recommendation-context.schema.json). Backend уже вычислил gaps, ожидаемые gain и факты участия. LLM выбирает порядок допустимых ID и evidence IDs; сервер проверяет membership, уникальность, ranks, revision и ≥3 категории оснований для каждой карточки.
+Модуль Олега получает готовый контекст без БД и HTTP: [спецификация AI](ai-recommendations.md), [JSON Schema](../contracts/recommendation-context.schema.json). Backend уже вычислил gaps, ожидаемые gain и факты участия. LLM выбирает порядок допустимых ID и evidence IDs; сервер проверяет membership, уникальность, ranks, revision и ≥3 категории оснований для каждой карточки.
 
 Текст объяснения сервер собирает из доверенных фактов. Отсутствие истории — факт отсутствия, а не выдуманные «две активности в срок». В наборе данных нет timestamp фактического завершения, поэтому утверждения «завершено вовремя» для таких строк не подтверждены. История помогает выбирать формат и приоритет, но не делает выводы о трудолюбии.
 
