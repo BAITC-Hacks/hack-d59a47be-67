@@ -1,3 +1,20 @@
+# Проверка приложенного case_1 и локального запуска — 2026-09-23
+
+Проверена текущая backend-ветка `codex/backend-ai-handoff`, runtime commit `3b85babc78e6c522b6c5d04d42e5a16a37966570`. Изменений приложения для этой проверки не потребовалось; ниже только фактические результаты. Код AI/frontend, исходные файлы и рабочие записи не менялись.
+
+- В приложенном `case_1/career_quest_dataset/` присутствуют4 источника и3 README. SHA256 источников совпадают с `docs/data-audit.md`.200 сотрудников,40 мероприятий,60 навыков,32 целевых role/grade,2743 записи истории; дата среза2026-10-01. Отдельного ТЗ в папке нет; сохранённый оригинал — `docs/requirements/original-spec.txt`.
+- `scripts.audit_dataset.audit()` —64 508 проверок/0 нарушений. `domain.replay()` совпал с независимым аудитом у200/200;159 actionable/10 no_target/31 no_candidates.544 повторных mandatory назначения сохраняются. Отсутствие полезных кандидатов у31 профиля связано с правилами допуска/покрытием каталога, а не отсутствием данных.
+- Установленная `var/career_quest.sqlite3` проверена через read-only SQLite: source_json, history и оба каталога полностью равны нормализованным исходникам;4 migration checksums PASS; `quick_check=ok`, FK violations0; revision1.200 профилей/2743 history/0 accounts. БД и данные исключены из Git.
+- Во временной SQLite выполнены реальные `ImportService.preview/commit`, повтор импорта и миграций:3075 изменённых записей при первом импорте,0 при повторе, revision1 сохраняется. Через `TestClient(create_app(..., ai_enabled=False))` проверены200 HTTP-профилей, каталог,HR pagination/summary,login/logout/HttpOnly/CSRF,403 для чужого профиля и HR-запросов сотрудника,preview без записи и HTTP dry_run/commit повторного кита. Временные случайные учётки и вся тестовая БД удалены вместе с принадлежащим проверке TemporaryDirectory; рабочие учётки не создавались. Ни записи, ни пароли не выводились.
+- `scripts/verify-integration --backend-ref HEAD --ai-ref origin/codex/ai-recommendations`: backend3b85bab + AI f10006a, виртуальное tree30bb15b961516ba45ca2fa8f49de1beb700cec0f без конфликтов; **468 passed**,21 исходный тест,9 schema checks,Ruff и два TCP-запуска PASS. Только синтетический remote selector, без live LLM; одно известное Starlette/httpx warning.
+- При начале проверки API не слушал8000 (connection refused). Выполнено `AI_ENABLED=false scripts/dev`. После запуска: health/readiness/version/docs/OpenAPI200; `/api/me` без cookie401. Readiness: dataset loaded1.0:r1, AI not_configured/none. Проверенный локальный адрес — http://127.0.0.1:8000/docs. Процесс работает в текущей сессии; после остановки/reboot нужен `scripts/dev`.
+
+Для полного интерактивного demo в этой рабочей копии ещё нужны серверные учётки (`backend.app.cli create-account`), согласованное подключение PR#3/#4 и frontend. Здесь нет `.env` и AI-модуля, AI отключён; реальные профили не отправлялись провайдеру. Нет Docker CLI; переданный ARM64-отчёт Олега ниже не является новым запуском на этой машине. PR не сливались, публичный deploy не выполнялся.
+
+Ниже сохранены предыдущие проверки.
+
+---
+
 # Русские объяснения и принятие Docker patch — 2026-09-23
 
 Внешний `explanation.text` больше не склеивает английские JSON-facts. Backend строит русский текст из того же snapshot, сохраняет evidence_ids и внутренний AI-контекст. Уровни не округляются скрыто; history/candidate другого события отклоняются. Новые карточки сохраняют исходный текст при restart/stale; старые нужно запросить заново.
