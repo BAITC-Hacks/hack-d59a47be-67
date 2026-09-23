@@ -1,0 +1,67 @@
+{
+  "mode": "live_synthetic_backend_evaluation",
+  "synthetic_only": true,
+  "quality_evaluated": true,
+  "prompt_version": "career-quest-selection-v1",
+  "case_count": 3,
+  "passed_count": 3,
+  "failed_count": 0,
+  "cases": [
+    {
+      "case_id": "backend_critical_over_lowest",
+      "passed": true,
+      "verdict": "passed",
+      "status": "ok",
+      "latency_ms": 1512.76,
+      "selected_event_ids": [
+        "SYNTH_BE_EVENT_B"
+      ],
+      "requires_enriched_facts": true
+    },
+    {
+      "case_id": "backend_repeated_format_nonparticipation",
+      "passed": true,
+      "verdict": "passed",
+      "status": "ok",
+      "latency_ms": 954.45,
+      "selected_event_ids": [
+        "SYNTH_BE_EVENT_B"
+      ],
+      "requires_enriched_facts": true
+    },
+    {
+      "case_id": "backend_no_history",
+      "passed": true,
+      "verdict": "passed",
+      "status": "ok",
+      "latency_ms": 1072.93,
+      "selected_event_ids": [
+        "SYNTH_BE_EVENT_A"
+      ],
+      "requires_enriched_facts": true
+    }
+  ],
+  "model": "gpt-4.1-mini-2025-04-14",
+  "context_origin": "synthetic source import -> SQLite -> CareerService._context",
+  "backend_service_sha256": "73640485db72826855affa198459bc966444c68e2f9710de0725f5bd6a7f46b6",
+  "contexts": [
+    {
+      "case_id": "backend_critical_over_lowest",
+      "sha256": "b73454721ebdbda91294fdcb71c3f22a4426769321fa0dc7449a925ceda113f4",
+      "candidate_count": 2,
+      "fact_count": 10
+    },
+    {
+      "case_id": "backend_repeated_format_nonparticipation",
+      "sha256": "dbc1087978a03177aa50c1dcf9a886333566a54f782af7632f6958869bfc88ed",
+      "candidate_count": 2,
+      "fact_count": 9
+    },
+    {
+      "case_id": "backend_no_history",
+      "sha256": "5d64b9de63ebde3e0fea4ef74ef91bc27dc1f4459b4d4eeecf475ec8efd163e2",
+      "candidate_count": 2,
+      "fact_count": 9
+    }
+  ]
+}

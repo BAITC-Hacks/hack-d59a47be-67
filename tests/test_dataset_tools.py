@@ -1,9 +1,10 @@
 """Synthetic-only regressions for unsafe paths and career-progress edge cases."""
 import copy
-from pathlib import Path
+import errno
 import stat
 import tempfile
 import unittest
+from pathlib import Path
 from zipfile import ZipFile, ZipInfo
 
 from scripts.audit_dataset import candidate_reasons, is_number, load_json, reconstruct_skills, select_target
@@ -22,8 +23,27 @@ class PrepareDatasetTests(unittest.TestCase):
             for name in FILES:
                 archive.writestr("nested/kit/" + name, "synthetic " + name)
             for name, contents in extras:
-                archive.writestr(name, contents)
+                if isinstance(name, str):
+                    # ZipInfo sanitizes names at construction on Windows. Restore
+                    # the exact fixture name so malformed bytes reach the reader.
+                    entry = ZipInfo(name)
+                    entry.filename = name
+                else:
+                    entry = name
+                archive.writestr(entry, contents)
         return path
+
+    def make_symlink(self, path, target, *, target_is_directory=False):
+        try:
+            path.symlink_to(target, target_is_directory=target_is_directory)
+        except NotImplementedError:
+            self.skipTest("Symbolic links are not implemented on this platform")
+        except OSError as error:
+            if getattr(error, "winerror", None) == 1314:
+                self.skipTest("Windows symbolic-link privilege is unavailable (WinError 1314)")
+            if error.errno in {errno.ENOSYS, errno.ENOTSUP}:
+                self.skipTest("Symbolic links are unsupported by this filesystem")
+            raise
 
     def test_extract_only_seven_and_idempotent(self):
         archive = self.make_zip([("nested/kit/.DS_Store", "ignore"), ("__MACOSX/._kit", "ignore")])
@@ -40,7 +60,7 @@ class PrepareDatasetTests(unittest.TestCase):
         self.assertEqual(7, len(prepare(source, self.root / "raw")))
 
     def test_zip_traversal_refused(self):
-        for name in ("../outside", "/absolute", "C:/windows", "bad\\path"):
+        for name in ("../outside", "/absolute", "C:/windows", "bad\\path", "bad\x00path"):
             with self.subTest(name=name):
                 with self.assertRaises(ValueError):
                     prepare(self.make_zip([(name, "bad")]), self.root / "raw")
@@ -79,7 +99,7 @@ class PrepareDatasetTests(unittest.TestCase):
         outside = self.root / "outside"
         outside.mkdir()
         destination = self.root / "raw"
-        destination.symlink_to(outside, target_is_directory=True)
+        self.make_symlink(destination, outside, target_is_directory=True)
         with self.assertRaises(ValueError):
             prepare(self.make_zip(), destination)
         self.assertEqual([], list(outside.iterdir()))
@@ -90,7 +110,7 @@ class PrepareDatasetTests(unittest.TestCase):
         for name in FILES:
             (source / name).write_text("synthetic")
         (source / "skills.json").unlink()
-        (source / "skills.json").symlink_to(source / "events.json")
+        self.make_symlink(source / "skills.json", source / "events.json")
         with self.assertRaises(ValueError):
             prepare(source, self.root / "raw")
 

@@ -1,0 +1,5 @@
+.local-demo*.json
+*.tsbuildinfo
+test-results/
+screenshots/
+.qa/

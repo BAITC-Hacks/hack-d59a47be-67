@@ -1,0 +1,1211 @@
+{
+  "verified_at": "2026-09-23",
+  "synthetic_only": true,
+  "baseline_ai_commit": "d7b1cbf6f43d7de276621f960ecb54dca2acbb38",
+  "backend_commit": "3b85babc78e6c522b6c5d04d42e5a16a37966570",
+  "runtime_source_sha256": {
+    "provider.py": "97c4f58497eef708ae3bae473e6aec88e6c6622a54ee62e270af0437ec94ab0a",
+    "prompts.py": "53f833f799e803bae23b3a7780b7d7c33c2029276c1e67f7349d33cca4dc752a",
+    "service.py": "39c2261cda7f908dd223f13b6caeabfcf3e62ffe2a06c4c6b5a56740d93cbfa9",
+    "validation.py": "b3c9514cb52bfe586378817c260f4a494f8218566f0a7bf4af91f9e133f3a746",
+    "__init__.py": "d6c160e551b7ae13711e48366fde81efc62e1099adbecd150246f8e063339578",
+    "latency_evaluation.py": "25f3a09f052cee2c90e37db7f8d409239fba0eefa8bfc71e387a21c097ba0b0f"
+  },
+  "requirement": {
+    "source": "docs/requirements/original-spec.txt",
+    "lines": [
+      54,
+      164,
+      277
+    ],
+    "ai_limit_ms": 10000,
+    "ui_limit_ms": 2000,
+    "correction": "Previous five-second comparison was a reporting error"
+  },
+  "baseline": {
+    "mode": "live_synthetic_backend_latency",
+    "synthetic_only": true,
+    "quality_evaluated": true,
+    "prompt_version": "career-quest-selection-v1",
+    "case_count": 3,
+    "rounds": 3,
+    "requirement_limit_ms": 10000,
+    "evaluator_timeout_ms": 7000.0,
+    "measurement_scope": "Sequential AI entry point; excludes HTTP backend/frontend and context preparation.",
+    "percentile_method": "nearest-rank; includes first call; sample p95 is not an SLA",
+    "cold_call_note": "First process call retained; provider cache/cold infrastructure state is unknown.",
+    "summary": {
+      "attempt_count": 9,
+      "successful_response_count": 9,
+      "passed_count": 9,
+      "failed_count": 0,
+      "unavailable_count": 0,
+      "timeout_count": 0,
+      "above_requirement_limit_count": 0,
+      "total_latency_all_attempts": {
+        "count": 9,
+        "median_ms": 1159.96,
+        "sample_p95_ms": 1375.16,
+        "max_ms": 1375.16
+      },
+      "total_latency_successful_responses": {
+        "count": 9,
+        "median_ms": 1159.96,
+        "sample_p95_ms": 1375.16,
+        "max_ms": 1375.16
+      },
+      "provider_latency_all_observed_calls": {
+        "count": 9,
+        "median_ms": 1159.55,
+        "sample_p95_ms": 1374.28,
+        "max_ms": 1374.28
+      },
+      "provider_latency_successful_responses": {
+        "count": 9,
+        "median_ms": 1159.55,
+        "sample_p95_ms": 1374.28,
+        "max_ms": 1374.28
+      },
+      "network_to_headers_all_observed_calls": {
+        "count": 9,
+        "median_ms": 1117.3,
+        "sample_p95_ms": 1332.9,
+        "max_ms": 1332.9
+      }
+    },
+    "attempts": [
+      {
+        "case_id": "backend_critical_over_lowest",
+        "passed": true,
+        "verdict": "passed",
+        "status": "ok",
+        "selected_event_ids": [
+          "SYNTH_BE_EVENT_B"
+        ],
+        "requires_enriched_facts": true,
+        "total_ms": 1249.1,
+        "provider_calls": 1,
+        "http_requests": 1,
+        "request_bytes": 9201,
+        "network_to_headers_ms": 1205.11,
+        "response_bytes": 5216,
+        "input_tokens": 2038,
+        "output_tokens": 13,
+        "cached_tokens": 0,
+        "provider_ms": 1248.19,
+        "local_overhead_ms": 0.91,
+        "timed_out": false,
+        "round": 1,
+        "attempt": 1,
+        "first_call": true
+      },
+      {
+        "case_id": "backend_repeated_format_nonparticipation",
+        "passed": true,
+        "verdict": "passed",
+        "status": "ok",
+        "selected_event_ids": [
+          "SYNTH_BE_EVENT_B"
+        ],
+        "requires_enriched_facts": true,
+        "total_ms": 1351.77,
+        "provider_calls": 1,
+        "http_requests": 1,
+        "request_bytes": 9007,
+        "network_to_headers_ms": 1311.36,
+        "response_bytes": 5216,
+        "input_tokens": 1974,
+        "output_tokens": 13,
+        "cached_tokens": 0,
+        "provider_ms": 1350.56,
+        "local_overhead_ms": 1.21,
+        "timed_out": false,
+        "round": 1,
+        "attempt": 2,
+        "first_call": false
+      },
+      {
+        "case_id": "backend_no_history",
+        "passed": true,
+        "verdict": "passed",
+        "status": "ok",
+        "selected_event_ids": [
+          "SYNTH_BE_EVENT_A"
+        ],
+        "requires_enriched_facts": true,
+        "total_ms": 1293.03,
+        "provider_calls": 1,
+        "http_requests": 1,
+        "request_bytes": 8895,
+        "network_to_headers_ms": 1244.85,
+        "response_bytes": 5216,
+        "input_tokens": 1934,
+        "output_tokens": 13,
+        "cached_tokens": 0,
+        "provider_ms": 1291.57,
+        "local_overhead_ms": 1.46,
+        "timed_out": false,
+        "round": 1,
+        "attempt": 3,
+        "first_call": false
+      },
+      {
+        "case_id": "backend_repeated_format_nonparticipation",
+        "passed": true,
+        "verdict": "passed",
+        "status": "ok",
+        "selected_event_ids": [
+          "SYNTH_BE_EVENT_B"
+        ],
+        "requires_enriched_facts": true,
+        "total_ms": 1375.16,
+        "provider_calls": 1,
+        "http_requests": 1,
+        "request_bytes": 9007,
+        "network_to_headers_ms": 1332.9,
+        "response_bytes": 5216,
+        "input_tokens": 1974,
+        "output_tokens": 13,
+        "cached_tokens": 0,
+        "provider_ms": 1374.28,
+        "local_overhead_ms": 0.88,
+        "timed_out": false,
+        "round": 2,
+        "attempt": 4,
+        "first_call": false
+      },
+      {
+        "case_id": "backend_no_history",
+        "passed": true,
+        "verdict": "passed",
+        "status": "ok",
+        "selected_event_ids": [
+          "SYNTH_BE_EVENT_A"
+        ],
+        "requires_enriched_facts": true,
+        "total_ms": 985.98,
+        "provider_calls": 1,
+        "http_requests": 1,
+        "request_bytes": 8895,
+        "network_to_headers_ms": 973.22,
+        "response_bytes": 5216,
+        "input_tokens": 1934,
+        "output_tokens": 13,
+        "cached_tokens": 0,
+        "provider_ms": 985.58,
+        "local_overhead_ms": 0.4,
+        "timed_out": false,
+        "round": 2,
+        "attempt": 5,
+        "first_call": false
+      },
+      {
+        "case_id": "backend_critical_over_lowest",
+        "passed": true,
+        "verdict": "passed",
+        "status": "ok",
+        "selected_event_ids": [
+          "SYNTH_BE_EVENT_B"
+        ],
+        "requires_enriched_facts": true,
+        "total_ms": 1159.96,
+        "provider_calls": 1,
+        "http_requests": 1,
+        "request_bytes": 9201,
+        "network_to_headers_ms": 1117.3,
+        "response_bytes": 5216,
+        "input_tokens": 2038,
+        "output_tokens": 13,
+        "cached_tokens": 0,
+        "provider_ms": 1159.55,
+        "local_overhead_ms": 0.41,
+        "timed_out": false,
+        "round": 2,
+        "attempt": 6,
+        "first_call": false
+      },
+      {
+        "case_id": "backend_no_history",
+        "passed": true,
+        "verdict": "passed",
+        "status": "ok",
+        "selected_event_ids": [
+          "SYNTH_BE_EVENT_A"
+        ],
+        "requires_enriched_facts": true,
+        "total_ms": 1078.47,
+        "provider_calls": 1,
+        "http_requests": 1,
+        "request_bytes": 8895,
+        "network_to_headers_ms": 1029.13,
+        "response_bytes": 5216,
+        "input_tokens": 1934,
+        "output_tokens": 13,
+        "cached_tokens": 0,
+        "provider_ms": 1078.09,
+        "local_overhead_ms": 0.38,
+        "timed_out": false,
+        "round": 3,
+        "attempt": 7,
+        "first_call": false
+      },
+      {
+        "case_id": "backend_critical_over_lowest",
+        "passed": true,
+        "verdict": "passed",
+        "status": "ok",
+        "selected_event_ids": [
+          "SYNTH_BE_EVENT_B"
+        ],
+        "requires_enriched_facts": true,
+        "total_ms": 1004.28,
+        "provider_calls": 1,
+        "http_requests": 1,
+        "request_bytes": 9201,
+        "network_to_headers_ms": 983.79,
+        "response_bytes": 5216,
+        "input_tokens": 2038,
+        "output_tokens": 13,
+        "cached_tokens": 0,
+        "provider_ms": 1003.78,
+        "local_overhead_ms": 0.5,
+        "timed_out": false,
+        "round": 3,
+        "attempt": 8,
+        "first_call": false
+      },
+      {
+        "case_id": "backend_repeated_format_nonparticipation",
+        "passed": true,
+        "verdict": "passed",
+        "status": "ok",
+        "selected_event_ids": [
+          "SYNTH_BE_EVENT_B"
+        ],
+        "requires_enriched_facts": true,
+        "total_ms": 932.06,
+        "provider_calls": 1,
+        "http_requests": 1,
+        "request_bytes": 9007,
+        "network_to_headers_ms": 877.01,
+        "response_bytes": 5216,
+        "input_tokens": 1974,
+        "output_tokens": 13,
+        "cached_tokens": 0,
+        "provider_ms": 931.68,
+        "local_overhead_ms": 0.38,
+        "timed_out": false,
+        "round": 3,
+        "attempt": 9,
+        "first_call": false
+      }
+    ],
+    "model": "gpt-4.1-mini-2025-04-14",
+    "ai_timeout_ms": 6000.0,
+    "context_origin": "synthetic source import -> SQLite -> CareerService._context",
+    "backend_service_sha256": "cd188380b90fbbee6edcbecb0fd89f32ccf299b02b76fdebaebba85c1147a595",
+    "contexts": [
+      {
+        "case_id": "backend_critical_over_lowest",
+        "sha256": "b73454721ebdbda91294fdcb71c3f22a4426769321fa0dc7449a925ceda113f4",
+        "candidate_count": 2,
+        "fact_count": 10
+      },
+      {
+        "case_id": "backend_repeated_format_nonparticipation",
+        "sha256": "dbc1087978a03177aa50c1dcf9a886333566a54f782af7632f6958869bfc88ed",
+        "candidate_count": 2,
+        "fact_count": 9
+      },
+      {
+        "case_id": "backend_no_history",
+        "sha256": "5d64b9de63ebde3e0fea4ef74ef91bc27dc1f4459b4d4eeecf475ec8efd163e2",
+        "candidate_count": 2,
+        "fact_count": 9
+      }
+    ]
+  },
+  "final_tls_reuse": {
+    "mode": "live_synthetic_backend_latency",
+    "synthetic_only": true,
+    "quality_evaluated": true,
+    "prompt_version": "career-quest-selection-v1",
+    "case_count": 3,
+    "rounds": 3,
+    "requirement_limit_ms": 10000,
+    "evaluator_timeout_ms": 7000.0,
+    "measurement_scope": "Sequential AI entry point; excludes HTTP backend/frontend and context preparation.",
+    "percentile_method": "nearest-rank; includes first call; sample p95 is not an SLA",
+    "cold_call_note": "First process call retained; provider cache/cold infrastructure state is unknown.",
+    "summary": {
+      "attempt_count": 9,
+      "successful_response_count": 9,
+      "passed_count": 9,
+      "failed_count": 0,
+      "unavailable_count": 0,
+      "timeout_count": 0,
+      "above_requirement_limit_count": 0,
+      "total_latency_all_attempts": {
+        "count": 9,
+        "median_ms": 1106.57,
+        "sample_p95_ms": 1284.37,
+        "max_ms": 1284.37
+      },
+      "total_latency_successful_responses": {
+        "count": 9,
+        "median_ms": 1106.57,
+        "sample_p95_ms": 1284.37,
+        "max_ms": 1284.37
+      },
+      "provider_latency_all_observed_calls": {
+        "count": 9,
+        "median_ms": 1106.12,
+        "sample_p95_ms": 1283.02,
+        "max_ms": 1283.02
+      },
+      "provider_latency_successful_responses": {
+        "count": 9,
+        "median_ms": 1106.12,
+        "sample_p95_ms": 1283.02,
+        "max_ms": 1283.02
+      },
+      "network_to_headers_all_observed_calls": {
+        "count": 9,
+        "median_ms": 1082.59,
+        "sample_p95_ms": 1245.09,
+        "max_ms": 1245.09
+      }
+    },
+    "attempts": [
+      {
+        "case_id": "backend_critical_over_lowest",
+        "passed": true,
+        "verdict": "passed",
+        "status": "ok",
+        "selected_event_ids": [
+          "SYNTH_BE_EVENT_B"
+        ],
+        "requires_enriched_facts": true,
+        "total_ms": 1198.13,
+        "provider_calls": 1,
+        "http_requests": 1,
+        "request_bytes": 9201,
+        "network_to_headers_ms": 1154.43,
+        "response_bytes": 5216,
+        "input_tokens": 2038,
+        "output_tokens": 13,
+        "cached_tokens": 0,
+        "provider_ms": 1196.96,
+        "local_overhead_ms": 1.17,
+        "timed_out": false,
+        "round": 1,
+        "attempt": 1,
+        "first_call": true
+      },
+      {
+        "case_id": "backend_repeated_format_nonparticipation",
+        "passed": true,
+        "verdict": "passed",
+        "status": "ok",
+        "selected_event_ids": [
+          "SYNTH_BE_EVENT_B"
+        ],
+        "requires_enriched_facts": true,
+        "total_ms": 1115.86,
+        "provider_calls": 1,
+        "http_requests": 1,
+        "request_bytes": 9007,
+        "network_to_headers_ms": 1082.59,
+        "response_bytes": 5216,
+        "input_tokens": 1974,
+        "output_tokens": 13,
+        "cached_tokens": 0,
+        "provider_ms": 1114.36,
+        "local_overhead_ms": 1.5,
+        "timed_out": false,
+        "round": 1,
+        "attempt": 2,
+        "first_call": false
+      },
+      {
+        "case_id": "backend_no_history",
+        "passed": true,
+        "verdict": "passed",
+        "status": "ok",
+        "selected_event_ids": [
+          "SYNTH_BE_EVENT_A"
+        ],
+        "requires_enriched_facts": true,
+        "total_ms": 1284.37,
+        "provider_calls": 1,
+        "http_requests": 1,
+        "request_bytes": 8895,
+        "network_to_headers_ms": 1245.09,
+        "response_bytes": 5216,
+        "input_tokens": 1934,
+        "output_tokens": 13,
+        "cached_tokens": 0,
+        "provider_ms": 1283.02,
+        "local_overhead_ms": 1.35,
+        "timed_out": false,
+        "round": 1,
+        "attempt": 3,
+        "first_call": false
+      },
+      {
+        "case_id": "backend_repeated_format_nonparticipation",
+        "passed": true,
+        "verdict": "passed",
+        "status": "ok",
+        "selected_event_ids": [
+          "SYNTH_BE_EVENT_B"
+        ],
+        "requires_enriched_facts": true,
+        "total_ms": 988.85,
+        "provider_calls": 1,
+        "http_requests": 1,
+        "request_bytes": 9007,
+        "network_to_headers_ms": 959.78,
+        "response_bytes": 5216,
+        "input_tokens": 1974,
+        "output_tokens": 13,
+        "cached_tokens": 0,
+        "provider_ms": 987.79,
+        "local_overhead_ms": 1.06,
+        "timed_out": false,
+        "round": 2,
+        "attempt": 4,
+        "first_call": false
+      },
+      {
+        "case_id": "backend_no_history",
+        "passed": true,
+        "verdict": "passed",
+        "status": "ok",
+        "selected_event_ids": [
+          "SYNTH_BE_EVENT_A"
+        ],
+        "requires_enriched_facts": true,
+        "total_ms": 1198.34,
+        "provider_calls": 1,
+        "http_requests": 1,
+        "request_bytes": 8895,
+        "network_to_headers_ms": 1150.96,
+        "response_bytes": 5216,
+        "input_tokens": 1934,
+        "output_tokens": 13,
+        "cached_tokens": 0,
+        "provider_ms": 1197.51,
+        "local_overhead_ms": 0.83,
+        "timed_out": false,
+        "round": 2,
+        "attempt": 5,
+        "first_call": false
+      },
+      {
+        "case_id": "backend_critical_over_lowest",
+        "passed": true,
+        "verdict": "passed",
+        "status": "ok",
+        "selected_event_ids": [
+          "SYNTH_BE_EVENT_B"
+        ],
+        "requires_enriched_facts": true,
+        "total_ms": 1106.57,
+        "provider_calls": 1,
+        "http_requests": 1,
+        "request_bytes": 9201,
+        "network_to_headers_ms": 1105.2,
+        "response_bytes": 5216,
+        "input_tokens": 2038,
+        "output_tokens": 13,
+        "cached_tokens": 0,
+        "provider_ms": 1106.12,
+        "local_overhead_ms": 0.45,
+        "timed_out": false,
+        "round": 2,
+        "attempt": 6,
+        "first_call": false
+      },
+      {
+        "case_id": "backend_no_history",
+        "passed": true,
+        "verdict": "passed",
+        "status": "ok",
+        "selected_event_ids": [
+          "SYNTH_BE_EVENT_A"
+        ],
+        "requires_enriched_facts": true,
+        "total_ms": 954.93,
+        "provider_calls": 1,
+        "http_requests": 1,
+        "request_bytes": 8895,
+        "network_to_headers_ms": 931.35,
+        "response_bytes": 5216,
+        "input_tokens": 1934,
+        "output_tokens": 13,
+        "cached_tokens": 0,
+        "provider_ms": 954.37,
+        "local_overhead_ms": 0.56,
+        "timed_out": false,
+        "round": 3,
+        "attempt": 7,
+        "first_call": false
+      },
+      {
+        "case_id": "backend_critical_over_lowest",
+        "passed": true,
+        "verdict": "passed",
+        "status": "ok",
+        "selected_event_ids": [
+          "SYNTH_BE_EVENT_B"
+        ],
+        "requires_enriched_facts": true,
+        "total_ms": 1037.21,
+        "provider_calls": 1,
+        "http_requests": 1,
+        "request_bytes": 9201,
+        "network_to_headers_ms": 1019.2,
+        "response_bytes": 5216,
+        "input_tokens": 2038,
+        "output_tokens": 13,
+        "cached_tokens": 0,
+        "provider_ms": 1036.7,
+        "local_overhead_ms": 0.51,
+        "timed_out": false,
+        "round": 3,
+        "attempt": 8,
+        "first_call": false
+      },
+      {
+        "case_id": "backend_repeated_format_nonparticipation",
+        "passed": true,
+        "verdict": "passed",
+        "status": "ok",
+        "selected_event_ids": [
+          "SYNTH_BE_EVENT_B"
+        ],
+        "requires_enriched_facts": true,
+        "total_ms": 1050.73,
+        "provider_calls": 1,
+        "http_requests": 1,
+        "request_bytes": 9007,
+        "network_to_headers_ms": 1041.75,
+        "response_bytes": 5216,
+        "input_tokens": 1974,
+        "output_tokens": 13,
+        "cached_tokens": 0,
+        "provider_ms": 1050.36,
+        "local_overhead_ms": 0.37,
+        "timed_out": false,
+        "round": 3,
+        "attempt": 9,
+        "first_call": false
+      }
+    ],
+    "model": "gpt-4.1-mini-2025-04-14",
+    "ai_timeout_ms": 6000.0,
+    "context_origin": "synthetic source import -> SQLite -> CareerService._context",
+    "backend_service_sha256": "cd188380b90fbbee6edcbecb0fd89f32ccf299b02b76fdebaebba85c1147a595",
+    "contexts": [
+      {
+        "case_id": "backend_critical_over_lowest",
+        "sha256": "b73454721ebdbda91294fdcb71c3f22a4426769321fa0dc7449a925ceda113f4",
+        "candidate_count": 2,
+        "fact_count": 10
+      },
+      {
+        "case_id": "backend_repeated_format_nonparticipation",
+        "sha256": "dbc1087978a03177aa50c1dcf9a886333566a54f782af7632f6958869bfc88ed",
+        "candidate_count": 2,
+        "fact_count": 9
+      },
+      {
+        "case_id": "backend_no_history",
+        "sha256": "5d64b9de63ebde3e0fea4ef74ef91bc27dc1f4459b4d4eeecf475ec8efd163e2",
+        "candidate_count": 2,
+        "fact_count": 9
+      }
+    ]
+  },
+  "http_baseline": {
+    "synthetic_only": true,
+    "prompt_version": "career-quest-selection-v1",
+    "model": "gpt-4.1-mini-2025-04-14",
+    "backend_context": "frontend synthetic_kit -> temporarySQLite -> realHTTP",
+    "profile_http_ms": 1.91,
+    "attempts": [
+      {
+        "attempt": 1,
+        "first_call": true,
+        "http_status": 200,
+        "status": "ok",
+        "latency_ms": 1200.42,
+        "card_count": 3,
+        "selected_event_ids": [
+          "UI_SYNTH_SYSTEMS_COURSE",
+          "UI_SYNTH_PYTHON_COURSE",
+          "UI_SYNTH_SPEAKING_COURSE"
+        ],
+        "contract_passed": true
+      },
+      {
+        "attempt": 2,
+        "first_call": false,
+        "http_status": 200,
+        "status": "ok",
+        "latency_ms": 1506.47,
+        "card_count": 3,
+        "selected_event_ids": [
+          "UI_SYNTH_SYSTEMS_COURSE",
+          "UI_SYNTH_PYTHON_COURSE",
+          "UI_SYNTH_SPEAKING_COURSE"
+        ],
+        "contract_passed": true
+      },
+      {
+        "attempt": 3,
+        "first_call": false,
+        "http_status": 200,
+        "status": "ok",
+        "latency_ms": 1158.62,
+        "card_count": 3,
+        "selected_event_ids": [
+          "UI_SYNTH_SYSTEMS_COURSE",
+          "UI_SYNTH_PYTHON_COURSE",
+          "UI_SYNTH_SPEAKING_COURSE"
+        ],
+        "contract_passed": true
+      }
+    ],
+    "completion": {
+      "passed": true,
+      "progress_before": 56.25,
+      "progress_after": 62.5,
+      "stale": true
+    },
+    "all_passed": true
+  },
+  "http_final_tls_reuse": {
+    "synthetic_only": true,
+    "prompt_version": "career-quest-selection-v1",
+    "model": "gpt-4.1-mini-2025-04-14",
+    "backend_context": "frontend synthetic_kit -> temporarySQLite -> realHTTP",
+    "profile_http_ms": 2.18,
+    "attempts": [
+      {
+        "attempt": 1,
+        "first_call": true,
+        "http_status": 200,
+        "status": "ok",
+        "latency_ms": 1445.55,
+        "card_count": 3,
+        "selected_event_ids": [
+          "UI_SYNTH_SYSTEMS_COURSE",
+          "UI_SYNTH_PYTHON_COURSE",
+          "UI_SYNTH_SPEAKING_COURSE"
+        ],
+        "contract_passed": true
+      },
+      {
+        "attempt": 2,
+        "first_call": false,
+        "http_status": 200,
+        "status": "ok",
+        "latency_ms": 1564.38,
+        "card_count": 3,
+        "selected_event_ids": [
+          "UI_SYNTH_SYSTEMS_COURSE",
+          "UI_SYNTH_PYTHON_COURSE",
+          "UI_SYNTH_SPEAKING_COURSE"
+        ],
+        "contract_passed": true
+      },
+      {
+        "attempt": 3,
+        "first_call": false,
+        "http_status": 200,
+        "status": "ok",
+        "latency_ms": 1694.16,
+        "card_count": 3,
+        "selected_event_ids": [
+          "UI_SYNTH_SYSTEMS_COURSE",
+          "UI_SYNTH_PYTHON_COURSE",
+          "UI_SYNTH_SPEAKING_COURSE"
+        ],
+        "contract_passed": true
+      }
+    ],
+    "completion": {
+      "passed": true,
+      "progress_before": 56.25,
+      "progress_after": 62.5,
+      "stale": true
+    },
+    "all_passed": true
+  },
+  "local_client_setup": {
+    "synthetic_only": true,
+    "no_network": true,
+    "measurement": "AsyncClient creation and close; default CA vs cached identical verified context",
+    "results": {
+      "fresh_ca_per_client": {
+        "count": 20,
+        "first_ms": 65.869,
+        "warm_median_ms": 8.673,
+        "all_ms": [
+          65.869,
+          8.828,
+          9.212,
+          9.266,
+          10.067,
+          9.066,
+          9.261,
+          8.673,
+          9.281,
+          8.899,
+          9.065,
+          8.282,
+          8.467,
+          8.305,
+          8.261,
+          8.516,
+          8.311,
+          8.337,
+          8.359,
+          8.378
+        ]
+      },
+      "shared_ca_context": {
+        "count": 20,
+        "first_ms": 7.907,
+        "warm_median_ms": 0.115,
+        "all_ms": [
+          7.907,
+          0.157,
+          0.135,
+          0.128,
+          0.125,
+          0.121,
+          0.126,
+          0.117,
+          0.117,
+          0.114,
+          0.114,
+          0.113,
+          0.115,
+          0.116,
+          0.112,
+          0.111,
+          0.112,
+          0.112,
+          0.111,
+          0.109
+        ]
+      }
+    }
+  },
+  "rejected_compact_wire_experiment": {
+    "shipped": false,
+    "reason": "Fewer output tokens but no demonstrated end-to-end speed benefit; original event_ids/prompt v1 retained",
+    "entry_point": {
+      "mode": "live_synthetic_backend_latency",
+      "synthetic_only": true,
+      "quality_evaluated": true,
+      "prompt_version": "career-quest-selection-v2",
+      "case_count": 3,
+      "rounds": 3,
+      "requirement_limit_ms": 10000,
+      "evaluator_timeout_ms": 7000.0,
+      "measurement_scope": "Sequential AI entry point; excludes HTTP backend/frontend and context preparation.",
+      "percentile_method": "nearest-rank; includes first call; sample p95 is not an SLA",
+      "cold_call_note": "First process call retained; provider cache/cold infrastructure state is unknown.",
+      "summary": {
+        "attempt_count": 9,
+        "successful_response_count": 9,
+        "passed_count": 9,
+        "failed_count": 0,
+        "unavailable_count": 0,
+        "timeout_count": 0,
+        "above_requirement_limit_count": 0,
+        "total_latency_all_attempts": {
+          "count": 9,
+          "median_ms": 1106.89,
+          "sample_p95_ms": 1915.18,
+          "max_ms": 1915.18
+        },
+        "total_latency_successful_responses": {
+          "count": 9,
+          "median_ms": 1106.89,
+          "sample_p95_ms": 1915.18,
+          "max_ms": 1915.18
+        },
+        "provider_latency_all_observed_calls": {
+          "count": 9,
+          "median_ms": 1106.46,
+          "sample_p95_ms": 1914.27,
+          "max_ms": 1914.27
+        },
+        "provider_latency_successful_responses": {
+          "count": 9,
+          "median_ms": 1106.46,
+          "sample_p95_ms": 1914.27,
+          "max_ms": 1914.27
+        },
+        "network_to_headers_all_observed_calls": {
+          "count": 9,
+          "median_ms": 1050.18,
+          "sample_p95_ms": 1872.15,
+          "max_ms": 1872.15
+        }
+      },
+      "attempts": [
+        {
+          "case_id": "backend_critical_over_lowest",
+          "passed": true,
+          "verdict": "passed",
+          "status": "ok",
+          "selected_event_ids": [
+            "SYNTH_BE_EVENT_B"
+          ],
+          "requires_enriched_facts": true,
+          "total_ms": 1915.18,
+          "provider_calls": 1,
+          "http_requests": 1,
+          "request_bytes": 9451,
+          "network_to_headers_ms": 1872.15,
+          "response_bytes": 5450,
+          "input_tokens": 2084,
+          "output_tokens": 7,
+          "cached_tokens": 0,
+          "provider_ms": 1914.27,
+          "local_overhead_ms": 0.91,
+          "timed_out": false,
+          "round": 1,
+          "attempt": 1,
+          "first_call": true
+        },
+        {
+          "case_id": "backend_repeated_format_nonparticipation",
+          "passed": true,
+          "verdict": "passed",
+          "status": "ok",
+          "selected_event_ids": [
+            "SYNTH_BE_EVENT_B"
+          ],
+          "requires_enriched_facts": true,
+          "total_ms": 958.83,
+          "provider_calls": 1,
+          "http_requests": 1,
+          "request_bytes": 9257,
+          "network_to_headers_ms": 926.17,
+          "response_bytes": 5450,
+          "input_tokens": 2020,
+          "output_tokens": 7,
+          "cached_tokens": 0,
+          "provider_ms": 958.26,
+          "local_overhead_ms": 0.57,
+          "timed_out": false,
+          "round": 1,
+          "attempt": 2,
+          "first_call": false
+        },
+        {
+          "case_id": "backend_no_history",
+          "passed": true,
+          "verdict": "passed",
+          "status": "ok",
+          "selected_event_ids": [
+            "SYNTH_BE_EVENT_A"
+          ],
+          "requires_enriched_facts": true,
+          "total_ms": 1106.89,
+          "provider_calls": 1,
+          "http_requests": 1,
+          "request_bytes": 9145,
+          "network_to_headers_ms": 1050.18,
+          "response_bytes": 5450,
+          "input_tokens": 1980,
+          "output_tokens": 7,
+          "cached_tokens": 0,
+          "provider_ms": 1106.46,
+          "local_overhead_ms": 0.43,
+          "timed_out": false,
+          "round": 1,
+          "attempt": 3,
+          "first_call": false
+        },
+        {
+          "case_id": "backend_repeated_format_nonparticipation",
+          "passed": true,
+          "verdict": "passed",
+          "status": "ok",
+          "selected_event_ids": [
+            "SYNTH_BE_EVENT_B"
+          ],
+          "requires_enriched_facts": true,
+          "total_ms": 777.01,
+          "provider_calls": 1,
+          "http_requests": 1,
+          "request_bytes": 9257,
+          "network_to_headers_ms": 740.55,
+          "response_bytes": 5450,
+          "input_tokens": 2020,
+          "output_tokens": 7,
+          "cached_tokens": 0,
+          "provider_ms": 776.53,
+          "local_overhead_ms": 0.48,
+          "timed_out": false,
+          "round": 2,
+          "attempt": 4,
+          "first_call": false
+        },
+        {
+          "case_id": "backend_no_history",
+          "passed": true,
+          "verdict": "passed",
+          "status": "ok",
+          "selected_event_ids": [
+            "SYNTH_BE_EVENT_A"
+          ],
+          "requires_enriched_facts": true,
+          "total_ms": 1128.61,
+          "provider_calls": 1,
+          "http_requests": 1,
+          "request_bytes": 9145,
+          "network_to_headers_ms": 1103.87,
+          "response_bytes": 5450,
+          "input_tokens": 1980,
+          "output_tokens": 7,
+          "cached_tokens": 0,
+          "provider_ms": 1128.18,
+          "local_overhead_ms": 0.43,
+          "timed_out": false,
+          "round": 2,
+          "attempt": 5,
+          "first_call": false
+        },
+        {
+          "case_id": "backend_critical_over_lowest",
+          "passed": true,
+          "verdict": "passed",
+          "status": "ok",
+          "selected_event_ids": [
+            "SYNTH_BE_EVENT_B"
+          ],
+          "requires_enriched_facts": true,
+          "total_ms": 1145.61,
+          "provider_calls": 1,
+          "http_requests": 1,
+          "request_bytes": 9451,
+          "network_to_headers_ms": 1109.42,
+          "response_bytes": 5450,
+          "input_tokens": 2084,
+          "output_tokens": 7,
+          "cached_tokens": 0,
+          "provider_ms": 1145.14,
+          "local_overhead_ms": 0.47,
+          "timed_out": false,
+          "round": 2,
+          "attempt": 6,
+          "first_call": false
+        },
+        {
+          "case_id": "backend_no_history",
+          "passed": true,
+          "verdict": "passed",
+          "status": "ok",
+          "selected_event_ids": [
+            "SYNTH_BE_EVENT_A"
+          ],
+          "requires_enriched_facts": true,
+          "total_ms": 1040.21,
+          "provider_calls": 1,
+          "http_requests": 1,
+          "request_bytes": 9145,
+          "network_to_headers_ms": 992.61,
+          "response_bytes": 5450,
+          "input_tokens": 1980,
+          "output_tokens": 7,
+          "cached_tokens": 0,
+          "provider_ms": 1039.77,
+          "local_overhead_ms": 0.44,
+          "timed_out": false,
+          "round": 3,
+          "attempt": 7,
+          "first_call": false
+        },
+        {
+          "case_id": "backend_critical_over_lowest",
+          "passed": true,
+          "verdict": "passed",
+          "status": "ok",
+          "selected_event_ids": [
+            "SYNTH_BE_EVENT_B"
+          ],
+          "requires_enriched_facts": true,
+          "total_ms": 898.74,
+          "provider_calls": 1,
+          "http_requests": 1,
+          "request_bytes": 9451,
+          "network_to_headers_ms": 871.91,
+          "response_bytes": 5450,
+          "input_tokens": 2084,
+          "output_tokens": 7,
+          "cached_tokens": 0,
+          "provider_ms": 898.29,
+          "local_overhead_ms": 0.45,
+          "timed_out": false,
+          "round": 3,
+          "attempt": 8,
+          "first_call": false
+        },
+        {
+          "case_id": "backend_repeated_format_nonparticipation",
+          "passed": true,
+          "verdict": "passed",
+          "status": "ok",
+          "selected_event_ids": [
+            "SYNTH_BE_EVENT_B"
+          ],
+          "requires_enriched_facts": true,
+          "total_ms": 1123.49,
+          "provider_calls": 1,
+          "http_requests": 1,
+          "request_bytes": 9257,
+          "network_to_headers_ms": 1071.22,
+          "response_bytes": 5450,
+          "input_tokens": 2020,
+          "output_tokens": 7,
+          "cached_tokens": 0,
+          "provider_ms": 1123.07,
+          "local_overhead_ms": 0.42,
+          "timed_out": false,
+          "round": 3,
+          "attempt": 9,
+          "first_call": false
+        }
+      ],
+      "model": "gpt-4.1-mini-2025-04-14",
+      "ai_timeout_ms": 6000.0,
+      "context_origin": "synthetic source import -> SQLite -> CareerService._context",
+      "backend_service_sha256": "cd188380b90fbbee6edcbecb0fd89f32ccf299b02b76fdebaebba85c1147a595",
+      "contexts": [
+        {
+          "case_id": "backend_critical_over_lowest",
+          "sha256": "b73454721ebdbda91294fdcb71c3f22a4426769321fa0dc7449a925ceda113f4",
+          "candidate_count": 2,
+          "fact_count": 10
+        },
+        {
+          "case_id": "backend_repeated_format_nonparticipation",
+          "sha256": "dbc1087978a03177aa50c1dcf9a886333566a54f782af7632f6958869bfc88ed",
+          "candidate_count": 2,
+          "fact_count": 9
+        },
+        {
+          "case_id": "backend_no_history",
+          "sha256": "5d64b9de63ebde3e0fea4ef74ef91bc27dc1f4459b4d4eeecf475ec8efd163e2",
+          "candidate_count": 2,
+          "fact_count": 9
+        }
+      ]
+    },
+    "http": {
+      "synthetic_only": true,
+      "prompt_version": "career-quest-selection-v2",
+      "model": "gpt-4.1-mini-2025-04-14",
+      "backend_context": "frontend synthetic_kit -> temporarySQLite -> realHTTP",
+      "profile_http_ms": 2.12,
+      "attempts": [
+        {
+          "attempt": 1,
+          "first_call": true,
+          "http_status": 200,
+          "status": "ok",
+          "latency_ms": 1534.28,
+          "card_count": 3,
+          "selected_event_ids": [
+            "UI_SYNTH_PYTHON_COURSE",
+            "UI_SYNTH_SYSTEMS_COURSE",
+            "UI_SYNTH_SPEAKING_COURSE"
+          ],
+          "contract_passed": true
+        },
+        {
+          "attempt": 2,
+          "first_call": false,
+          "http_status": 200,
+          "status": "ok",
+          "latency_ms": 1936.18,
+          "card_count": 3,
+          "selected_event_ids": [
+            "UI_SYNTH_PYTHON_COURSE",
+            "UI_SYNTH_SYSTEMS_COURSE",
+            "UI_SYNTH_SPEAKING_COURSE"
+          ],
+          "contract_passed": true
+        },
+        {
+          "attempt": 3,
+          "first_call": false,
+          "http_status": 200,
+          "status": "ok",
+          "latency_ms": 1599.47,
+          "card_count": 3,
+          "selected_event_ids": [
+            "UI_SYNTH_PYTHON_COURSE",
+            "UI_SYNTH_SYSTEMS_COURSE",
+            "UI_SYNTH_SPEAKING_COURSE"
+          ],
+          "contract_passed": true
+        }
+      ],
+      "completion": {
+        "passed": true,
+        "progress_before": 56.25,
+        "progress_after": 62.5,
+        "stale": true
+      },
+      "all_passed": true
+    }
+  },
+  "local_context_preparation": {
+    "no_network": true,
+    "three_synthetic_kits_import_and_context_ms": 12.771,
+    "immediate_test_selector_engine": {
+      "samples_per_case": 100,
+      "median_ms": [
+        0.119,
+        0.107,
+        0.109
+      ],
+      "max_ms": [
+        0.702,
+        0.149,
+        0.167
+      ]
+    }
+  },
+  "validation": {
+    "standalone_backend_ai_tests": 436,
+    "combined_backend_ai_tests": 498,
+    "original_unit_tests": 21,
+    "schema_check_groups": 9,
+    "explicit_handoff_tests": 19,
+    "new_tls_tests": 8,
+    "new_benchmark_tests": 22,
+    "ruff": "passed",
+    "tcp_smoke": "passed, two launches; test selector",
+    "container": "passed, build, verification, non-root, allowlist, volume/session/replay after recreation; synthetic selector"
+  },
+  "limitations": [
+    "Sequential small samples, provider cache state and network drift uncontrolled; no causal end-to-end speed claim",
+    "Sample p95 nearest-rank at n9 equals sample max; not a production SLA",
+    "HTTP timings exclude browser render",
+    "Three preliminary HTTP AI calls had no retained timings because the QA preview payload was invalid; corrected run fully repeated",
+    "No real employee data or arbitrary dataset sent; only fixed invented fixtures",
+    "GitHub CI billing blocker not addressed by this task"
+  ],
+  "cleanup": "Each HTTP server/disposableSQLite/credentialfile and container checker project cleaned; no public deploy or PR merge"
+}

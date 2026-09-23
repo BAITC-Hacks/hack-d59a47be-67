@@ -108,6 +108,16 @@ class SessionResponse(ContractModel):
     expires_at: AwareDatetime = Field(strict=False)
 
 
+class PublicDemoConfig(ContractModel):
+    enabled: bool
+    session_ttl_seconds: int
+    ai_enabled: bool
+
+
+class PublicSessionRequest(ContractModel):
+    role: Literal["employee", "hr"]
+
+
 class LogoutResponse(ContractModel):
     status: Literal["logged_out"] = "logged_out"
 
@@ -405,6 +415,70 @@ class HRSummaryResponse(ContractModel):
     employees_with_goal: Annotated[int, Field(ge=0)]
     completion_count: Annotated[int, Field(ge=0)]
     demo_simulation_count: Annotated[int, Field(ge=0)]
+
+
+class HRSkillGap(ContractModel):
+    skill_id: Identifier
+    skill_name: str
+    employees_requiring: Annotated[int, Field(ge=1)]
+    employees_with_gap: Annotated[int, Field(ge=0)]
+    gap_percent: Annotated[float, Field(ge=0, le=100, allow_inf_nan=False)]
+    average_gap: Score
+    critical_gap_count: Annotated[int, Field(ge=0)]
+
+
+class HRAttentionReason(ContractModel):
+    code: Literal["no_history", "no_recent_completion", "repeated_no_show", "no_candidates", "no_target"]
+    message: str
+
+
+class HRAttentionEmployee(ContractModel):
+    profile: EmployeeProfile
+    reasons: list[HRAttentionReason]
+    last_completed_date: date | None = Field(strict=False)
+    history_records_in_period: Annotated[int, Field(ge=0)]
+    completed_in_period: Annotated[int, Field(ge=0)]
+    no_show_in_period: Annotated[int, Field(ge=0)]
+    eligible_event_count: Annotated[int, Field(ge=0)]
+    progress_percent: Annotated[float, Field(ge=0, le=100, allow_inf_nan=False)] | None
+
+
+class HRParticipation(ContractModel):
+    event_id: Identifier
+    title: str
+    type: str
+    format: str
+    mandatory: bool
+    record_count: Annotated[int, Field(ge=0)]
+    participant_count: Annotated[int, Field(ge=0)]
+    completed: Annotated[int, Field(ge=0)]
+    in_progress: Annotated[int, Field(ge=0)]
+    dropped: Annotated[int, Field(ge=0)]
+    no_show: Annotated[int, Field(ge=0)]
+    declined: Annotated[int, Field(ge=0)]
+    overdue: Annotated[int, Field(ge=0)]
+
+
+class HRAnalyticsResponse(ContractModel):
+    """A deterministic, HR-only snapshot; observations are not a motivation score."""
+
+    data_version: Version
+    state_version: Annotated[int, Field(ge=0)]
+    scenario_date: date = Field(strict=False)
+    period_start: date = Field(strict=False)
+    period_end: date = Field(strict=False)
+    window_days: Annotated[int, Field(ge=1, le=365)]
+    employee_count: Annotated[int, Field(ge=0)]
+    employees_with_goal: Annotated[int, Field(ge=0)]
+    employees_with_history: Annotated[int, Field(ge=0)]
+    employees_with_completion_in_period: Annotated[int, Field(ge=0)]
+    history_records_in_period: Annotated[int, Field(ge=0)]
+    historical_proxy_records_in_period: Annotated[int, Field(ge=0)]
+    excluded_simulations: Annotated[int, Field(ge=0)]
+    skill_gaps: list[HRSkillGap]
+    attention: list[HRAttentionEmployee]
+    participation: list[HRParticipation]
+    notes: list[str]
 
 
 class SourceFile(ContractModel):

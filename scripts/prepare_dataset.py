@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import argparse
 import hashlib
-from pathlib import Path, PurePosixPath
 import stat
 import zipfile
+from pathlib import Path, PurePosixPath
 
 FILES = (
     "README.md", "README.ru.md", "README.kz.md", "employees.json",
@@ -18,7 +18,7 @@ MAX_TOTAL_BYTES = 50 * 1024 * 1024
 
 def safe_path(name: str) -> PurePosixPath:
     path = PurePosixPath(name)
-    if not name or "\\" in name or path.is_absolute() or ".." in path.parts or ":" in name:
+    if not name or "\\" in name or "\x00" in name or path.is_absolute() or ".." in path.parts or ":" in name:
         raise ValueError(f"Unsafe source path: {name!r}")
     return path
 
@@ -41,6 +41,9 @@ def read_source(source: Path) -> dict[str, bytes]:
             if len(archive.infolist()) > 10000:
                 raise ValueError("Archive contains too many entries")
             for entry in archive.infolist():
+                # ZipInfo.filename normalizes backslashes on Windows and truncates
+                # at NUL. Reject unsafe archive names before trusting that version.
+                safe_path(entry.orig_filename)
                 path = safe_path(entry.filename)
                 normalized_name = str(path)
                 if normalized_name in seen:

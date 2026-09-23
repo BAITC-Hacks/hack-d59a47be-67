@@ -34,9 +34,13 @@ class Settings:
     sqlite_local_disk: bool = False
     ai_enabled: bool = False
     commit_sha: str = "unknown"
+    public_demo_mode: bool = False
+    static_files_path: Path | None = None
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "database_path", Path(self.database_path))
+        if self.static_files_path is not None:
+            object.__setattr__(self, "static_files_path", Path(self.static_files_path))
         object.__setattr__(self, "allowed_origins", tuple(self.allowed_origins))
         if self.app_env not in {"development", "test", "staging"}:
             raise ValueError("APP_ENV must be development, test, or staging")
@@ -92,6 +96,9 @@ class Settings:
             if not isinstance(parsed_origins, list):
                 raise ValueError("ALLOWED_ORIGINS must be a JSON array")
             origins = tuple(parsed_origins)
+        public_origin = env.get("PUBLIC_BASE_URL") or env.get("RENDER_EXTERNAL_URL")
+        if public_origin:
+            origins = (*origins, public_origin)
         try:
             ttl = int(env.get("SESSION_TTL_SECONDS", "3600"))
         except ValueError as exc:
@@ -107,5 +114,11 @@ class Settings:
             sqlite_wal=_boolean("SQLITE_WAL", env.get("SQLITE_WAL"), False),
             sqlite_local_disk=_boolean("SQLITE_LOCAL_DISK", env.get("SQLITE_LOCAL_DISK"), False),
             ai_enabled=_boolean("AI_ENABLED", env.get("AI_ENABLED"), False),
-            commit_sha=env.get("COMMIT_SHA", "unknown"),
+            commit_sha=(
+                env.get("RENDER_GIT_COMMIT", "unknown")
+                if env.get("COMMIT_SHA", "unknown") == "unknown"
+                else env["COMMIT_SHA"]
+            ),
+            public_demo_mode=_boolean("PUBLIC_DEMO_MODE", env.get("PUBLIC_DEMO_MODE"), False),
+            static_files_path=Path(env["STATIC_FILES_PATH"]) if env.get("STATIC_FILES_PATH") else None,
         )

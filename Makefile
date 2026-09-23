@@ -25,7 +25,7 @@ check:
 	$(VENV_PYTHON) -m unittest discover -s tests -v
 	$(VENV_PYTHON) -m pytest backend/tests -q
 	$(VENV_PYTHON) scripts/check_contracts.py
-	$(VENV_PYTHON) -m ruff check backend scripts/smoke.py scripts/check_contracts.py
+	$(VENV_PYTHON) -m ruff check backend scripts/smoke.py scripts/check_contracts.py scripts/verify_integration.py scripts/check_container.py
 
 dev:
 	scripts/dev
