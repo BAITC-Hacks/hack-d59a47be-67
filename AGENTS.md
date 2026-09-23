@@ -69,6 +69,8 @@
 - 2026-09-23, воспроизводимая приёмка: добавлены scripts/verify-integration для виртуального объединения закоммиченных backend/AI refs в временный snapshot, scripts/smoke --ai с настоящим AI-модулем и тестовым selector по TCP, scripts/check-container для изолированного Compose project. Docker CLI/Desktop/daemon отсутствуют; глобальные установки/очистка не выполнялись.
 - Проверено до checkpoint: прямой AI TCP smoke (два запуска, cards/latest stale/session/точный idempotency replay) PASS;25 тестов контейнерного runner, make check backend269 passed/1 optional skip +21 исходный тест+9 checks+Ruff/format. Контейнерная команда честно возвращает2/NOT RUN; build/runtime не заявлены. Следующий шаг — прогнать новую snapshot-команду на точном checkpoint, обновить PR #4 и проверить Docker на доступном хосте.
 
+- Финальная snapshot-команда на backend960187e + AI8f0dc05:438 passed +21 исходный тест+9 checks+Ruff; два TCP-запуска AI smoke PASS. Git tree без конфликтов, refs/PR не изменялись. Данные/ключи не отправлялись; контейнерный путь остаётся NOT RUN из-за отсутствия Docker. Следующий шаг — командный review обновлённого PR #4 и фактический `--container` на Docker-хосте.
+
 ## Журнал — предметный backend
 
 - 2026-09-23, порция 1: добавлены чистые расчёты replay/caps, целей, прогресса и кандидатов; исходные JSON/CSV валидируются и импортируются через preview/token и атомарный commit. Каждая history-запись сохраняется по record_id; рост рассчитывается только для completed после review и до даты кита. Повторные mandatory не теряются.

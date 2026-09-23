@@ -1,3 +1,18 @@
+# Воспроизводимая интеграция и контейнерная приёмка — 2026-09-23
+
+Проверено командой `scripts/verify-integration --backend-ref HEAD --ai-ref origin/codex/ai-recommendations` на backend `960187ef069b552130f5cc51612d3193cfa23a87` и AI `8f0dc053b769a9b965fc648b9b67d3cd01a14981`. Виртуальное объединение без конфликтов: tree `c4fcd058af2986d6b8d2019180bf5d59edeb9b87`. Проверка экспортировала только tracked tree во временную папку, не переключала рабочую ветку и не сливала PR.
+
+- Совместный snapshot: **438 passed**,21 исходный тест,9 contract checks,Ruff PASS; TCP smoke дважды запускает настоящий API/AI-модуль и проверяет cards/evidence → completion → restart → точный idempotency replay/latest stale → logout. Подменён только remote selector; реальных ключей, LLM-вызовов и отправки профилей не было.
+- Backend отдельно: `make check` — **269 passed,1 optional AI skip**,21 исходный тест,9 checks,Ruff PASS; формат33 файлов проверен.25 новых тестов проверяют изоляцию окружения, loopback port, image allowlist и unavailable Docker path.
+- `scripts/check-container --require-ai` — **exit2 / NOT RUN**, Docker CLI/Desktop/daemon отсутствуют. Это НЕ пройденный container build. Скрипт подготовлен для реальной сборки/проверки non-root/содержимого образа/auth/SQLite и пересоздания контейнера с тем же named volume на машине с Docker; эти действия здесь не выполнялись.
+- `git diff --check` и protected-path diff PASS: frontend/, backend/app/ai/, Pydantic/HTTP схемы не менялись. Публичного деплоя и merge PR нет. CI всё ещё billing-blocked.
+
+Команды повторения и границы проверки описаны в docs/HANDOFF.md. На Docker-хосте: `scripts/verify-integration --ai-ref origin/codex/ai-recommendations --container`. Команда использует отдельный случайный Compose project и удаляет только созданные ею тестовые ресурсы; очистка существующих ресурсов/установка Docker не выполняются.
+
+Ниже сохранены предыдущие проверки.
+
+---
+
 # Backend-передача AI PR #3 — 2026-09-23
 
 Ветка `codex/backend-ai-handoff` от `origin/codex/architecture-foundation` (`e3dfc7e`, уже содержит опубликованный ранее PR #2). AI PR #3 (`8f0dc05`) проверен в отдельной detached working copy `/private/tmp/career-quest-pr3-integration`; поверх скопированы только изменения backend/инфраструктуры и новые тесты. AI-код и собственные тесты Олега не менялись, PR не сливались.
