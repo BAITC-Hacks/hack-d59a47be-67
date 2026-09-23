@@ -13,7 +13,12 @@ import {
   Trash2,
   Upload,
 } from "lucide-react";
-import { ApiError, type ImportResponse, type SourceFile } from "../../api";
+import {
+  ApiError,
+  type BatchImportRequest,
+  type ImportResponse,
+  type SourceFile,
+} from "../../api";
 import { useApp } from "../../context";
 import {
   importIssueDetails,
@@ -25,7 +30,9 @@ import "./import.css";
 type Selection = { source: SourceFile; name: string; size: number };
 type SelectedFiles = Partial<Record<ImportFilename, Selection>>;
 type ValidatedImport = { response: ImportResponse; files: SourceFile[] };
-type ImportPageProps = { onDone: () => void };
+type ImportPageProps = { onDone: () => void; publicDemo?: boolean };
+
+const PUBLIC_IMPORT_REQUEST_BYTES = 256_000;
 
 const FILE_OPTIONS = [
   {
@@ -52,7 +59,7 @@ const COUNT_LABELS: Record<string, string> = {
   events: "Мероприятий",
 };
 
-export function ImportPage({ onDone }: ImportPageProps) {
+export function ImportPage({ onDone, publicDemo = false }: ImportPageProps) {
   const { client, mode, user, handleError } = useApp();
   const [selected, setSelected] = useState<SelectedFiles>({});
   const [validated, setValidated] = useState<ValidatedImport | null>(null);
@@ -84,7 +91,7 @@ export function ImportPage({ onDone }: ImportPageProps) {
       };
       operationInFlight.current = false;
     };
-  }, [client, mode, user.id]);
+  }, [client, mode, user.id, publicDemo]);
 
   const currentOperation = () => {
     const epoch = lifecycle.current.epoch;
@@ -94,6 +101,23 @@ export function ImportPage({ onDone }: ImportPageProps) {
   const isDemo = mode === "demo";
   const currentStep = result ? 3 : validated ? 2 : 1;
   const selectedCount = Object.keys(selected).length;
+
+  const fitsRequestLimit = (body: BatchImportRequest) => {
+    if (
+      publicDemo &&
+      new TextEncoder().encode(JSON.stringify(body)).byteLength >
+        PUBLIC_IMPORT_REQUEST_BYTES
+    ) {
+      setError(
+        "В публичной демонстрации общий запрос ограничен 256 КБ (256 000 байт), включая JSON и служебные данные. Уменьшите файлы и проверьте их снова.",
+      );
+      setErrorDetails([]);
+      setValidated(null);
+      setUncertainCommit(false);
+      return false;
+    }
+    return true;
+  };
 
   const selectFile = async (
     file: File | undefined,
@@ -153,6 +177,8 @@ export function ImportPage({ onDone }: ImportPageProps) {
     const files = FILE_OPTIONS.flatMap(({ name }) =>
       selected[name] ? [selected[name]!.source] : [],
     );
+    const body = { dry_run: true, files };
+    if (!fitsRequestLimit(body)) return;
     operationInFlight.current = true;
     setBusy("preview");
     setError("");
@@ -160,7 +186,7 @@ export function ImportPage({ onDone }: ImportPageProps) {
     setValidated(null);
     setUncertainCommit(false);
     try {
-      const response = await client.importFiles({ dry_run: true, files });
+      const response = await client.importFiles(body);
       if (!isCurrent()) return;
       if (response.status !== "validated" || !response.preview_token) {
         throw new Error(
@@ -188,17 +214,19 @@ export function ImportPage({ onDone }: ImportPageProps) {
       uncertainCommit
     )
       return;
+    const body = {
+      dry_run: false,
+      files: validated.files,
+      preview_token: validated.response.preview_token,
+    };
+    if (!fitsRequestLimit(body)) return;
     const isCurrent = currentOperation();
     operationInFlight.current = true;
     setBusy("commit");
     setError("");
     setErrorDetails([]);
     try {
-      const response = await client.importFiles({
-        dry_run: false,
-        files: validated.files,
-        preview_token: validated.response.preview_token,
-      });
+      const response = await client.importFiles(body);
       if (!isCurrent()) return;
       if (response.status !== "imported")
         throw new Error("Сервис не подтвердил сохранение данных.");
@@ -346,7 +374,9 @@ export function ImportPage({ onDone }: ImportPageProps) {
                 <div>
                   <h2 id="files-title">Выберите файлы</h2>
                   <p className="muted">
-                    Один или оба файла, до 2 МБ каждый, кодировка UTF-8.
+                    {publicDemo
+                      ? "Один или оба файла в UTF-8. Общая отправка — до 256 КБ, включая JSON и служебные данные."
+                      : "Один или оба файла, до 2 МБ каждый, кодировка UTF-8."}
                   </p>
                 </div>
               </div>

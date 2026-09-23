@@ -37,7 +37,7 @@ function sourceFile(
   return file;
 }
 
-function setup(mode: "live" | "demo" = "live") {
+function setup(mode: "live" | "demo" = "live", publicDemo = false) {
   const importFiles = vi.fn<CareerClient["importFiles"]>();
   const onDone = vi.fn();
   const context: AppContextValue = {
@@ -51,7 +51,7 @@ function setup(mode: "live" | "demo" = "live") {
   };
   const view = render(
     <AppContext.Provider value={context}>
-      <ImportPage onDone={onDone} />
+      <ImportPage onDone={onDone} publicDemo={publicDemo} />
     </AppContext.Provider>,
   );
   return { importFiles, onDone, user: userEvent.setup(), context, ...view };
@@ -77,45 +77,111 @@ async function selectAndValidate(user: ReturnType<typeof userEvent.setup>) {
 }
 
 describe("two-phase HR import", () => {
-  it("uploads only on an explicit check and submits the identical source with its token once", async () => {
-    const { importFiles, user } = setup();
-    importFiles.mockResolvedValueOnce(preview);
-    let finishCommit: (value: ImportResponse) => void = () => {};
-    importFiles.mockImplementationOnce(
-      () =>
-        new Promise((resolve) => {
-          finishCommit = resolve;
+  it.each([false, true])(
+    "uploads only on an explicit check and submits the identical source with its token once (public: %s)",
+    async (publicDemo) => {
+      const { importFiles, user } = setup("live", publicDemo);
+      importFiles.mockResolvedValueOnce(preview);
+      let finishCommit: (value: ImportResponse) => void = () => {};
+      importFiles.mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            finishCommit = resolve;
+          }),
+      );
+      const file = sourceFile('\uFEFF{"meta":{},"employees":[]}\r\n');
+      await user.upload(screen.getByLabelText("Выбрать employees.json"), file);
+      expect(importFiles).not.toHaveBeenCalled();
+      await user.click(
+        screen.getByRole("button", { name: "Проверить данные" }),
+      );
+      const confirm = await screen.findByRole("button", {
+        name: "Подтвердить загрузку",
+      });
+      fireEvent.click(confirm);
+      fireEvent.click(confirm);
+      expect(importFiles).toHaveBeenCalledTimes(2);
+      const checked = importFiles.mock.calls[0][0];
+      const committed = importFiles.mock.calls[1][0];
+      expect(checked.dry_run).toBe(true);
+      expect(committed).toEqual({
+        dry_run: false,
+        files: checked.files,
+        preview_token: preview.preview_token,
+      });
+      expect(committed.files[0].content).toBe(
+        '\uFEFF{"meta":{},"employees":[]}\r\n',
+      );
+      await act(async () =>
+        finishCommit({ ...preview, status: "imported", dry_run: false }),
+      );
+      expect(
+        await screen.findByRole("heading", {
+          name: "Команда готова к следующему шагу",
         }),
-    );
-    const file = sourceFile('\uFEFF{"meta":{},"employees":[]}\r\n');
+      ).toBeInTheDocument();
+    },
+  );
+
+  it("rejects a public request before the API call when JSON escaping makes the total exceed 256 KB", async () => {
+    const { importFiles, user } = setup("live", true);
+    const content = JSON.stringify({
+      meta: { note: "я\n".repeat(60_000) },
+      employees: [],
+    });
+    const file = sourceFile(content);
+    expect(file.size).toBeLessThan(256_000);
+    expect(screen.getByText(/Общая отправка — до 256 КБ/)).toBeInTheDocument();
+    expect(screen.queryByText(/до 2 МБ каждый/)).not.toBeInTheDocument();
     await user.upload(screen.getByLabelText("Выбрать employees.json"), file);
-    expect(importFiles).not.toHaveBeenCalled();
     await user.click(screen.getByRole("button", { name: "Проверить данные" }));
-    const confirm = await screen.findByRole("button", {
-      name: "Подтвердить загрузку",
-    });
-    fireEvent.click(confirm);
-    fireEvent.click(confirm);
-    expect(importFiles).toHaveBeenCalledTimes(2);
-    const checked = importFiles.mock.calls[0][0];
-    const committed = importFiles.mock.calls[1][0];
-    expect(checked.dry_run).toBe(true);
-    expect(committed).toEqual({
-      dry_run: false,
-      files: checked.files,
-      preview_token: preview.preview_token,
-    });
-    expect(committed.files[0].content).toBe(
-      '\uFEFF{"meta":{},"employees":[]}\r\n',
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Уменьшите файлы",
     );
-    await act(async () =>
-      finishCommit({ ...preview, status: "imported", dry_run: false }),
-    );
+    expect(importFiles).not.toHaveBeenCalled();
     expect(
-      await screen.findByRole("heading", {
-        name: "Команда готова к следующему шагу",
-      }),
-    ).toBeInTheDocument();
+      screen.getByRole("button", { name: "Убрать employees.json" }),
+    ).toBeEnabled();
+  });
+
+  it("checks the commit's full encoded body including its token without reporting an uncertain write", async () => {
+    const { importFiles, user } = setup("live", true);
+    const base = '{"meta":{},"employees":[]}';
+    const baseBody = {
+      dry_run: true,
+      files: [
+        {
+          source_filename: "employees.json",
+          source_format: "json",
+          content: base,
+        },
+      ],
+    };
+    const padding =
+      256_000 - new TextEncoder().encode(JSON.stringify(baseBody)).byteLength;
+    importFiles.mockResolvedValueOnce(preview);
+    await user.upload(
+      screen.getByLabelText("Выбрать employees.json"),
+      sourceFile(base + " ".repeat(padding)),
+    );
+    await user.click(screen.getByRole("button", { name: "Проверить данные" }));
+    await user.click(
+      await screen.findByRole("button", { name: "Подтвердить загрузку" }),
+    );
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Уменьшите файлы",
+    );
+    expect(screen.getByRole("alert")).not.toHaveTextContent(
+      "Не удалось подтвердить сохранение",
+    );
+    expect(importFiles).toHaveBeenCalledTimes(1);
+    expect(
+      new TextEncoder().encode(JSON.stringify(importFiles.mock.calls[0][0]))
+        .byteLength,
+    ).toBe(256_000);
+    expect(
+      screen.queryByRole("button", { name: "Подтвердить загрузку" }),
+    ).not.toBeInTheDocument();
   });
 
   it("invalidates the checked batch when a file changes", async () => {

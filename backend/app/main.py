@@ -9,6 +9,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException
+from starlette.staticfiles import StaticFiles
 
 from . import contracts as c
 from .ai_adapter import AIAdapter
@@ -16,7 +17,15 @@ from .auth import COOKIE, digest, login, require_employee, require_hr, require_u
 from .config import Settings
 from .database import Database, MigrationError
 from .errors import APIError
+from .hr_routes import register_hr_routes
 from .imports import ImportService
+from .public_demo import (
+    MAX_BODY_BYTES,
+    WORKSPACE_COOKIE,
+    PublicWorkspaces,
+    WorkspaceDatabase,
+    register_public_routes,
+)
 from .service import CareerService
 
 log = logging.getLogger("career_quest")
@@ -24,7 +33,8 @@ log = logging.getLogger("career_quest")
 
 def create_app(settings: Settings | None = None) -> FastAPI:
     config = settings or Settings.from_env()
-    database = Database(config)
+    database = WorkspaceDatabase(config) if config.public_demo_mode else Database(config)
+    public = PublicWorkspaces(database) if config.public_demo_mode else None
     adapter = AIAdapter(config.ai_enabled)
     career = CareerService(database, adapter)
     importer = ImportService(database)
@@ -35,6 +45,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             database.migrate()
         except (sqlite3.Error, OSError, MigrationError):
             log.error("Database initialization failed; readiness is unavailable")
+        if public:
+            public.initialize()
         yield
 
     app = FastAPI(
@@ -47,6 +59,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     )
     app.state.settings, app.state.database, app.state.ai_adapter = config, database, adapter
     app.state.career = career
+    app.state.public_demo = public
+    register_hr_routes(app, career)
+    register_public_routes(app, public)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=list(config.allowed_origins),
@@ -70,14 +85,33 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     @app.middleware("http")
     async def request_boundary(request, call_next):
         request.state.request_id = str(uuid.uuid4())
+        context_token = None
         try:
+            if public:
+                context_token = database.current.set(public.resolve(request.cookies.get(WORKSPACE_COOKIE)))
+                if request.method in {"POST", "PATCH", "PUT"}:
+                    chunks, length = [], 0
+                    async for chunk in request.stream():
+                        length += len(chunk)
+                        if length > MAX_BODY_BYTES:
+                            raise APIError(413, "DEMO_UPLOAD_LIMIT", "Demo requests are limited to 256 KB.")
+                        chunks.append(chunk)
+                    # Starlette replays this bounded body to the endpoint's JSON parser.
+                    request._body = b"".join(chunks)
+                if request.url.path == "/api/auth/login":
+                    raise APIError(403, "PUBLIC_DEMO_REQUIRED", "Use the public demonstration entry.")
             response = await call_next(request)
+        except APIError as exc:
+            response = error(request, exc.status, exc.code, exc.message, exc.details)
         except (sqlite3.Error, OSError):
             response = error(request, 503, "STORAGE_UNAVAILABLE", "Storage is temporarily unavailable.")
         except Exception:
             # Do not log request bodies, credentials, raw profiles or exception text.
             log.error("Unhandled request failure request_id=%s", request.state.request_id)
             response = error(request, 500, "INTERNAL_ERROR", "An internal error occurred.")
+        finally:
+            if context_token is not None:
+                database.current.reset(context_token)
         if response.status_code >= 400 and not response.headers.get("content-type", "").startswith(
             "application/json"
         ):
@@ -296,7 +330,16 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             for method, operation in methods.items():
                 if method in {"get", "post", "patch"} and (
                     path.startswith("/api/")
-                    and path not in {"/api/auth/login", "/api/health", "/api/health/ready", "/api/version"}
+                    and not path.startswith("/api/public/examples/")
+                    and path
+                    not in {
+                        "/api/auth/login",
+                        "/api/health",
+                        "/api/health/ready",
+                        "/api/version",
+                        "/api/public/config",
+                        "/api/public/session",
+                    }
                 ):
                     operation["security"] = [{"DemoSession": []}]
                     if method in {"post", "patch"}:
@@ -327,6 +370,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         return document
 
     app.openapi = openapi
+    if config.static_files_path is not None:
+        # The build directory is explicit; never expose the repository or local data.
+        app.mount("/", StaticFiles(directory=config.static_files_path, html=True), name="frontend")
     return app
 
 

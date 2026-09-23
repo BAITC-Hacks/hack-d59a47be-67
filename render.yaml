@@ -1,0 +1,41 @@
+# Free public demonstration; see docs/PUBLIC_DEPLOYMENT.md for limits and verification.
+services:
+  - type: web
+    name: career-quest-public
+    runtime: docker
+    plan: free
+    region: frankfurt
+    branch: feat/product-ready
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    numInstances: 1
+    autoDeployTrigger: "off"
+    healthCheckPath: /api/health/ready
+    envVars:
+      - key: APP_ENV
+        value: staging
+      - key: PUBLIC_DEMO_MODE
+        value: "true"
+      - key: COOKIE_SECURE
+        value: "true"
+      - key: DATABASE_PATH
+        value: /data/career_quest.sqlite3
+      - key: STATIC_FILES_PATH
+        value: /app/frontend/dist
+      - key: PORT
+        value: "10000"
+      - key: SESSION_TTL_SECONDS
+        value: "3600"
+      - key: SQLITE_WAL
+        value: "false"
+      - key: SQLITE_LOCAL_DISK
+        value: "false"
+      - key: AI_ENABLED
+        value: "false"
+      - key: OPENAI_MODEL
+        value: gpt-4.1-mini-2025-04-14
+      - key: AI_TIMEOUT_SECONDS
+        value: "6.0"
+# No persistent disk, paid database, extra service, API key or shared account password.
+# Render supplies RENDER_EXTERNAL_URL; the backend uses it as an exact allowed origin.
+# Add OPENAI_API_KEY only through the Render Environment dashboard, then enable AI explicitly.

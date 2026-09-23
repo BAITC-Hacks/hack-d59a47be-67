@@ -1,0 +1,139 @@
+.public-access {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  padding-top: 10px;
+}
+.public-access h3 {
+  font-size: 21px;
+  color: #00583f;
+  margin: 0 0 12px;
+}
+.public-access > p:not(.eyebrow) {
+  font-size: 12px;
+  line-height: 1.9;
+  color: #68745f;
+}
+.public-access-actions {
+  display: grid;
+  gap: 11px;
+  margin: 23px 0 16px;
+}
+.public-access-actions .button {
+  min-height: 49px;
+  justify-content: space-between;
+  text-align: left;
+}
+.public-access-actions .button-secondary {
+  justify-content: center;
+}
+.public-access > .public-access-detail {
+  font-size: 10px;
+  line-height: 1.8;
+}
+.public-access > .public-access-ai-note {
+  margin-top: 14px;
+  padding: 12px 14px;
+  background: #f1efdf;
+  border-left: 3px solid #b79845;
+  color: #71643b;
+  font-size: 11px;
+}
+.public-access-status {
+  margin-bottom: 11px;
+}
+.public-config-retry {
+  margin-top: 18px;
+  padding: 14px;
+  background: #f2f2e7;
+  border-radius: 5px;
+  font-size: 11px;
+  line-height: 1.8;
+  color: #637459;
+}
+.public-config-retry button {
+  margin-top: 8px;
+  min-height: 34px;
+}
+.public-session-notice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 14px 35px;
+  background: #ecf1e5;
+  border-bottom: 1px solid #d7dfc8;
+  color: #466147;
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+.public-session-notice > div {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  min-width: 0;
+}
+.public-session-notice p {
+  min-width: 0;
+}
+.public-session-notice strong,
+.public-session-notice span {
+  display: block;
+}
+.public-session-notice strong {
+  color: #1f5b3c;
+  margin-bottom: 3px;
+}
+.public-session-notice span {
+  line-height: 1.7;
+  color: #697659;
+}
+.public-session-notice button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  border: 0;
+  background: transparent;
+  color: #285f3f;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 6px 0;
+  text-align: left;
+}
+.public-import-examples {
+  padding: 13px 35px;
+  font-size: 11px;
+  line-height: 1.9;
+  color: #637255;
+  border-bottom: 1px solid #e0e2d3;
+  background: #f5f5eb;
+  overflow-wrap: anywhere;
+}
+.public-import-examples > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px 22px;
+  margin-top: 5px;
+}
+.public-import-examples a {
+  color: #00654c;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  font-weight: 650;
+}
+@media (max-width: 640px) {
+  .public-session-notice {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    padding: 14px 18px;
+  }
+  .public-session-notice button {
+    flex-shrink: 1;
+    max-width: 100%;
+    padding: 5px 0;
+  }
+  .public-import-examples {
+    padding: 13px 18px;
+  }
+}

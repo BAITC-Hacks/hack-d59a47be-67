@@ -8,16 +8,20 @@ import type {
   GoalUpdateRequest,
   HealthResponse,
   HRSummaryResponse,
+  HRAnalyticsResponse,
   ImportResponse,
   PreviewRequest,
   PreviewResponse,
   RecommendationResponse,
   SessionResponse,
+  PublicDemoConfig,
   UserIdentity,
 } from "./types";
 
 export interface CareerClient {
   login(username: string, password: string): Promise<SessionResponse>;
+  publicConfig(): Promise<PublicDemoConfig>;
+  publicSession(role: "employee" | "hr"): Promise<SessionResponse>;
   me(): Promise<UserIdentity>;
   logout(): Promise<void>;
   health(): Promise<HealthResponse>;
@@ -37,6 +41,7 @@ export interface CareerClient {
   ): Promise<CompletionResponse>;
   goal(id: string, body: GoalUpdateRequest): Promise<EmployeeDetailResponse>;
   hrSummary(): Promise<HRSummaryResponse>;
+  hrAnalytics(windowDays?: number): Promise<HRAnalyticsResponse>;
   importFiles(body: BatchImportRequest): Promise<ImportResponse>;
 }
 
@@ -86,6 +91,12 @@ export function clearSession(): void {
 }
 
 const messages: Record<string, string> = {
+  DEMO_CAPACITY: "Все учебные пространства сейчас заняты. Попробуйте позже.",
+  DEMO_RATE_LIMITED:
+    "Лимит действий этой демосессии исчерпан. Попробуйте позже.",
+  PUBLIC_DEMO_REQUIRED: "Откройте личную учебную копию с экрана входа.",
+  DEMO_UPLOAD_LIMIT:
+    "Для открытого демо выберите файлы общим размером до 256 КБ. Полный импорт доступен в локальной установке.",
   INVALID_CREDENTIALS:
     "Неверный логин или пароль. Проверьте данные и попробуйте снова.",
   UNAUTHENTICATED: "Сессия завершилась. Войдите снова, чтобы продолжить.",
@@ -250,7 +261,35 @@ export function createApiClient(options: ApiClientOptions = {}): CareerClient {
   }
 
   const employeePath = (id: string) => `/employees/${encodeURIComponent(id)}`;
+  function acceptSession(session: SessionResponse): SessionResponse {
+    if (
+      typeof session.csrf_token !== "string" ||
+      !session.csrf_token ||
+      !isRecord(session.user) ||
+      !["employee", "hr"].includes(String(session.user.role))
+    ) {
+      throw new ApiError(
+        200,
+        "INVALID_RESPONSE",
+        "Сервер не выдал токен сессии. Повторите вход.",
+      );
+    }
+    rememberCsrf(session.csrf_token);
+    return session;
+  }
   return {
+    publicConfig: () => request("/public/config"),
+    async publicSession(role) {
+      return acceptSession(
+        await request<SessionResponse>(
+          "/public/session",
+          "POST",
+          { role },
+          {},
+          true,
+        ),
+      );
+    },
     async login(username, password) {
       const session = await request<SessionResponse>(
         "/auth/login",
@@ -259,20 +298,7 @@ export function createApiClient(options: ApiClientOptions = {}): CareerClient {
         {},
         true,
       );
-      if (
-        typeof session.csrf_token !== "string" ||
-        !session.csrf_token ||
-        !isRecord(session.user) ||
-        !["employee", "hr"].includes(String(session.user.role))
-      ) {
-        throw new ApiError(
-          200,
-          "INVALID_RESPONSE",
-          "Сервер не выдал токен сессии. Повторите вход.",
-        );
-      }
-      rememberCsrf(session.csrf_token);
-      return session;
+      return acceptSession(session);
     },
     me: () => request("/me"),
     async logout() {
@@ -309,6 +335,8 @@ export function createApiClient(options: ApiClientOptions = {}): CareerClient {
     },
     goal: (id, body) => request(`${employeePath(id)}/goal`, "PATCH", body),
     hrSummary: () => request("/hr/summary"),
+    hrAnalytics: (windowDays = 90) =>
+      request(`/hr/analytics?window_days=${windowDays}`),
     importFiles: (body) => request("/hr/import", "POST", body),
   };
 }

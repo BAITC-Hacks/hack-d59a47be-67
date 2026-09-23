@@ -4,6 +4,74 @@
  */
 
 export interface paths {
+  "/api/hr/analytics": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Hr Analytics */
+    get: operations["hr_analytics_api_hr_analytics_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/public/examples/{filename}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Example File */
+    get: operations["example_file_api_public_examples__filename__get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/public/config": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Public Config */
+    get: operations["public_config_api_public_config_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/public/session": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Public Session */
+    post: operations["public_session_api_public_session_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/health": {
     parameters: {
       query?: never;
@@ -586,6 +654,134 @@ export interface components {
       expected_state_version: number;
       goal: components["schemas"]["Goal"];
     };
+    /**
+     * HRAnalyticsResponse
+     * @description A deterministic, HR-only snapshot; observations are not a motivation score.
+     */
+    HRAnalyticsResponse: {
+      /** Data Version */
+      data_version: string;
+      /** State Version */
+      state_version: number;
+      /**
+       * Scenario Date
+       * Format: date
+       */
+      scenario_date: string;
+      /**
+       * Period Start
+       * Format: date
+       */
+      period_start: string;
+      /**
+       * Period End
+       * Format: date
+       */
+      period_end: string;
+      /** Window Days */
+      window_days: number;
+      /** Employee Count */
+      employee_count: number;
+      /** Employees With Goal */
+      employees_with_goal: number;
+      /** Employees With History */
+      employees_with_history: number;
+      /** Employees With Completion In Period */
+      employees_with_completion_in_period: number;
+      /** History Records In Period */
+      history_records_in_period: number;
+      /** Historical Proxy Records In Period */
+      historical_proxy_records_in_period: number;
+      /** Excluded Simulations */
+      excluded_simulations: number;
+      /** Skill Gaps */
+      skill_gaps: components["schemas"]["HRSkillGap"][];
+      /** Attention */
+      attention: components["schemas"]["HRAttentionEmployee"][];
+      /** Participation */
+      participation: components["schemas"]["HRParticipation"][];
+      /** Notes */
+      notes: string[];
+    };
+    /** HRAttentionEmployee */
+    HRAttentionEmployee: {
+      profile: components["schemas"]["EmployeeProfile"];
+      /** Reasons */
+      reasons: components["schemas"]["HRAttentionReason"][];
+      /** Last Completed Date */
+      last_completed_date: string | null;
+      /** History Records In Period */
+      history_records_in_period: number;
+      /** Completed In Period */
+      completed_in_period: number;
+      /** No Show In Period */
+      no_show_in_period: number;
+      /** Eligible Event Count */
+      eligible_event_count: number;
+      /** Progress Percent */
+      progress_percent: number | null;
+    };
+    /** HRAttentionReason */
+    HRAttentionReason: {
+      /**
+       * Code
+       * @enum {string}
+       */
+      code:
+        | "no_history"
+        | "no_recent_completion"
+        | "repeated_no_show"
+        | "no_candidates"
+        | "no_target";
+      /** Message */
+      message: string;
+    };
+    /** HRParticipation */
+    HRParticipation: {
+      /** Event Id */
+      event_id: string;
+      /** Title */
+      title: string;
+      /** Type */
+      type: string;
+      /** Format */
+      format: string;
+      /** Mandatory */
+      mandatory: boolean;
+      /** Record Count */
+      record_count: number;
+      /** Participant Count */
+      participant_count: number;
+      /** Completed */
+      completed: number;
+      /** In Progress */
+      in_progress: number;
+      /** Dropped */
+      dropped: number;
+      /** No Show */
+      no_show: number;
+      /** Declined */
+      declined: number;
+      /** Overdue */
+      overdue: number;
+    };
+    /** HRSkillGap */
+    HRSkillGap: {
+      /** Skill Id */
+      skill_id: string;
+      /** Skill Name */
+      skill_name: string;
+      /** Employees Requiring */
+      employees_requiring: number;
+      /** Employees With Gap */
+      employees_with_gap: number;
+      /** Gap Percent */
+      gap_percent: number;
+      /** Average Gap */
+      average_gap: number;
+      /** Critical Gap Count */
+      critical_gap_count: number;
+    };
     /** HRSummaryResponse */
     HRSummaryResponse: {
       /** Data Version */
@@ -598,6 +794,11 @@ export interface components {
       completion_count: number;
       /** Demo Simulation Count */
       demo_simulation_count: number;
+    };
+    /** HTTPValidationError */
+    HTTPValidationError: {
+      /** Detail */
+      detail?: components["schemas"]["ValidationError"][];
     };
     /** HealthResponse */
     HealthResponse: {
@@ -730,6 +931,23 @@ export interface components {
       critical_met: number;
       /** Critical Total */
       critical_total: number;
+    };
+    /** PublicDemoConfig */
+    PublicDemoConfig: {
+      /** Enabled */
+      enabled: boolean;
+      /** Session Ttl Seconds */
+      session_ttl_seconds: number;
+      /** Ai Enabled */
+      ai_enabled: boolean;
+    };
+    /** PublicSessionRequest */
+    PublicSessionRequest: {
+      /**
+       * Role
+       * @enum {string}
+       */
+      role: "employee" | "hr";
     };
     /** ReadinessResponse */
     ReadinessResponse: {
@@ -876,6 +1094,19 @@ export interface components {
       /** Employee Id */
       employee_id: string | null;
     };
+    /** ValidationError */
+    ValidationError: {
+      /** Location */
+      loc: (string | number)[];
+      /** Message */
+      msg: string;
+      /** Error Type */
+      type: string;
+      /** Input */
+      input?: unknown;
+      /** Context */
+      ctx?: Record<string, never>;
+    };
     /** VersionResponse */
     VersionResponse: {
       /**
@@ -896,6 +1127,151 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+  hr_analytics_api_hr_analytics_get: {
+    parameters: {
+      query?: {
+        window_days?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HRAnalyticsResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Unprocessable Entity */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Service Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  example_file_api_public_examples__filename__get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        filename: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  public_config_api_public_config_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PublicDemoConfig"];
+        };
+      };
+    };
+  };
+  public_session_api_public_session_post: {
+    parameters: {
+      query?: never;
+      header: {
+        /** @description Exact allowlisted origin; browsers send this automatically. */
+        Origin: string;
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["PublicSessionRequest"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["SessionResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
   health_api_health_get: {
     parameters: {
       query?: never;

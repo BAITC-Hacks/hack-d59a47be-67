@@ -136,7 +136,8 @@ def validate_image(report: dict, image_env: list[str], require_ai: bool) -> None
     permitted = re.compile(
         r"(?:requirements\.lock|backend/__init__\.py|backend/app/[a-zA-Z0-9_]+\.py|"
         r"backend/app/ai/[a-zA-Z0-9_]+\.py|backend/app/ai/requirements\.txt|"
-        r"backend/migrations/[0-9]{3}_[a-z0-9_]+\.sql)"
+        r"backend/migrations/[0-9]{3}_[a-z0-9_]+\.sql|"
+        r"frontend/dist/(?:index\.html|favicon\.svg|assets/[a-zA-Z0-9_-]+\.(?:js|css|woff2?)))"
     )
     require(bool(report.get("files")), "Image application files are missing")
     require(all(permitted.fullmatch(path) for path in report["files"]), "Image contains a forbidden file")
@@ -236,6 +237,7 @@ def acceptance(runner: Runner, compose: list[str], project: str, require_ai: boo
         )
     )
     validate_image(report, image_env, require_ai)
+    require("frontend/dist/index.html" in report["files"], "Built frontend is missing from the image")
     print("PASS: build, non-root, image file allowlist, empty data and AI import boundary", flush=True)
     password = secrets.token_urlsafe(24)
     client = HTTP()
@@ -278,6 +280,15 @@ def acceptance(runner: Runner, compose: list[str], project: str, require_ai: boo
             ready["database"] == "ready" and ready["capabilities"]["ai"] == expected_ai, "Readiness failed"
         )
         client.call("/api/health")
+        with client.opener.open(client.base + "/", timeout=3) as page:
+            require(page.status == 200, "Built frontend is not served")
+            require("text/html" in page.headers.get("Content-Type", ""), "Frontend is not HTML")
+            document = page.read(1_000_000).decode("utf-8")
+        require('<div id="root"></div>' in document, "Frontend application root is missing")
+        script = re.search(r'<script[^>]+src="(/assets/[a-zA-Z0-9_-]+\.js)"', document)
+        require(script is not None, "Frontend entry asset is missing")
+        with client.opener.open(client.base + script[1], timeout=3) as asset:
+            require(asset.status == 200 and bool(asset.read(1)), "Frontend entry asset is not served")
         require(
             client.call("/api/version") == {"api_version": "1.0.0", "commit_sha": commit}, "Version mismatch"
         )
@@ -331,7 +342,7 @@ def acceptance(runner: Runner, compose: list[str], project: str, require_ai: boo
             require(state == before, "Data or applied migrations changed on container recreation")
         before = state
         runner.run(["docker", "rm", "--force", name])
-        print(f"PASS: container cycle {cycle + 1}, health/readiness/version/auth/rights/SQLite", flush=True)
+        print(f"PASS: container cycle {cycle + 1}, frontend/assets/health/auth/rights/SQLite", flush=True)
     print(
         "PASS: named volume, migrations, session and exact completion replay survive container recreation",
         flush=True,

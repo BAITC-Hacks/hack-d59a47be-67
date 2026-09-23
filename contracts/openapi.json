@@ -6,6 +6,200 @@
     "version": "1.0.0"
   },
   "paths": {
+    "/api/hr/analytics": {
+      "get": {
+        "tags": [
+          "implemented"
+        ],
+        "summary": "Hr Analytics",
+        "operationId": "hr_analytics_api_hr_analytics_get",
+        "parameters": [
+          {
+            "name": "window_days",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 365,
+              "minimum": 1,
+              "default": 90,
+              "title": "Window Days"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HRAnalyticsResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "x-implementation-status": "implemented",
+        "security": [
+          {
+            "DemoSession": []
+          }
+        ]
+      }
+    },
+    "/api/public/examples/{filename}": {
+      "get": {
+        "tags": [
+          "implemented"
+        ],
+        "summary": "Example File",
+        "operationId": "example_file_api_public_examples__filename__get",
+        "parameters": [
+          {
+            "name": "filename",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Filename"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/public/config": {
+      "get": {
+        "tags": [
+          "implemented"
+        ],
+        "summary": "Public Config",
+        "operationId": "public_config_api_public_config_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicDemoConfig"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/public/session": {
+      "post": {
+        "tags": [
+          "implemented"
+        ],
+        "summary": "Public Session",
+        "operationId": "public_session_api_public_session_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublicSessionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "description": "Exact allowlisted origin; browsers send this automatically.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
     "/api/health": {
       "get": {
         "tags": [
@@ -2301,6 +2495,363 @@
         ],
         "title": "GoalUpdateRequest"
       },
+      "HRAnalyticsResponse": {
+        "properties": {
+          "data_version": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Data Version"
+          },
+          "state_version": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "State Version"
+          },
+          "scenario_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Scenario Date"
+          },
+          "period_start": {
+            "type": "string",
+            "format": "date",
+            "title": "Period Start"
+          },
+          "period_end": {
+            "type": "string",
+            "format": "date",
+            "title": "Period End"
+          },
+          "window_days": {
+            "type": "integer",
+            "maximum": 365.0,
+            "minimum": 1.0,
+            "title": "Window Days"
+          },
+          "employee_count": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Employee Count"
+          },
+          "employees_with_goal": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Employees With Goal"
+          },
+          "employees_with_history": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Employees With History"
+          },
+          "employees_with_completion_in_period": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Employees With Completion In Period"
+          },
+          "history_records_in_period": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "History Records In Period"
+          },
+          "historical_proxy_records_in_period": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Historical Proxy Records In Period"
+          },
+          "excluded_simulations": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Excluded Simulations"
+          },
+          "skill_gaps": {
+            "items": {
+              "$ref": "#/components/schemas/HRSkillGap"
+            },
+            "type": "array",
+            "title": "Skill Gaps"
+          },
+          "attention": {
+            "items": {
+              "$ref": "#/components/schemas/HRAttentionEmployee"
+            },
+            "type": "array",
+            "title": "Attention"
+          },
+          "participation": {
+            "items": {
+              "$ref": "#/components/schemas/HRParticipation"
+            },
+            "type": "array",
+            "title": "Participation"
+          },
+          "notes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Notes"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "data_version",
+          "state_version",
+          "scenario_date",
+          "period_start",
+          "period_end",
+          "window_days",
+          "employee_count",
+          "employees_with_goal",
+          "employees_with_history",
+          "employees_with_completion_in_period",
+          "history_records_in_period",
+          "historical_proxy_records_in_period",
+          "excluded_simulations",
+          "skill_gaps",
+          "attention",
+          "participation",
+          "notes"
+        ],
+        "title": "HRAnalyticsResponse",
+        "description": "A deterministic, HR-only snapshot; observations are not a motivation score."
+      },
+      "HRAttentionEmployee": {
+        "properties": {
+          "profile": {
+            "$ref": "#/components/schemas/EmployeeProfile"
+          },
+          "reasons": {
+            "items": {
+              "$ref": "#/components/schemas/HRAttentionReason"
+            },
+            "type": "array",
+            "title": "Reasons"
+          },
+          "last_completed_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Completed Date"
+          },
+          "history_records_in_period": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "History Records In Period"
+          },
+          "completed_in_period": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Completed In Period"
+          },
+          "no_show_in_period": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "No Show In Period"
+          },
+          "eligible_event_count": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Eligible Event Count"
+          },
+          "progress_percent": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 100.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Progress Percent"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "profile",
+          "reasons",
+          "last_completed_date",
+          "history_records_in_period",
+          "completed_in_period",
+          "no_show_in_period",
+          "eligible_event_count",
+          "progress_percent"
+        ],
+        "title": "HRAttentionEmployee"
+      },
+      "HRAttentionReason": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "no_history",
+              "no_recent_completion",
+              "repeated_no_show",
+              "no_candidates",
+              "no_target"
+            ],
+            "title": "Code"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "title": "HRAttentionReason"
+      },
+      "HRParticipation": {
+        "properties": {
+          "event_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Event Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "type": {
+            "type": "string",
+            "title": "Type"
+          },
+          "format": {
+            "type": "string",
+            "title": "Format"
+          },
+          "mandatory": {
+            "type": "boolean",
+            "title": "Mandatory"
+          },
+          "record_count": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Record Count"
+          },
+          "participant_count": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Participant Count"
+          },
+          "completed": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Completed"
+          },
+          "in_progress": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "In Progress"
+          },
+          "dropped": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Dropped"
+          },
+          "no_show": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "No Show"
+          },
+          "declined": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Declined"
+          },
+          "overdue": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Overdue"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "event_id",
+          "title",
+          "type",
+          "format",
+          "mandatory",
+          "record_count",
+          "participant_count",
+          "completed",
+          "in_progress",
+          "dropped",
+          "no_show",
+          "declined",
+          "overdue"
+        ],
+        "title": "HRParticipation"
+      },
+      "HRSkillGap": {
+        "properties": {
+          "skill_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Skill Id"
+          },
+          "skill_name": {
+            "type": "string",
+            "title": "Skill Name"
+          },
+          "employees_requiring": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Employees Requiring"
+          },
+          "employees_with_gap": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Employees With Gap"
+          },
+          "gap_percent": {
+            "type": "number",
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Gap Percent"
+          },
+          "average_gap": {
+            "type": "number",
+            "maximum": 5.0,
+            "minimum": 0.0,
+            "title": "Average Gap"
+          },
+          "critical_gap_count": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Critical Gap Count"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "skill_id",
+          "skill_name",
+          "employees_requiring",
+          "employees_with_gap",
+          "gap_percent",
+          "average_gap",
+          "critical_gap_count"
+        ],
+        "title": "HRSkillGap"
+      },
       "HRSummaryResponse": {
         "properties": {
           "data_version": {
@@ -2340,6 +2891,19 @@
           "demo_simulation_count"
         ],
         "title": "HRSummaryResponse"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
       },
       "HealthResponse": {
         "properties": {
@@ -2660,6 +3224,48 @@
           "critical_total"
         ],
         "title": "Progress"
+      },
+      "PublicDemoConfig": {
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled"
+          },
+          "session_ttl_seconds": {
+            "type": "integer",
+            "title": "Session Ttl Seconds"
+          },
+          "ai_enabled": {
+            "type": "boolean",
+            "title": "Ai Enabled"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "enabled",
+          "session_ttl_seconds",
+          "ai_enabled"
+        ],
+        "title": "PublicDemoConfig"
+      },
+      "PublicSessionRequest": {
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": [
+              "employee",
+              "hr"
+            ],
+            "title": "Role"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "role"
+        ],
+        "title": "PublicSessionRequest"
       },
       "ReadinessResponse": {
         "properties": {
@@ -3031,6 +3637,46 @@
           "employee_id"
         ],
         "title": "UserIdentity"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
       },
       "VersionResponse": {
         "properties": {

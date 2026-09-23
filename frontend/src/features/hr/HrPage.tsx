@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import type { EmployeeListResponse, HRSummaryResponse } from "../../api";
 import { useApp } from "../../context";
+import { HrAnalytics } from "./HrAnalytics";
 import "./hr.css";
 
 const PAGE_SIZE = 20;
@@ -81,8 +82,8 @@ export function HrPage({ onOpenEmployee, onOpenImport }: HrPageProps) {
           <p className="eyebrow">РАЗВИТИЕ КОМАНДЫ</p>
           <h1>Люди и их следующие шаги</h1>
           <p className="muted">
-            Откройте профиль, чтобы увидеть цель, навыки и подходящие активности
-            сотрудника.
+            Найдите, где нужна поддержка, и откройте профиль, чтобы обсудить
+            цель и следующий шаг сотрудника.
           </p>
         </div>
         <button className="button button-primary" onClick={onOpenImport}>
@@ -146,6 +147,8 @@ export function HrPage({ onOpenEmployee, onOpenImport }: HrPageProps) {
           </div>
         ))}
       </section>
+
+      <HrAnalytics onOpenEmployee={onOpenEmployee} refresh={refresh} />
 
       <section className="card hr-directory" aria-labelledby="team-title">
         <div className="hr-directory-top">
@@ -325,7 +328,8 @@ export function HrPage({ onOpenEmployee, onOpenImport }: HrPageProps) {
           <h3>Развитие видно в каждом профиле</h3>
           <p>
             Навыки, требования цели и история доступны в карточке сотрудника.
-            Общая аналитика пробелов и участия пока не подключена.
+            Сводка помогает начать разговор; причины пропусков и подходящий темп
+            развития стоит уточнить у самого сотрудника.
             {mode === "demo"
               ? " Сейчас показана вымышленная команда для знакомства с продуктом."
               : ""}

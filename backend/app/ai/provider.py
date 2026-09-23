@@ -5,6 +5,8 @@ from __future__ import annotations
 import asyncio
 import json
 import math
+import ssl
+from functools import lru_cache
 from typing import TYPE_CHECKING, Any, Literal
 
 if TYPE_CHECKING:
@@ -15,6 +17,21 @@ MAX_REQUEST_BYTES = 200 * 1024
 MAX_RESPONSE_BYTES = 64 * 1024
 MAX_OUTPUT_TOKENS = 1024
 ProviderErrorCode = Literal["timeout", "provider_unavailable", "invalid_output"]
+
+
+@lru_cache(maxsize=1)
+def _tls_context() -> ssl.SSLContext:
+    """Reuse only the public CA configuration, never a client or user state.
+
+    This matches httpx's verified, trust_env=False default. Loading the pinned
+    CA bundle once avoids repeating certificate parsing for every request.
+    Credentials, connections and responses remain scoped to the async call.
+    """
+    import certifi
+
+    context = ssl.create_default_context(cafile=certifi.where())
+    context.keylog_filename = None
+    return context
 
 
 class ProviderError(Exception):
@@ -209,6 +226,7 @@ class AsyncOpenAIProvider:
             async with asyncio.timeout(self._timeout_seconds):
                 async with httpx.AsyncClient(
                     transport=self._transport,
+                    verify=_tls_context(),
                     timeout=self._timeout_seconds,
                     follow_redirects=False,
                     trust_env=False,
@@ -242,5 +260,5 @@ class AsyncOpenAIProvider:
             return _selection(bytes(chunks), allowed_ids, limit)
         except (TimeoutError, httpx.TimeoutException):
             raise ProviderError("timeout") from None
-        except (httpx.HTTPError, ValueError):
+        except (httpx.HTTPError, ValueError, OSError, ImportError):
             raise ProviderError("provider_unavailable") from None

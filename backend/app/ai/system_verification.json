@@ -1,0 +1,183 @@
+{
+  "verified_at": "2026-09-23",
+  "synthetic_only": true,
+  "snapshot": {
+    "backend": "3b85babc78e6c522b6c5d04d42e5a16a37966570",
+    "ai": "f10006a13c056ae49983c6e8200711cea73afa6a",
+    "frontend": "f91638b612dfc36b06b399fdbb426f51c1ad248c",
+    "backend_ai_tree": "30bb15b961516ba45ca2fa8f49de1beb700cec0f"
+  },
+  "checks": {
+    "original_unit_tests": 21,
+    "backend_ai_tests": 468,
+    "explicit_ai_handoff_tests": 19,
+    "schema_groups": 9,
+    "ruff": "passed",
+    "tcp_smoke": "passed, two launches",
+    "committed_container_runner": "passed, no patches",
+    "container_recreation": "passed, volume/session/idempotency replay"
+  },
+  "live": {
+    "mode": "live_synthetic_backend_evaluation",
+    "synthetic_only": true,
+    "quality_evaluated": true,
+    "prompt_version": "career-quest-selection-v1",
+    "case_count": 3,
+    "passed_count": 3,
+    "failed_count": 0,
+    "cases": [
+      {
+        "case_id": "backend_critical_over_lowest",
+        "passed": true,
+        "verdict": "passed",
+        "status": "ok",
+        "latency_ms": 1617.3,
+        "selected_event_ids": [
+          "SYNTH_BE_EVENT_B"
+        ],
+        "requires_enriched_facts": true
+      },
+      {
+        "case_id": "backend_repeated_format_nonparticipation",
+        "passed": true,
+        "verdict": "passed",
+        "status": "ok",
+        "latency_ms": 2397.09,
+        "selected_event_ids": [
+          "SYNTH_BE_EVENT_B"
+        ],
+        "requires_enriched_facts": true
+      },
+      {
+        "case_id": "backend_no_history",
+        "passed": true,
+        "verdict": "passed",
+        "status": "ok",
+        "latency_ms": 994.49,
+        "selected_event_ids": [
+          "SYNTH_BE_EVENT_A"
+        ],
+        "requires_enriched_facts": true
+      }
+    ],
+    "model": "gpt-4.1-mini-2025-04-14",
+    "context_origin": "synthetic source import -> SQLite -> CareerService._context",
+    "backend_service_sha256": "cd188380b90fbbee6edcbecb0fd89f32ccf299b02b76fdebaebba85c1147a595",
+    "contexts": [
+      {
+        "case_id": "backend_critical_over_lowest",
+        "sha256": "b73454721ebdbda91294fdcb71c3f22a4426769321fa0dc7449a925ceda113f4",
+        "candidate_count": 2,
+        "fact_count": 10
+      },
+      {
+        "case_id": "backend_repeated_format_nonparticipation",
+        "sha256": "dbc1087978a03177aa50c1dcf9a886333566a54f782af7632f6958869bfc88ed",
+        "candidate_count": 2,
+        "fact_count": 9
+      },
+      {
+        "case_id": "backend_no_history",
+        "sha256": "5d64b9de63ebde3e0fea4ef74ef91bc27dc1f4459b4d4eeecf475ec8efd163e2",
+        "candidate_count": 2,
+        "fact_count": 9
+      }
+    ]
+  },
+  "frontend": {
+    "snapshot": {
+      "backend": "3b85bab",
+      "ai": "f10006a",
+      "frontend": "f91638b"
+    },
+    "environment": {
+      "node": "22.14.0",
+      "pnpm_actual": "11.19.0",
+      "pnpm_declared": "11.25.0"
+    },
+    "checks": {
+      "frozen_lock_install": "passed; 139 packages reused from local store",
+      "unit_tests": {
+        "passed": 52,
+        "files": 6
+      },
+      "typecheck_and_build": "passed",
+      "prettier": "passed",
+      "backend_openapi_byte_parity": true,
+      "frontend_schema_byte_parity": true,
+      "real_http_smoke": "passed; synthetic SQLite; AI disabled; sessions/access/CSRF/preview/completion/exact replay/stale/version conflict/import/restart"
+    },
+    "hashes": {
+      "openapi_sha256": "e3ed718c3339053cbe61857f2f84f7ef3d061f5b41e1466df38a42d845950d57",
+      "frontend_schema_sha256": "85909b47e7ae2ce45d5c41aa3757a372e2c9239655e170952a3047d20ccd8a89"
+    },
+    "source_modified": false,
+    "cleanup": "Smoke server and synthetic database cleaned; temporary schema generation directory cleaned; node_modules and dist kept for parent UI check.",
+    "limitations": [
+      "No browser or live OpenAI evaluation in this subtask.",
+      "Installed pnpm11.19.0 differs from packageManager11.25.0; frozen lock, tests and build passed."
+    ]
+  },
+  "browser": {
+    "http_after_restart": [
+      200,
+      200,
+      200
+    ],
+    "live_recommendations": 3,
+    "engine": "oleg",
+    "recommendation_http_ms": 5033.1,
+    "completion_mode": "completion",
+    "event_id": "UI_SYNTH_SYSTEMS_COURSE",
+    "skill_before": 2,
+    "skill_after": 3,
+    "progress_before": 56.25,
+    "progress_after": 62.5,
+    "revision_before": 1,
+    "revision_after": 2,
+    "history_preserved_after_restart": true,
+    "russian_explanations_preserved_after_restart": true,
+    "stale": true,
+    "disabled_preview_buttons": 3,
+    "mobile_widths": [
+      {
+        "viewport": 390,
+        "scroll_width": 390
+      },
+      {
+        "viewport": 320,
+        "scroll_width": 320
+      },
+      {
+        "viewport": 1440,
+        "scroll_width": 1440
+      }
+    ],
+    "console_observations": [
+      "Expected HTTP404 latest before any recommendations; UI displayed empty state correctly",
+      "Diagnostic probe used nonexistent /api/auth/me; corrected GET /api/me returned200; not a UI request"
+    ]
+  },
+  "container": {
+    "engine": "28.0.4",
+    "compose": "2.34.0",
+    "platform": "linux/arm64",
+    "python": "3.12.14",
+    "ui_image_id": "sha256:7a447cfe9dfee04e464fc1e9c20670f46269809404a434e606cabac9a6f601ad"
+  },
+  "ci": {
+    "passed": false,
+    "check_run": 107163472658,
+    "reason": "GitHub account billing lock: job not started"
+  },
+  "runtime_source_changes": false,
+  "merged_prs": false,
+  "public_deploy": false,
+  "cleanup": "Own UI container/volume/image, random credentials, browser and Vite cleaned; user resources retained",
+  "limitations": [
+    "5033.10 ms meets the original specification's 10 s AI limit; earlier 5 s comparison was a reporting error; p95/stability not established",
+    "Only fixed synthetic quality cases",
+    "Production/AMD64 not checked",
+    "pnpm actual11.19.0 differs from declared11.25.0"
+  ]
+}

@@ -39,6 +39,12 @@ import {
 } from "./api/client";
 import { createDemoClient, resetDemo } from "./api/demo";
 import { Ornament, QuestMark } from "./components/Ornament";
+import {
+  PublicAccess,
+  PublicSessionNotice,
+  type PublicConfig,
+  type PublicRole,
+} from "./components/PublicAccess";
 import type { CatalogResponse, UserIdentity } from "./api/types";
 import { AppContext } from "./context";
 import { Dialog, ErrorAlert, Loading, Logo } from "./components/ui";
@@ -104,9 +110,21 @@ function CareerApp() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
+  const [signingIn, setSigningIn] = useState(false);
+  const [publicConfig, setPublicConfig] = useState<PublicConfig | null>(null);
+  const [publicConfigError, setPublicConfigError] = useState(false);
+  const [configRefresh, setConfigRefresh] = useState(0);
   const { client, mode } = connection;
   const connectionRef = useRef(connection);
+  const authBusyRef = useRef(false);
+  const authSequenceRef = useRef(0);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
+  useEffect(
+    () => () => {
+      authSequenceRef.current++;
+    },
+    [],
+  );
   useEffect(() => {
     if (!menuOpen) return;
     const closeOnEscape = (event: KeyboardEvent) => {
@@ -121,6 +139,23 @@ function CareerApp() {
   useEffect(() => {
     connectionRef.current = connection;
   }, [connection]);
+  useEffect(() => {
+    let active = true;
+    setPublicConfig(null);
+    setPublicConfigError(false);
+    if (mode !== "live") return;
+    client
+      .publicConfig()
+      .then((config) => {
+        if (active) setPublicConfig(config);
+      })
+      .catch(() => {
+        if (active) setPublicConfigError(true);
+      });
+    return () => {
+      active = false;
+    };
+  }, [client, mode, configRefresh]);
   const navigate = useCallback((path: string) => {
     window.location.hash = `/${path}`;
     setMenuOpen(false);
@@ -194,24 +229,66 @@ function CareerApp() {
     [client, mode, user, catalog, handleError],
   );
 
-  async function login(username: string, password: string) {
+  async function signIn(
+    action: () => ReturnType<CareerClient["login"]>,
+    publicEntry = false,
+  ) {
+    if (authBusyRef.current) return;
+    authBusyRef.current = true;
+    const sequence = ++authSequenceRef.current;
+    setSigningIn(true);
     setLoginError("");
+    setGlobalError("");
+    if (publicEntry) {
+      // Role switching revokes the preceding server session. Hide its controls immediately.
+      setUser(null);
+      setCatalog(null);
+    }
     try {
-      const session = await client.login(username, password);
-      if (connectionRef.current !== connection) return;
+      const session = await action();
+      if (
+        connectionRef.current !== connection ||
+        authSequenceRef.current !== sequence
+      )
+        return;
       setUser(session.user);
       safeStorage.set("cq-ui-mode", "live");
       navigate(session.user.role === "hr" ? "hr" : "overview");
     } catch (e) {
-      if (connectionRef.current === connection) setLoginError(handleError(e));
+      if (
+        connectionRef.current === connection &&
+        authSequenceRef.current === sequence
+      )
+        setLoginError(handleError(e));
       throw e;
+    } finally {
+      if (
+        connectionRef.current === connection &&
+        authSequenceRef.current === sequence
+      ) {
+        authBusyRef.current = false;
+        setSigningIn(false);
+      }
     }
+  }
+  function login(username: string, password: string) {
+    return signIn(() => client.login(username, password));
+  }
+  function enterPublic(role: PublicRole) {
+    return signIn(() => client.publicSession(role), true);
+  }
+  function selectConnection(next: Connection) {
+    authSequenceRef.current++;
+    authBusyRef.current = false;
+    setSigningIn(false);
+    connectionRef.current = next;
+    setConnection(next);
   }
   function enterDemo(role: "employee" | "hr" = "employee") {
     safeStorage.set("cq-ui-mode", "demo");
     safeStorage.set("cq-demo-role", role);
     setLoginError("");
-    setConnection({ client: createDemoClient(role), mode: "demo" });
+    selectConnection({ client: createDemoClient(role), mode: "demo" });
     navigate(role === "hr" ? "hr" : "overview");
   }
   async function logout() {
@@ -223,7 +300,7 @@ function CareerApp() {
       if (connectionRef.current !== connection) return;
       clearSession();
       safeStorage.set("cq-ui-mode", "live");
-      setConnection({ client: createApiClient(), mode: "live" });
+      selectConnection({ client: createApiClient(), mode: "live" });
       setUser(null);
       setCatalog(null);
       navigate("overview");
@@ -245,6 +322,11 @@ function CareerApp() {
       <LoginPage
         onLogin={login}
         onDemo={() => enterDemo()}
+        onPublicLogin={enterPublic}
+        publicConfig={publicConfig}
+        publicConfigError={publicConfigError}
+        onRetryConfig={() => setConfigRefresh((value) => value + 1)}
+        busy={signingIn}
         error={loginError}
       />
     );
@@ -429,6 +511,14 @@ function CareerApp() {
               <span className="topbar-avatar">{isHr ? "HR" : "Я"}</span>
             </div>
           </header>
+          {mode === "live" && publicConfig?.enabled && (
+            <PublicSessionNotice
+              config={publicConfig}
+              role={user.role}
+              busy={signingIn || loggingOut}
+              onEnter={enterPublic}
+            />
+          )}
           {mode === "demo" && (
             <div className="demo-banner">
               <span>
@@ -449,7 +539,10 @@ function CareerApp() {
             {globalError && <ErrorAlert message={globalError} />}
             {isHr ? (
               actualPage === "import" ? (
-                <ImportPage onDone={() => navigate("hr")} />
+                <ImportPage
+                  onDone={() => navigate("hr")}
+                  publicDemo={publicConfig?.enabled === true && mode === "live"}
+                />
               ) : actualPage === "employee" ? (
                 <>
                   <button
@@ -545,26 +638,32 @@ function CareerApp() {
 function LoginPage({
   onLogin,
   onDemo,
+  onPublicLogin,
+  publicConfig,
+  publicConfigError,
+  onRetryConfig,
+  busy,
   error,
 }: {
   onLogin: (username: string, password: string) => Promise<void>;
   onDemo: () => void;
+  onPublicLogin: (role: PublicRole) => Promise<void>;
+  publicConfig: PublicConfig | null;
+  publicConfigError: boolean;
+  onRetryConfig: () => void;
+  busy: boolean;
   error: string;
 }) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [busy, setBusy] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   async function submit(e: FormEvent) {
     e.preventDefault();
     if (busy) return;
-    setBusy(true);
     try {
       await onLogin(username.trim(), password);
     } catch {
       /* Parent displays the localized message. */
-    } finally {
-      setBusy(false);
     }
   }
   return (
@@ -604,77 +703,106 @@ function LoginPage({
           <span className="login-compass">
             <QuestMark />
           </span>
-          <h2>Вход в кабинет</h2>
+          <h2>
+            {publicConfig?.enabled ? "Добро пожаловать" : "Вход в кабинет"}
+          </h2>
           <p className="login-description">
             Ваши навыки, карьерная цель и история развития.
           </p>
-          <form onSubmit={(e) => void submit(e)}>
-            <label className="field-label" htmlFor="username">
-              Логин
-            </label>
-            <input
-              className="field-input"
-              id="username"
-              name="username"
-              autoComplete="username"
-              placeholder="Ваш рабочий логин"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              required
-              disabled={busy}
+          {error && <ErrorAlert message={error} />}
+          {publicConfig?.enabled ? (
+            <PublicAccess
+              config={publicConfig}
+              busy={busy}
+              onEnter={onPublicLogin}
             />
-            <label className="field-label" htmlFor="password">
-              Пароль
-            </label>
-            <div className="password-field">
-              <input
-                className="field-input"
-                id="password"
-                name="password"
-                type={showPassword ? "text" : "password"}
-                autoComplete="current-password"
-                placeholder="Введите пароль"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                disabled={busy}
-              />
+          ) : (
+            <>
+              <form onSubmit={(e) => void submit(e)}>
+                <label className="field-label" htmlFor="username">
+                  Логин
+                </label>
+                <input
+                  className="field-input"
+                  id="username"
+                  name="username"
+                  autoComplete="username"
+                  placeholder="Ваш рабочий логин"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  required
+                  disabled={busy}
+                />
+                <label className="field-label" htmlFor="password">
+                  Пароль
+                </label>
+                <div className="password-field">
+                  <input
+                    className="field-input"
+                    id="password"
+                    name="password"
+                    type={showPassword ? "text" : "password"}
+                    autoComplete="current-password"
+                    placeholder="Введите пароль"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    disabled={busy}
+                  />
+                  <button
+                    className="icon-button"
+                    type="button"
+                    aria-label={
+                      showPassword ? "Скрыть пароль" : "Показать пароль"
+                    }
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+                <button
+                  className="button button-primary button-full login-submit"
+                  disabled={busy}
+                >
+                  {busy ? "Входим…" : "Войти в кабинет"}
+                  <ArrowRight size={19} />
+                </button>
+              </form>
+              <p className="account-help">
+                Учётную запись предоставляет HR вашей команды.
+              </p>
+              <div className="login-divider">
+                <span>Познакомиться с продуктом</span>
+              </div>
               <button
-                className="icon-button"
-                type="button"
-                aria-label={showPassword ? "Скрыть пароль" : "Показать пароль"}
-                onClick={() => setShowPassword(!showPassword)}
+                className="button button-secondary button-full demo-login"
+                onClick={onDemo}
+                disabled={busy}
               >
-                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                <BookOpen size={18} />
+                Посмотреть демо
+                <ArrowUpRight size={17} />
+              </button>
+              <p className="demo-login-note">
+                Готовые примеры интерфейса. Без реального подбора рекомендаций.
+              </p>
+            </>
+          )}
+          {publicConfigError && (
+            <div className="public-config-retry" role="status">
+              <p>
+                Не удалось проверить быстрый доступ к серверу. Обычный вход
+                доступен по учётной записи.
+              </p>
+              <button
+                className="button button-secondary"
+                onClick={onRetryConfig}
+                disabled={busy}
+              >
+                Проверить быстрый доступ
               </button>
             </div>
-            {error && <ErrorAlert message={error} />}
-            <button
-              className="button button-primary button-full login-submit"
-              disabled={busy}
-            >
-              {busy ? "Входим…" : "Войти в кабинет"}
-              <ArrowRight size={19} />
-            </button>
-          </form>
-          <p className="account-help">
-            Учётную запись предоставляет HR вашей команды.
-          </p>
-          <div className="login-divider">
-            <span>Познакомиться с продуктом</span>
-          </div>
-          <button
-            className="button button-secondary button-full demo-login"
-            onClick={onDemo}
-            disabled={busy}
-          >
-            <BookOpen size={18} />
-            Посмотреть демо
-            <ArrowUpRight size={17} />
-          </button>
-          <p className="demo-login-note">
-            Готовые примеры интерфейса. Без реального подбора рекомендаций.
-          </p>
+          )}
         </div>
         <span className="login-security">
           <ShieldCheck size={16} />

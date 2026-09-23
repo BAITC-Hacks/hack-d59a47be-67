@@ -1,2 +1,5 @@
 # Preserve spacing in the archived source specification; do not lint its text.
 docs/requirements/original-spec.txt -whitespace
+# Match Prettier's LF output in fresh Windows and Linux checkouts.
+frontend/** text=auto eol=lf
+.githooks/* text eol=lf

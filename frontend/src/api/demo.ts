@@ -415,6 +415,24 @@ export function createDemoClient(
         "Импорт доступен после подключения к серверу. Демо не принимает и не сохраняет ваши файлы.",
       );
     },
+    async hrAnalytics() {
+      hrOnly();
+      throw new ApiError(
+        503,
+        "DEMO_ANALYTICS_UNAVAILABLE",
+        "Общая аналитика рассчитывается сервером. Войдите в серверную демоверсию, чтобы её проверить.",
+      );
+    },
+    async publicConfig() {
+      return { enabled: false, session_ttl_seconds: 3600, ai_enabled: false };
+    },
+    async publicSession() {
+      throw new ApiError(
+        404,
+        "NOT_FOUND",
+        "Выберите серверную демоверсию на экране входа.",
+      );
+    },
   };
 }
 

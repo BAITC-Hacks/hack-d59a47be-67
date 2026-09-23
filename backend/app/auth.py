@@ -64,6 +64,12 @@ def require_user(request: Request) -> dict:
         csrf = request.headers.get("x-csrf-token", "")
         if not csrf or len(csrf) > 256 or not hmac.compare_digest(digest(csrf), row["csrf_hash"]):
             raise APIError(403, "CSRF_FAILED", "A valid X-CSRF-Token is required.")
+        public = getattr(request.app.state, "public_demo", None)
+        if public and request.url.path != "/api/auth/logout":
+            public.charge(
+                ai=request.url.path.endswith("/recommendations") and request.app.state.settings.ai_enabled,
+                importing=request.url.path == "/api/hr/import",
+            )
     return identity(row)
 
 
