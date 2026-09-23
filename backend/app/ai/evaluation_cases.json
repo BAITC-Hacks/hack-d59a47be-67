@@ -1,0 +1,358 @@
+{
+  "schema_version": 1,
+  "synthetic_only": true,
+  "description": "Все профили, мероприятия, навыки и факты вымышлены; исходный датасет не использовался. Cases с enriched facts проверяют предложенное содержимое facts, а не текущий backend context builder.",
+  "cases": [
+    {
+      "case_id": "critical_target_over_lowest_skill",
+      "requires_enriched_facts": true,
+      "rubric": "Первым выбрать шаг к критичному навыку целевой роли. Низший некритичный навык и больший сырой gain не перевешивают критичный разрыв; два отказа от конкретного курса подтверждают необходимость учитывать историю, но не дают основания объявлять постоянные предпочтения сотрудника.",
+      "expected_top_event_ids": [
+        "SYNTH_CRITICAL_LAB"
+      ],
+      "excluded_event_ids": [],
+      "context": {
+        "contract_version": "1",
+        "data_version": "synthetic-evaluation-v1",
+        "state_version": 1,
+        "scenario_date": "2026-10-01",
+        "profile": {
+          "profile_ref": "synthetic-profile-critical",
+          "role": "Synthetic Engineer",
+          "grade": "Middle"
+        },
+        "goal": {
+          "target_role": "Synthetic Engineer",
+          "target_grade": "Senior"
+        },
+        "current_skills": [
+          {
+            "skill_id": "SYNTH_DOCUMENTATION",
+            "level": 0
+          },
+          {
+            "skill_id": "SYNTH_ARCHITECTURE",
+            "level": 3
+          }
+        ],
+        "gaps": [
+          {
+            "skill_id": "SYNTH_DOCUMENTATION",
+            "current_level": 0,
+            "target_level": 2,
+            "gap": 2
+          },
+          {
+            "skill_id": "SYNTH_ARCHITECTURE",
+            "current_level": 3,
+            "target_level": 4,
+            "gap": 1
+          }
+        ],
+        "eligible_candidates": [
+          {
+            "event_id": "SYNTH_LOWEST_COURSE",
+            "title": "Вымышленный курс документации",
+            "effects": [
+              {
+                "skill_id": "SYNTH_DOCUMENTATION",
+                "before": 0,
+                "after": 2,
+                "delta": 2
+              }
+            ],
+            "evidence_ids": [
+              "critical-candidate-SYNTH_LOWEST_COURSE"
+            ]
+          },
+          {
+            "event_id": "SYNTH_CRITICAL_LAB",
+            "title": "Вымышленная архитектурная лаборатория",
+            "effects": [
+              {
+                "skill_id": "SYNTH_ARCHITECTURE",
+                "before": 3,
+                "after": 4,
+                "delta": 1
+              }
+            ],
+            "evidence_ids": [
+              "critical-candidate-SYNTH_CRITICAL_LAB"
+            ]
+          }
+        ],
+        "facts": [
+          {
+            "evidence_id": "critical-goal",
+            "kind": "goal",
+            "subject_id": "synthetic-profile-critical",
+            "fact": "Цель профиля Middle — Synthetic Engineer Senior. SYNTH_ARCHITECTURE — критичный навык цели; SYNTH_DOCUMENTATION — некритичный."
+          },
+          {
+            "evidence_id": "critical-history",
+            "kind": "history",
+            "subject_id": "synthetic-profile-critical",
+            "fact": "Только вымышленная история; перечисленные мероприятия не завершены и не начаты."
+          },
+          {
+            "evidence_id": "critical-gap-SYNTH_DOCUMENTATION",
+            "kind": "gap",
+            "subject_id": "SYNTH_DOCUMENTATION",
+            "fact": "Навык SYNTH_DOCUMENTATION: текущий уровень 0, цель 2, разрыв 2."
+          },
+          {
+            "evidence_id": "critical-gap-SYNTH_ARCHITECTURE",
+            "kind": "gap",
+            "subject_id": "SYNTH_ARCHITECTURE",
+            "fact": "Навык SYNTH_ARCHITECTURE: текущий уровень 3, цель 4, разрыв 1."
+          },
+          {
+            "evidence_id": "critical-candidate-SYNTH_LOWEST_COURSE",
+            "kind": "candidate",
+            "subject_id": "SYNTH_LOWEST_COURSE",
+            "fact": "Допустимый добровольный online-курс. SYNTH_DOCUMENTATION: 0 → 2; критичных навыков цели не развивает."
+          },
+          {
+            "evidence_id": "critical-candidate-SYNTH_CRITICAL_LAB",
+            "kind": "candidate",
+            "subject_id": "SYNTH_CRITICAL_LAB",
+            "fact": "Допустимая добровольная self_paced-лаборатория. SYNTH_ARCHITECTURE: 3 → 4; закрывает критичный разрыв цели."
+          },
+          {
+            "evidence_id": "critical-declines",
+            "kind": "history",
+            "subject_id": "SYNTH_LOWEST_COURSE",
+            "fact": "По SYNTH_LOWEST_COURSE два declined (2026-08-03 и 2026-09-01); причины не указаны, completed/in_progress нет. Эти записи не запрещают повторный выбор."
+          },
+          {
+            "evidence_id": "critical-lab-history",
+            "kind": "history",
+            "subject_id": "SYNTH_CRITICAL_LAB",
+            "fact": "Для SYNTH_CRITICAL_LAB история участия отсутствует; это нейтральный факт, не свидетельство предпочтения формата."
+          }
+        ],
+        "limit": 1
+      }
+    },
+    {
+      "case_id": "equal_gain_participation_and_format",
+      "requires_enriched_facts": true,
+      "rubric": "При одинаковом приросте одного навыка первым предложить доступную self_paced-альтернативу. Два no_show относятся только к конкретному live-событию; завершение другого self_paced курса — слабый положительный сигнал, не доказательство постоянной склонности. Оба кандидата остаются допустимыми.",
+      "expected_top_event_ids": [
+        "SYNTH_ASYNC_PRACTICE"
+      ],
+      "excluded_event_ids": [],
+      "context": {
+        "contract_version": "1",
+        "data_version": "synthetic-evaluation-v1",
+        "state_version": 1,
+        "scenario_date": "2026-10-01",
+        "profile": {
+          "profile_ref": "synthetic-profile-formats",
+          "role": "Synthetic Engineer",
+          "grade": "Middle"
+        },
+        "goal": {
+          "target_role": "Synthetic Engineer",
+          "target_grade": "Senior"
+        },
+        "current_skills": [
+          {
+            "skill_id": "SYNTH_PRESENTATION",
+            "level": 2
+          }
+        ],
+        "gaps": [
+          {
+            "skill_id": "SYNTH_PRESENTATION",
+            "current_level": 2,
+            "target_level": 3,
+            "gap": 1
+          }
+        ],
+        "eligible_candidates": [
+          {
+            "event_id": "SYNTH_LIVE_WORKSHOP",
+            "title": "Вымышленный live-практикум",
+            "effects": [
+              {
+                "skill_id": "SYNTH_PRESENTATION",
+                "before": 2,
+                "after": 3,
+                "delta": 1
+              }
+            ],
+            "evidence_ids": [
+              "formats-candidate-SYNTH_LIVE_WORKSHOP"
+            ]
+          },
+          {
+            "event_id": "SYNTH_ASYNC_PRACTICE",
+            "title": "Вымышленная самостоятельная практика",
+            "effects": [
+              {
+                "skill_id": "SYNTH_PRESENTATION",
+                "before": 2,
+                "after": 3,
+                "delta": 1
+              }
+            ],
+            "evidence_ids": [
+              "formats-candidate-SYNTH_ASYNC_PRACTICE"
+            ]
+          }
+        ],
+        "facts": [
+          {
+            "evidence_id": "formats-goal",
+            "kind": "goal",
+            "subject_id": "synthetic-profile-formats",
+            "fact": "Цель профиля Middle — Synthetic Engineer Senior. Требуется SYNTH_PRESENTATION 3 при текущем уровне 2."
+          },
+          {
+            "evidence_id": "formats-history",
+            "kind": "history",
+            "subject_id": "synthetic-profile-formats",
+            "fact": "Только вымышленная история; перечисленные мероприятия не завершены и не начаты."
+          },
+          {
+            "evidence_id": "formats-gap-SYNTH_PRESENTATION",
+            "kind": "gap",
+            "subject_id": "SYNTH_PRESENTATION",
+            "fact": "Навык SYNTH_PRESENTATION: текущий уровень 2, цель 3, разрыв 1."
+          },
+          {
+            "evidence_id": "formats-candidate-SYNTH_LIVE_WORKSHOP",
+            "kind": "candidate",
+            "subject_id": "SYNTH_LIVE_WORKSHOP",
+            "fact": "Допустимый добровольный offline-практикум. SYNTH_PRESENTATION: 2 → 3; есть доступная будущая сессия."
+          },
+          {
+            "evidence_id": "formats-candidate-SYNTH_ASYNC_PRACTICE",
+            "kind": "candidate",
+            "subject_id": "SYNTH_ASYNC_PRACTICE",
+            "fact": "Допустимый добровольный self_paced-курс. SYNTH_PRESENTATION: 2 → 3; одинаковый прирост с live-практикумом."
+          },
+          {
+            "evidence_id": "formats-live-history",
+            "kind": "history",
+            "subject_id": "SYNTH_LIVE_WORKSHOP",
+            "fact": "Для SYNTH_LIVE_WORKSHOP два no_show на предыдущих сессиях; completed/in_progress нет. Причины неизвестны; это сигнал участия по событию, а не запрет формата."
+          },
+          {
+            "evidence_id": "formats-async-history",
+            "kind": "history",
+            "subject_id": "SYNTH_ASYNC_PRACTICE",
+            "fact": "Для SYNTH_ASYNC_PRACTICE истории нет. В вымышленной истории есть completed другого self_paced-курса; это ограниченный положительный сигнал, не постоянное предпочтение."
+          }
+        ],
+        "limit": 1
+      }
+    },
+    {
+      "case_id": "eligible_gain_without_excluded_event",
+      "requires_enriched_facts": false,
+      "rubric": "Выбрать наибольшее подтверждённое сокращение разрыва среди переданных допустимых событий. SYNTH_LOCKED_ACCELERATOR с большим потенциальным gain исключён backend по prerequisites и вообще не передаётся AI; evaluator не приписывает фильтрацию модели.",
+      "expected_top_event_ids": [
+        "SYNTH_FOUNDATION_STEP"
+      ],
+      "excluded_event_ids": [
+        "SYNTH_LOCKED_ACCELERATOR"
+      ],
+      "context": {
+        "contract_version": "1",
+        "data_version": "synthetic-evaluation-v1",
+        "state_version": 1,
+        "scenario_date": "2026-10-01",
+        "profile": {
+          "profile_ref": "synthetic-profile-eligible",
+          "role": "Synthetic Engineer",
+          "grade": "Middle"
+        },
+        "goal": {
+          "target_role": "Synthetic Engineer",
+          "target_grade": "Senior"
+        },
+        "current_skills": [
+          {
+            "skill_id": "SYNTH_ANALYSIS",
+            "level": 1
+          }
+        ],
+        "gaps": [
+          {
+            "skill_id": "SYNTH_ANALYSIS",
+            "current_level": 1,
+            "target_level": 4,
+            "gap": 3
+          }
+        ],
+        "eligible_candidates": [
+          {
+            "event_id": "SYNTH_SHORT_PRACTICE",
+            "title": "Вымышленная короткая практика",
+            "effects": [
+              {
+                "skill_id": "SYNTH_ANALYSIS",
+                "before": 1,
+                "after": 1.5,
+                "delta": 0.5
+              }
+            ],
+            "evidence_ids": [
+              "eligible-candidate-SYNTH_SHORT_PRACTICE"
+            ]
+          },
+          {
+            "event_id": "SYNTH_FOUNDATION_STEP",
+            "title": "Вымышленный базовый модуль",
+            "effects": [
+              {
+                "skill_id": "SYNTH_ANALYSIS",
+                "before": 1,
+                "after": 2,
+                "delta": 1
+              }
+            ],
+            "evidence_ids": [
+              "eligible-candidate-SYNTH_FOUNDATION_STEP"
+            ]
+          }
+        ],
+        "facts": [
+          {
+            "evidence_id": "eligible-goal",
+            "kind": "goal",
+            "subject_id": "synthetic-profile-eligible",
+            "fact": "Цель профиля Middle — Synthetic Engineer Senior. SYNTH_ANALYSIS должен вырасти с 1 до 4."
+          },
+          {
+            "evidence_id": "eligible-history",
+            "kind": "history",
+            "subject_id": "synthetic-profile-eligible",
+            "fact": "Только вымышленная история; перечисленные мероприятия не завершены и не начаты."
+          },
+          {
+            "evidence_id": "eligible-gap-SYNTH_ANALYSIS",
+            "kind": "gap",
+            "subject_id": "SYNTH_ANALYSIS",
+            "fact": "Навык SYNTH_ANALYSIS: текущий уровень 1, цель 4, разрыв 3."
+          },
+          {
+            "evidence_id": "eligible-candidate-SYNTH_SHORT_PRACTICE",
+            "kind": "candidate",
+            "subject_id": "SYNTH_SHORT_PRACTICE",
+            "fact": "Допустимое добровольное событие SYNTH_SHORT_PRACTICE уменьшает разрыв SYNTH_ANALYSIS на 0.5: 1 → 1.5."
+          },
+          {
+            "evidence_id": "eligible-candidate-SYNTH_FOUNDATION_STEP",
+            "kind": "candidate",
+            "subject_id": "SYNTH_FOUNDATION_STEP",
+            "fact": "Допустимое добровольное событие SYNTH_FOUNDATION_STEP уменьшает разрыв SYNTH_ANALYSIS на 1: 1 → 2."
+          }
+        ],
+        "limit": 1
+      }
+    }
+  ]
+}
