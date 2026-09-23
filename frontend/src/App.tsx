@@ -19,15 +19,12 @@ import {
   Compass,
   Eye,
   EyeOff,
-  Flag,
   History,
   LayoutDashboard,
-  Leaf,
   LogOut,
   Menu,
   RotateCcw,
   ShieldCheck,
-  Sparkles,
   Target,
   Upload,
   Users,
@@ -41,6 +38,7 @@ import {
   type CareerClient,
 } from "./api/client";
 import { createDemoClient, resetDemo } from "./api/demo";
+import { Ornament, QuestMark } from "./components/Ornament";
 import type { CatalogResponse, UserIdentity } from "./api/types";
 import { AppContext } from "./context";
 import { Dialog, ErrorAlert, Loading, Logo } from "./components/ui";
@@ -80,7 +78,7 @@ function initialConnection(): Connection {
 const navigation = [
   { id: "overview", label: "Моё развитие", icon: LayoutDashboard },
   { id: "skills", label: "Навыки и цель", icon: Target },
-  { id: "recommendations", label: "Следующий шаг", icon: Sparkles },
+  { id: "recommendations", label: "Следующий шаг", icon: Compass },
   { id: "catalog", label: "Каталог активностей", icon: BookOpen },
   { id: "history", label: "История развития", icon: History },
 ] as const;
@@ -321,7 +319,7 @@ function CareerApp() {
           <div className="workspace-label">
             <span className="workspace-mark">CQ</span>
             <div>
-              <strong>Пространство развития</strong>
+              <strong>Halyk · Career Quest</strong>
               <span>{isHr ? "Кабинет HR" : "Личный кабинет"}</span>
             </div>
           </div>
@@ -359,24 +357,15 @@ function CareerApp() {
                 >
                   <item.icon size={19} />
                   <span>{item.label}</span>
-                  {item.id === "recommendations" && (
-                    <span className="nav-spark">✦</span>
-                  )}
                 </a>
               ))
             )}
           </nav>
           <div className="sidebar-bottom">
             <div className="sidebar-tip">
-              <span className="tip-flower">
-                <Leaf size={24} />
-              </span>
-              <strong>
-                Большой путь.
-                <br />
-                Небольшие шаги.
-              </strong>
-              <p>Развивайтесь в своём темпе — мы поможем с направлением.</p>
+              <Ornament />
+              <strong lang="kk">Өсу өзіңнен басталады</strong>
+              <p>Рост начинается с тебя.</p>
             </div>
             <button className="nav-item" onClick={() => setHelpOpen(true)}>
               <CircleHelp size={19} />
@@ -427,14 +416,15 @@ function CareerApp() {
               >
                 <Menu size={22} />
               </button>
-              <span>Моё пространство</span>
+              <span>КАРЬЕРА И РАЗВИТИЕ</span>
               <ChevronRight size={14} />
               <strong>{activeLabel}</strong>
             </div>
+            <Ornament className="topbar-ornament" />
             <div className="topbar-right">
               <span className="private-label">
                 <ShieldCheck size={15} />
-                Личное пространство
+                {isHr ? "Доступ HR" : "Личный кабинет"}
               </span>
               <span className="topbar-avatar">{isHr ? "HR" : "Я"}</span>
             </div>
@@ -442,8 +432,8 @@ function CareerApp() {
           {mode === "demo" && (
             <div className="demo-banner">
               <span>
-                <Sparkles size={15} />
-                <strong>Демонстрация</strong>
+                <BookOpen size={15} />
+                <strong>Демонстрация интерфейса</strong>
                 <span>
                   Вымышленные данные и готовые примеры. Реальный AI не
                   вызывается.
@@ -499,12 +489,11 @@ function CareerApp() {
           </main>
           <footer className="app-footer">
             <span>
-              Career Quest <span className="muted">·</span> Развитие с понятным
-              смыслом
+              Career Quest <span className="muted">·</span> Прототип для кейса
+              Halyk Bank
             </span>
             <span>
-              <Leaf size={12} />
-              Каждый шаг важен
+              <span lang="kk">Болашаққа бірге</span>
             </span>
           </footer>
         </div>
@@ -583,87 +572,41 @@ function LoginPage({
       <section className="login-story">
         <Logo />
         <div className="login-story-content">
-          <span className="story-eyebrow">
-            <span className="status-dot" />
-            ВАША КАРЬЕРА С НАПРАВЛЕНИЕМ
-          </span>
-          <h1>
-            Знайте, куда расти.
+          <span className="story-eyebrow">HALYK · CAREER QUEST</span>
+          <h1 lang="kk">
+            Болашаққа
             <br />
-            <span>И с чего начать.</span>
+            <span>бірге.</span>
           </h1>
+          <p className="story-translation">К следующей ступени — вместе.</p>
           <p>
-            Превратите отдельные курсы и активности в понятный путь к вашей
-            следующей роли.
+            Профессиональный рост начинается с понятного плана. Узнайте, какие
+            навыки развивать и как каждая активность приближает вас к цели.
           </p>
-          <div className="path-illustration" aria-hidden="true">
-            <div className="illustration-grid" />
-            <svg viewBox="0 0 530 225">
-              <path d="M40 190H132Q160 190 160 162V143Q160 115 188 115H290Q318 115 318 87V63Q318 35 346 35H484" />
-              <circle cx="40" cy="190" r="8" />
-              <circle cx="210" cy="115" r="8" />
-              <circle cx="484" cy="35" r="8" />
-            </svg>
-            <div className="path-label path-label-start">
-              <span>
-                <Check size={15} />
-              </span>
-              <div>
-                <small>ТОЧКА ОТСЧЁТА</small>
-                <strong>Ваши навыки</strong>
-              </div>
-            </div>
-            <div className="path-label path-label-step">
-              <span>
-                <Sparkles size={17} />
-              </span>
-              <div>
-                <small>ПОНЯТНЫЙ ШАГ</small>
-                <strong>Новая возможность</strong>
-              </div>
-            </div>
-            <div className="path-label path-label-goal">
-              <span>
-                <Flag size={18} />
-              </span>
-              <div>
-                <small>ВАША ЦЕЛЬ</small>
-                <strong>Следующая роль</strong>
-              </div>
-            </div>
-          </div>
-          <div className="story-features">
+          <div className="story-stages">
             <span>
-              <Target size={17} />
-              Личная траектория
+              <b>01</b>Выберите цель
             </span>
             <span>
-              <Sparkles size={17} />
-              Объяснимые рекомендации
+              <b>02</b>Развивайте навыки
             </span>
             <span>
-              <TrendingIcon />
-              Видимый прогресс
+              <b>03</b>Следите за прогрессом
             </span>
           </div>
         </div>
-        <span className="story-footer">
-          Развитие — это путь, который выбираете вы.
-        </span>
+        <Ornament className="login-ornament" />
+        <span className="story-footer">Мансап жолы · Ваш карьерный путь</span>
       </section>
       <section className="login-panel">
         <span className="login-panel-kicker">CAREER QUEST / ВХОД</span>
         <div className="login-form-wrap">
           <span className="login-compass">
-            <Compass size={31} />
+            <QuestMark />
           </span>
-          <h2>
-            Ваш следующий шаг
-            <br />
-            уже ближе
-          </h2>
+          <h2>Вход в кабинет</h2>
           <p className="login-description">
-            Войдите в своё пространство развития.
+            Ваши навыки, карьерная цель и история развития.
           </p>
           <form onSubmit={(e) => void submit(e)}>
             <label className="field-label" htmlFor="username">
@@ -725,12 +668,12 @@ function LoginPage({
             onClick={onDemo}
             disabled={busy}
           >
-            <Sparkles size={18} />
+            <BookOpen size={18} />
             Посмотреть демо
             <ArrowUpRight size={17} />
           </button>
           <p className="demo-login-note">
-            Без регистрации. На вымышленных данных.
+            Готовые примеры интерфейса. Без реального подбора рекомендаций.
           </p>
         </div>
         <span className="login-security">
@@ -741,10 +684,6 @@ function LoginPage({
     </div>
   );
 }
-function TrendingIcon() {
-  return <ArrowUpRight size={17} />;
-}
-
 class AppErrorBoundary extends Component<
   { children: ReactNode },
   { failed: boolean }

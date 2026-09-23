@@ -1,15 +1,16 @@
 import { useEffect, useRef, type ReactNode } from "react";
-import { ArrowUpRight, Compass, LoaderCircle, X } from "lucide-react";
+import { Compass, LoaderCircle, X } from "lucide-react";
+import { QuestMark } from "./Ornament";
 
 export function Logo() {
   return (
     <span className="brand">
       <span className="brand-symbol">
-        <ArrowUpRight size={23} strokeWidth={2.8} />
+        <QuestMark />
       </span>
       <span>
-        career<span className="brand-light">quest</span>
-        <span className="brand-dot">.</span>
+        <span className="brand-name">Career Quest</span>
+        <span className="brand-signature">МАНСАП ЖОЛЫ</span>
       </span>
     </span>
   );

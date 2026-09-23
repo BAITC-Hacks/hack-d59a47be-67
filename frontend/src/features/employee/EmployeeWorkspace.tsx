@@ -13,10 +13,10 @@ import {
   RefreshCw,
   Search,
   ShieldCheck,
-  Sparkles,
   Target,
   TrendingUp,
 } from "lucide-react";
+import { Ornament } from "../../components/Ornament";
 import { ApiError } from "../../api/client";
 import type {
   CatalogEvent,
@@ -287,8 +287,8 @@ export default function EmployeeWorkspace({
         key={rec.event_id}
       >
         <div className="rec-top">
-          <span className={`event-icon tone-${index % 3}`}>
-            <BookOpen size={23} />
+          <span className="rec-number" aria-hidden="true">
+            {String(index + 1).padStart(2, "0")}
           </span>
           <span className={index === 0 ? "badge badge-green" : "badge"}>
             {stale
@@ -319,7 +319,7 @@ export default function EmployeeWorkspace({
         </div>
         <details className="why-details" open={index === 0 && !stale}>
           <summary>
-            <Sparkles size={15} />
+            <ShieldCheck size={15} />
             Почему вам подходит
             <ChevronRight size={15} />
           </summary>
@@ -345,8 +345,8 @@ export default function EmployeeWorkspace({
           <h2 id="recommendations-title">
             Ваш следующий шаг{" "}
             <span className="small-ai">
-              <Sparkles size={13} />
-              {mode === "demo" ? "Пример" : "AI"}
+              <Target size={13} />
+              {mode === "demo" ? "Пример" : "По профилю"}
             </span>
           </h2>
         </div>
@@ -405,7 +405,7 @@ export default function EmployeeWorkspace({
       ) : (
         <div className="first-step-card">
           <span className="feature-icon">
-            <Sparkles size={28} />
+            <Target size={28} />
           </span>
           <div>
             <h3>Найдём полезный шаг именно для вас</h3>
@@ -433,7 +433,7 @@ export default function EmployeeWorkspace({
           <p className="eyebrow">
             {isHr
               ? `ПРОФИЛЬ СОТРУДНИКА · ${person.full_name}`
-              : "ВАШ ПУТЬ, ВАШ ТЕМП"}
+              : "МАНСАП ЖОЛЫ / КАРЬЕРНЫЙ ПУТЬ"}
           </p>
           <h1>{title}</h1>
           <p>{descriptions[view]}</p>
@@ -485,7 +485,7 @@ export default function EmployeeWorkspace({
             <div className="goal-hero-content">
               <span className="hero-kicker">
                 <Flag size={15} />
-                ВАША КАРЬЕРНАЯ ЦЕЛЬ
+                СЛЕДУЮЩАЯ СТУПЕНЬ
               </span>
               <h2 id="goal-title">
                 {goal ? (
@@ -504,7 +504,7 @@ export default function EmployeeWorkspace({
               </h2>
               <p>
                 {goal
-                  ? "Развивайте нужные навыки. Следующий шаг уже ближе."
+                  ? "План развития для выбранной роли. Каждый завершённый шаг отражается в ваших навыках."
                   : "Выберите направление — и мы покажем путь к нему."}
               </p>
               <button
@@ -516,36 +516,31 @@ export default function EmployeeWorkspace({
               </button>
             </div>
             <div className="hero-progress">
-              <div className="progress-orbit">
-                <svg viewBox="0 0 180 180" aria-hidden="true">
-                  <circle className="orbit-track" cx="90" cy="90" r="77" />
-                  <circle
-                    className="orbit-value"
-                    cx="90"
-                    cy="90"
-                    r="77"
-                    strokeDasharray={`${(progress?.percent ?? 0) * 4.838} 483.81`}
-                  />
-                </svg>
-                <div>
-                  <strong>
-                    {progress ? Math.round(progress.percent) : "—"}
-                    {progress && <span>%</span>}
-                  </strong>
-                  <span>соответствие цели</span>
-                </div>
+              <span className="progress-label">Соответствие требованиям</span>
+              <div className="progress-value">
+                <strong>
+                  {progress ? formatNumber(progress.percent) : "—"}
+                </strong>
+                {progress && <span>%</span>}
               </div>
+              {progress && (
+                <progress
+                  className="goal-progress"
+                  max={100}
+                  value={progress.percent}
+                  aria-label="Соответствие навыков карьерной цели"
+                />
+              )}
               <span className="hero-progress-caption">
                 {progress
                   ? `${progress.met_skills} из ${progress.total_skills} требований выполнено`
-                  : "Ваша цель ещё не выбрана"}
+                  : "Выберите цель, чтобы увидеть требования"}
+              </span>
+              <span className="progress-note">
+                Оценка навыков, а не гарантия повышения
               </span>
             </div>
-            <div className="hero-decoration" aria-hidden="true">
-              <span />
-              <span />
-              <span />
-            </div>
+            <Ornament className="goal-ornament" />
           </section>
           <div className="journey-strip">
             <span>

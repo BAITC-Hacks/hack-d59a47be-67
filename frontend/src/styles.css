@@ -1,5 +1,3 @@
-@import url("./design.css");
-
 :root {
   font-family: "Manrope Variable", "Segoe UI", sans-serif;
   color: #263e35;
@@ -366,12 +364,6 @@ svg {
   border-radius: 9px;
   color: #d2ed9c;
 }
-.brand-light {
-  font-weight: 450;
-}
-.brand-dot {
-  color: #7ca63e;
-}
 .sidebar {
   width: 244px;
   position: fixed;
@@ -465,10 +457,6 @@ svg {
 .nav-item.active svg {
   color: #60864c;
 }
-.nav-spark {
-  color: #9ba887;
-  margin-left: auto;
-}
 .sidebar-bottom {
   margin-top: auto;
   padding-top: 50px;
@@ -480,13 +468,6 @@ svg {
   margin-bottom: 19px;
   position: relative;
   overflow: hidden;
-}
-.tip-flower {
-  position: absolute;
-  right: 12px;
-  top: 21px;
-  color: #a4b77b;
-  transform: rotate(20deg);
 }
 .sidebar-tip strong {
   font-size: 14px;
@@ -790,85 +771,9 @@ svg {
   text-align: center;
   flex-shrink: 0;
 }
-.progress-orbit {
-  position: relative;
-  width: 170px;
-  height: 170px;
-  margin: 0 auto 7px;
-}
-.progress-orbit svg {
-  position: absolute;
-  inset: 0;
-  transform: rotate(-90deg);
-  width: 100%;
-  height: 100%;
-  fill: none;
-  stroke-width: 7;
-}
-.orbit-track {
-  stroke: #397861;
-}
-.orbit-value {
-  stroke: #d6eaa8;
-  stroke-linecap: round;
-  transition: stroke-dasharray 0.7s;
-}
-.progress-orbit > div {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
-}
-.progress-orbit strong {
-  font-size: 48px;
-  font-weight: 600;
-  letter-spacing: -2px;
-  line-height: 1.25;
-  color: #edf5dd;
-}
-.progress-orbit strong span {
-  font-size: 25px;
-  font-weight: 400;
-  margin-left: 2px;
-  color: #b2ceae;
-}
-.progress-orbit > div > span {
-  font-size: 9px;
-  color: #a7c7ac;
-  margin-top: 4px;
-}
 .hero-progress-caption {
   font-size: 10px;
   color: #b9d4b7;
-}
-.hero-decoration {
-  position: absolute;
-  right: -20px;
-  top: 15px;
-  width: 470px;
-  height: 420px;
-  transform: rotate(-24deg);
-  opacity: 0.25;
-}
-.hero-decoration span {
-  display: block;
-  position: absolute;
-  width: 100%;
-  height: 210px;
-  border: 1px solid #77aa8e;
-  border-radius: 70px;
-  bottom: 0;
-  right: 0;
-}
-.hero-decoration span:nth-child(2) {
-  bottom: 75px;
-  right: -65px;
-}
-.hero-decoration span:nth-child(3) {
-  bottom: 150px;
-  right: -130px;
 }
 .journey-strip {
   display: flex;
@@ -1535,10 +1440,6 @@ svg {
   .hero-progress {
     padding-right: 60px;
   }
-  .progress-orbit {
-    width: 190px;
-    height: 190px;
-  }
   .recommendation-card h3 {
     font-size: 17px;
   }
@@ -1647,13 +1548,6 @@ svg {
   }
   .goal-hero h2 {
     font-size: 27px;
-  }
-  .progress-orbit {
-    width: 145px;
-    height: 145px;
-  }
-  .progress-orbit strong {
-    font-size: 39px;
   }
   .hero-progress-caption {
     font-size: 8px;
@@ -1826,19 +1720,6 @@ svg {
   .hero-kicker {
     font-size: 8px;
     letter-spacing: 1px;
-  }
-  .progress-orbit {
-    width: 122px;
-    height: 122px;
-  }
-  .progress-orbit strong {
-    font-size: 35px;
-  }
-  .progress-orbit strong span {
-    font-size: 18px;
-  }
-  .progress-orbit > div > span {
-    font-size: 7px;
   }
   .hero-progress-caption {
     display: block;
@@ -2075,10 +1956,6 @@ svg {
   }
   .goal-hero h2 {
     font-size: 22px;
-  }
-  .progress-orbit {
-    width: 104px;
-    height: 104px;
   }
   .hero-kicker {
     font-size: 7px;

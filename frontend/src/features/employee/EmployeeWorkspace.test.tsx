@@ -536,7 +536,11 @@ describe("employee workflow", () => {
       within(dialog).getByRole("button", { name: "Обновить профиль" }),
     );
     await waitFor(() => expect(employee).toHaveBeenCalledTimes(2));
-    expect(await screen.findByText("82")).toBeVisible();
+    expect(
+      await screen.findByRole("progressbar", {
+        name: "Соответствие навыков карьерной цели",
+      }),
+    ).toHaveValue(81.82);
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(
       Object.keys(sessionStorage).filter((key) =>
