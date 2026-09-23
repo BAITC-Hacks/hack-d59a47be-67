@@ -1,0 +1,32 @@
+import type { components } from "./schema";
+
+// Generated from the backend's OpenAPI document; do not duplicate its models here.
+type Schema = components["schemas"];
+export type ActivityRecord = Schema["ActivityRecord"];
+export type BatchImportRequest = Schema["BatchImportRequest"];
+export type CatalogEvent = Schema["CatalogEvent"];
+export type CatalogResponse = Schema["CatalogResponse"];
+export type CatalogRole = Schema["CatalogRole"];
+export type CatalogSkill = Schema["CatalogSkill"];
+export type CompletionRequest = Schema["CompletionRequest"];
+export type CompletionResponse = Schema["CompletionResponse"];
+export type EmployeeDetailResponse = Schema["EmployeeDetailResponse"];
+export type EmployeeListResponse = Schema["EmployeeListResponse"];
+export type EmployeeProfile = Schema["EmployeeProfile"];
+export type ErrorResponse = Schema["ErrorResponse"];
+export type Goal = Schema["Goal"];
+export type GoalUpdateRequest = Schema["GoalUpdateRequest"];
+export type HealthResponse = Schema["HealthResponse"];
+export type HRSummaryResponse = Schema["HRSummaryResponse"];
+export type ImportResponse = Schema["ImportResponse"];
+export type PreviewRequest = Schema["PreviewRequest"];
+export type PreviewResponse = Schema["PreviewResponse"];
+export type Progress = Schema["Progress"];
+export type RecommendationResponse = Schema["RecommendationResponse"];
+export type RecommendedEvent = Schema["RecommendedEvent"];
+export type SessionResponse = Schema["SessionResponse"];
+export type SkillEffect = Schema["SkillEffect"];
+export type SkillGap = Schema["SkillGap"];
+export type SkillLevel = Schema["SkillLevel"];
+export type SourceFile = Schema["SourceFile"];
+export type UserIdentity = Schema["UserIdentity"];
