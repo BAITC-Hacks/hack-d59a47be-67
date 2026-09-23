@@ -2,6 +2,8 @@
 
 Ветка `codex/backend-ai-handoff` от `origin/codex/architecture-foundation` (`e3dfc7e`, уже содержит опубликованный ранее PR #2). AI PR #3 (`8f0dc05`) проверен в отдельной detached working copy `/private/tmp/career-quest-pr3-integration`; поверх скопированы только изменения backend/инфраструктуры и новые тесты. AI-код и собственные тесты Олега не менялись, PR не сливались.
 
+Опубликован [PR #4](https://github.com/BAITC-Hacks/hack-d59a47be-67/pull/4). `git merge-tree --write-tree HEAD origin/codex/ai-recommendations` завершился успешно без конфликтов файлов, включая журнал AGENTS; проверка не меняла refs и не выполняла merge PR.
+
 - `make check` в backend-ветке: **244 passed, 1 skipped**, 21 исходный unit test, 9 проверок контрактов, Ruff PASS. Skip — только сквозной тест optional AI, которого в этой ветке пока нет.
 - `make check VENV_PYTHON=<absolute path to project .venv/bin/python>` в изолированной копии PR #3 с backend-дополнениями: **413 passed**, 21 исходный unit test, 9 проверок контрактов, Ruff PASS. Сетевой selection подменён; ни ключ, ни OpenAI для этих тестов не нужны.
 - `.venv/bin/ruff format --check backend scripts/smoke.py scripts/check_contracts.py`:29 files formatted; `git diff --check`:PASS. Одно известное upstream warning Starlette/httpx.
