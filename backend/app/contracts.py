@@ -428,7 +428,17 @@ class HRSkillGap(ContractModel):
 
 
 class HRAttentionReason(ContractModel):
-    code: Literal["no_history", "no_recent_completion", "repeated_no_show", "no_candidates", "no_target"]
+    code: Literal[
+        "no_history",
+        "no_recent_completion",
+        "repeated_no_show",
+        "no_candidates",
+        "no_target",
+        "recommendation_missing",
+        "recommendation_stale",
+        "recommendation_unavailable",
+        "ai_not_configured",
+    ]
     message: str
 
 

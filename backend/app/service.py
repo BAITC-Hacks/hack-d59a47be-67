@@ -3,6 +3,7 @@
 import hashlib
 import json
 import uuid
+from collections.abc import Callable
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 
@@ -227,7 +228,7 @@ class CareerService:
             if value != before[key]
         ]
 
-    def complete(self, employee_id, user, payload, key):
+    def complete(self, employee_id, user, payload, key, *, before_write: Callable[[], None] | None = None):
         if user["role"] != "hr" and user["employee_id"] != employee_id:
             raise APIError(403, "FORBIDDEN", "This employee is outside your access scope.")
         if not key or not 1 <= len(key) <= 128 or any(ord(ch) < 33 or ord(ch) > 126 for ch in key):
@@ -243,6 +244,10 @@ class CareerService:
                 if cached["body_hash"] != body_hash:
                     raise APIError(409, "IDEMPOTENCY_CONFLICT", "This key was used with a different request.")
                 return json.loads(cached["response_json"])
+            if before_write is not None:
+                # Serialize replay lookup and charging for concurrent requests.
+                # A replay reads the saved response without using mutation quota.
+                before_write()
             snap = self._snapshot(conn, employee_id)
             check_revision(payload.expected_state_version, snap["state"]["revision"])
             event = snap["events"].get(payload.event_id)

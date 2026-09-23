@@ -112,15 +112,15 @@ function context(client: CareerClient): AppContextValue {
   };
 }
 
-function setup() {
+function setup(data = snapshot()) {
   const hrAnalytics = vi
     .fn<CareerClient["hrAnalytics"]>()
-    .mockResolvedValue(snapshot());
+    .mockResolvedValue(data);
   const value = context({ hrAnalytics } as unknown as CareerClient);
   const onOpenEmployee = vi.fn();
-  const content = (ctx = value) => (
+  const content = (ctx = value, refresh = 0) => (
     <AppContext.Provider value={ctx}>
-      <HrAnalytics onOpenEmployee={onOpenEmployee} refresh={0} />
+      <HrAnalytics onOpenEmployee={onOpenEmployee} refresh={refresh} />
     </AppContext.Provider>
   );
   const view = render(content());
@@ -210,6 +210,161 @@ describe("HR analytics", () => {
       screen.queryByText("Проектирование сервисов"),
     ).not.toBeInTheDocument();
     expect(screen.getByText("Актуальный срез за 180 дней")).toBeInTheDocument();
+  });
+
+  it("distinguishes missing, stale, failed and disabled recommendations from an empty eligible catalogue", async () => {
+    const cases = [
+      {
+        code: "recommendation_missing",
+        label: "Подбор ещё не выполнен",
+        name: "Подбор не запускали",
+        message: "Допустимые активности есть, но подбор ещё не выполнен.",
+        eligible: 2,
+      },
+      {
+        code: "recommendation_stale",
+        label: "Рекомендация устарела",
+        name: "Изменился профиль",
+        message:
+          "Данные изменились после последнего подбора. Обновите рекомендации.",
+        eligible: 2,
+      },
+      {
+        code: "recommendation_unavailable",
+        label: "Не удалось получить рекомендацию",
+        name: "Ошибка подбора",
+        message: "Последний подбор не дал результата. Повторите запрос.",
+        eligible: 2,
+      },
+      {
+        code: "ai_not_configured",
+        label: "AI-подбор не настроен",
+        name: "Подбор выключен",
+        message: "AI-подбор не настроен. Обратитесь к администратору.",
+        eligible: 2,
+      },
+      {
+        code: "no_candidates",
+        label: "Нет подходящих активностей",
+        name: "Каталог не закрывает разрыв",
+        message: "Среди доступных активностей нет подходящих для текущей цели.",
+        eligible: 0,
+      },
+    ] as const;
+    const data = snapshot();
+    data.employee_count = cases.length;
+    data.attention = cases.map((item) => ({
+      ...data.attention[0],
+      profile: {
+        ...data.attention[0].profile,
+        employee_id: `TEST_${item.code}`,
+        full_name: item.name,
+      },
+      reasons: [{ code: item.code, message: item.message }],
+      eligible_event_count: item.eligible,
+      completed_in_period: 1,
+      history_records_in_period: 1,
+      last_completed_date: "2026-09-30",
+    }));
+    const { user } = setup(data);
+    const support = await screen.findByRole("region", {
+      name: "С кем обсудить следующий шаг",
+    });
+    for (const item of cases) {
+      const card = within(support)
+        .getByRole("heading", { name: item.name })
+        .closest("li")!;
+      expect(within(card).getByText(item.label)).toBeInTheDocument();
+      expect(within(card).getByText(item.message)).toBeInTheDocument();
+      if (item.eligible > 0) {
+        expect(
+          within(card).queryByText("Нет подходящих активностей"),
+        ).not.toBeInTheDocument();
+      }
+    }
+    for (const item of cases) {
+      await user.selectOptions(
+        screen.getByLabelText("Показать основание"),
+        item.code,
+      );
+      expect(
+        within(support).getByRole("heading", { level: 4, name: item.name }),
+      ).toBeInTheDocument();
+      expect(
+        within(support).getAllByRole("heading", { level: 4 }),
+      ).toHaveLength(1);
+      expect(
+        within(support).getByText(/Показано 1 из 1 сотрудников/),
+      ).toBeInTheDocument();
+    }
+  });
+
+  it("refreshes missing and stale recommendation signals from the server after recommendation and profile changes", async () => {
+    const initial = snapshot();
+    initial.attention = [
+      {
+        ...initial.attention[0],
+        reasons: [
+          {
+            code: "recommendation_missing",
+            message: "Подбор ещё не выполнен.",
+          },
+        ],
+        eligible_event_count: 2,
+      },
+    ];
+    const { hrAnalytics, content, rerender, value, user } = setup(initial);
+    const support = await screen.findByRole("region", {
+      name: "С кем обсудить следующий шаг",
+    });
+    await user.selectOptions(
+      screen.getByLabelText("Показать основание"),
+      "recommendation_missing",
+    );
+    expect(
+      within(support).getByRole("heading", { level: 4 }),
+    ).toBeInTheDocument();
+
+    const recommended = { ...initial, attention: [] };
+    hrAnalytics.mockResolvedValueOnce(recommended);
+    rerender(content(value, 1));
+    expect(screen.getByRole("status")).toHaveTextContent("Считаем срез");
+    await screen.findByText(
+      "С этим основанием сотрудников нет. Выберите другое основание.",
+    );
+    expect(screen.getByLabelText("Показать основание")).toHaveValue(
+      "recommendation_missing",
+    );
+    expect(screen.queryByRole("heading", { level: 4 })).not.toBeInTheDocument();
+
+    const changed = {
+      ...initial,
+      state_version: initial.state_version + 1,
+      attention: [
+        {
+          ...initial.attention[0],
+          reasons: [
+            {
+              code: "recommendation_stale" as const,
+              message: "Данные изменились — обновите подбор.",
+            },
+          ],
+        },
+      ],
+    };
+    hrAnalytics.mockResolvedValueOnce(changed);
+    rerender(content(value, 2));
+    await screen.findByText(
+      "С этим основанием сотрудников нет. Выберите другое основание.",
+    );
+    await user.selectOptions(
+      screen.getByLabelText("Показать основание"),
+      "recommendation_stale",
+    );
+    expect(
+      screen.getByText("Данные изменились — обновите подбор."),
+    ).toBeInTheDocument();
+    expect(hrAnalytics).toHaveBeenCalledTimes(3);
   });
 
   it("ignores a previous session failure and does not invoke its error handler", async () => {

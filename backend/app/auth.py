@@ -48,6 +48,10 @@ def identity(row) -> dict:
 
 
 def require_user(request: Request) -> dict:
+    return _require_user(request, charge_mutation=True)
+
+
+def _require_user(request: Request, *, charge_mutation: bool) -> dict:
     token = request.cookies.get(COOKIE)
     if not token or len(token) > 256:
         raise APIError(401, "UNAUTHENTICATED", "Sign in to continue.")
@@ -65,7 +69,7 @@ def require_user(request: Request) -> dict:
         if not csrf or len(csrf) > 256 or not hmac.compare_digest(digest(csrf), row["csrf_hash"]):
             raise APIError(403, "CSRF_FAILED", "A valid X-CSRF-Token is required.")
         public = getattr(request.app.state, "public_demo", None)
-        if public and request.url.path != "/api/auth/logout":
+        if charge_mutation and public and request.url.path != "/api/auth/logout":
             public.charge(
                 ai=request.url.path.endswith("/recommendations") and request.app.state.settings.ai_enabled,
                 importing=request.url.path == "/api/hr/import",
@@ -82,6 +86,17 @@ def require_hr(request: Request) -> dict:
 
 def require_employee(request: Request, employee_id: str) -> dict:
     user = require_user(request)
+    return _employee_scope(request, employee_id, user)
+
+
+def require_completion_employee(request: Request, employee_id: str) -> dict:
+    # Completion charges only after its transactional idempotency lookup. Keep
+    # authentication, Origin, CSRF and employee scope mandatory for every replay.
+    user = _require_user(request, charge_mutation=False)
+    return _employee_scope(request, employee_id, user)
+
+
+def _employee_scope(request: Request, employee_id: str, user: dict) -> dict:
     if user["role"] != "hr" and user["employee_id"] != employee_id:
         raise APIError(403, "FORBIDDEN", "This employee is outside your access scope.")
     with request.app.state.database.connect() as conn:

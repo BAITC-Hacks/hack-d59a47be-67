@@ -9,9 +9,40 @@ from collections import Counter, defaultdict
 from datetime import date, timedelta
 
 from . import domain
+from .contracts import RecommendationResponse
 from .service import CareerService
 
 STATUSES = ("completed", "in_progress", "dropped", "no_show", "declined", "overdue")
+
+
+def _recommendation_reason(latest, revision: int) -> dict | None:
+    """Explain a missing next step from stored outcomes, without invoking AI."""
+    if latest is None:
+        return {
+            "code": "recommendation_missing",
+            "message": "Есть полезные доступные активности, но подбор следующего шага ещё не выполнен.",
+        }
+    if latest["revision"] != revision:
+        return {
+            "code": "recommendation_stale",
+            "message": "Сохранённый подбор устарел после изменения данных. Нужно обновить рекомендации.",
+        }
+    try:
+        response = RecommendationResponse.model_validate_json(latest["response_json"])
+    except ValueError:
+        response = None
+    if response is not None and response.status == "not_configured":
+        return {
+            "code": "ai_not_configured",
+            "message": "Последний подбор не выполнен: AI не настроен. Доступные активности есть в каталоге.",
+        }
+    if response is not None and response.status == "ok" and response.recommendations:
+        return None
+    return {
+        "code": "recommendation_unavailable",
+        "message": "Последний подбор не дал проверенной рекомендации. Доступные активности есть; "
+        "можно повторить подбор или обсудить следующий шаг.",
+    }
 
 
 def build_hr_analytics(career: CareerService, window_days: int = 90) -> dict:
@@ -22,6 +53,16 @@ def build_hr_analytics(career: CareerService, window_days: int = 90) -> dict:
         state, catalog, event_catalog = career._state(conn)
         employees = conn.execute("SELECT employee_id FROM employee_profiles ORDER BY employee_id").fetchall()
         snapshots = [career._snapshot(conn, row[0]) for row in employees]
+        # Use the same insertion order as CareerService.latest and the SAME read
+        # transaction as skills/goals. Concurrent completions/imports must not
+        # mix a later recommendation or revision into this HR snapshot.
+        latest_runs = {
+            row["employee_id"]: row
+            for row in conn.execute(
+                "SELECT employee_id, revision, response_json FROM recommendation_runs "
+                "WHERE rowid IN (SELECT MAX(rowid) FROM recommendation_runs GROUP BY employee_id)"
+            )
+        }
     as_of = date.fromisoformat(state["scenario_date"])
     start = as_of - timedelta(days=window_days - 1)
     events = {item["event_id"]: item for item in event_catalog["events"]}
@@ -103,6 +144,12 @@ def build_hr_analytics(career: CareerService, window_days: int = 90) -> dict:
                     "Проверьте покрытие каталога и условия участия.",
                 }
             )
+        elif candidates:
+            reason = _recommendation_reason(
+                latest_runs.get(snap["employee"]["employee_id"]), state["revision"]
+            )
+            if reason:
+                reasons.append(reason)
         if reasons:
             attention.append(
                 {
@@ -173,5 +220,8 @@ def build_hr_analytics(career: CareerService, window_days: int = 90) -> dict:
             "завершений — повод уточнить обстоятельства, а не оценка мотивации или рейтинг сотрудника.",
             "Нет завершений: сотрудник нанят не позднее начала периода, есть история, но за период нет "
             "завершений. Повторные неявки: не менее двух записей no_show за период.",
+            "Следующий шаг проверяется по последнему сохранённому подбору в этой же версии данных. "
+            "Наличие подходящей активности в каталоге само по себе не означает наличие рекомендации. "
+            "HR-аналитика не вызывает AI; при достигнутой цели новый шаг не требуется.",
         ],
     }

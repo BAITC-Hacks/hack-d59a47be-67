@@ -732,7 +732,11 @@ export interface components {
         | "no_recent_completion"
         | "repeated_no_show"
         | "no_candidates"
-        | "no_target";
+        | "no_target"
+        | "recommendation_missing"
+        | "recommendation_stale"
+        | "recommendation_unavailable"
+        | "ai_not_configured";
       /** Message */
       message: string;
     };

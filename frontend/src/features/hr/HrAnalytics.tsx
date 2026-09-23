@@ -19,15 +19,20 @@ const date = (value: string) =>
     timeZone: "UTC",
   }).format(new Date(`${value}T00:00:00Z`));
 
+type ReasonCode =
+  HRAnalyticsResponse["attention"][number]["reasons"][number]["code"];
+
 const reasons = {
   no_history: "Нет данных об участии",
   no_recent_completion: "Нет завершений за период",
   repeated_no_show: "Повторные пропуски",
-  no_candidates: "Нет доступного следующего шага",
+  recommendation_missing: "Подбор ещё не выполнен",
+  recommendation_stale: "Рекомендация устарела",
+  recommendation_unavailable: "Не удалось получить рекомендацию",
+  ai_not_configured: "AI-подбор не настроен",
+  no_candidates: "Нет подходящих активностей",
   no_target: "Нужно обсудить цель",
-};
-
-type ReasonCode = keyof typeof reasons;
+} satisfies Record<ReasonCode, string>;
 
 /** All analytics and support signals come from the server, including their denominators. */
 export function HrAnalytics({ onOpenEmployee, refresh }: Props) {
@@ -236,6 +241,10 @@ export function HrAnalytics({ onOpenEmployee, refresh }: Props) {
                     Основания для разговора, а не рейтинг сотрудников.
                     Отсутствие истории означает отсутствие данных, а не низкую
                     вовлечённость.
+                  </p>
+                  <p className="muted hr-analytics-description">
+                    Подходящие активности в каталоге ещё не означают, что
+                    сотрудник получил актуальную рекомендацию.
                   </p>
                 </div>
                 <label className="hr-reason-control">

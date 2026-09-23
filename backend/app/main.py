@@ -13,7 +13,15 @@ from starlette.staticfiles import StaticFiles
 
 from . import contracts as c
 from .ai_adapter import AIAdapter
-from .auth import COOKIE, digest, login, require_employee, require_hr, require_user
+from .auth import (
+    COOKIE,
+    digest,
+    login,
+    require_completion_employee,
+    require_employee,
+    require_hr,
+    require_user,
+)
 from .config import Settings
 from .database import Database, MigrationError
 from .errors import APIError
@@ -292,9 +300,18 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         "/api/employees/{employee_id}/completions", response_model=c.CompletionResponse, **domain_options
     )
     def completions(
-        employee_id: str, payload: c.CompletionRequest, request: Request, user=Depends(require_employee)
+        employee_id: str,
+        payload: c.CompletionRequest,
+        request: Request,
+        user=Depends(require_completion_employee),
     ):
-        return career.complete(employee_id, user, payload, request.headers.get("Idempotency-Key"))
+        return career.complete(
+            employee_id,
+            user,
+            payload,
+            request.headers.get("Idempotency-Key"),
+            before_write=public.charge if public else None,
+        )
 
     @app.get("/api/hr/summary", response_model=c.HRSummaryResponse, **domain_options)
     def summary(user=Depends(require_hr)):

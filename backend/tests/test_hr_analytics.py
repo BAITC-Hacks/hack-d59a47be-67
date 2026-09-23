@@ -1,5 +1,6 @@
 """Independent HR assertions on small synthetic cohorts, never organiser data."""
 
+import asyncio
 import json
 from datetime import date
 
@@ -27,7 +28,9 @@ from backend.tests.test_workflow import (
     history_source,
     json_source,
     profile,
+    request_recommendations,
     source_batch,
+    valid_ai_result,
 )
 
 
@@ -141,11 +144,12 @@ def test_attention_separates_missing_history_recent_hire_and_observed_signals(wo
     assert {row["code"] for row in people[EMPLOYEE]["reasons"]} == {
         "no_recent_completion",
         "repeated_no_show",
+        "recommendation_missing",
     }
     assert people[EMPLOYEE]["last_completed_date"] == date(2026, 6, 1)
     assert people[EMPLOYEE]["no_show_in_period"] == 2
-    assert [row["code"] for row in people[OTHER]["reasons"]] == ["no_history"]
-    assert newcomer["employee_id"] not in people
+    assert [row["code"] for row in people[OTHER]["reasons"]] == ["no_history", "recommendation_missing"]
+    assert [row["code"] for row in people[newcomer["employee_id"]]["reasons"]] == ["recommendation_missing"]
     assert result["employees_with_history"] == 2
     assert any("недостаток данных" in note for note in result["notes"])
 
@@ -232,7 +236,7 @@ def test_simulation_is_not_participation_and_no_history_does_not_become_inactivi
     assert result["employees_with_completion_in_period"] == 0
     assert not result["participation"]
     person = next(item for item in result["attention"] if item["profile"]["employee_id"] == EMPLOYEE)
-    assert [row["code"] for row in person["reasons"]] == ["no_history"]
+    assert [row["code"] for row in person["reasons"]] == ["no_history", "recommendation_missing"]
     assert person["last_completed_date"] is None
 
 
@@ -260,6 +264,153 @@ def test_analytics_does_not_call_ai_or_write_database(workspace):
     assert db.settings.database_path.read_bytes() == before
     ids = [item["profile"]["employee_id"] for item in first["attention"]]
     assert ids == sorted(ids)
+
+
+def save_recommendation(career, status="ok"):
+    async def select(context):
+        if status == "ok":
+            return valid_ai_result(context)
+        return c.RecommendationResult(status=status, engine="oleg", recommendations=[])
+
+    career.adapter._recommend = None if status == "not_configured" else select
+    return asyncio.run(career.recommend(EMPLOYEE, request_recommendations()))
+
+
+def attention_codes(career, employee_id=EMPLOYEE):
+    result = c.HRAnalyticsResponse.model_validate(build_hr_analytics(career))
+    return {
+        reason.code
+        for person in result.attention
+        if person.profile.employee_id == employee_id
+        for reason in person.reasons
+    }
+
+
+@pytest.mark.parametrize(
+    ("status", "expected"),
+    [
+        (None, {"recommendation_missing"}),
+        ("ok", set()),
+        ("unavailable", {"recommendation_unavailable"}),
+        ("not_configured", {"ai_not_configured"}),
+    ],
+)
+def test_next_step_uses_saved_result_even_with_recent_completion_and_candidates(workspace, status, expected):
+    _, db, career = workspace
+    load(db, profiles=[profile()], records=[record("HR_RECENT", event_id="WORKFLOW_MANDATORY")])
+    assert career._candidates(career.snapshot(EMPLOYEE))
+    if status:
+        save_recommendation(career, status)
+    assert attention_codes(career) == expected
+
+
+def test_latest_failure_is_not_hidden_by_previous_success_or_created_at_order(workspace):
+    _, db, career = workspace
+    load(db, profiles=[profile()], records=[record("HR_RECENT", event_id="WORKFLOW_MANDATORY")])
+    first = save_recommendation(career)
+    assert attention_codes(career) == set()
+    second = save_recommendation(career, "unavailable")
+    # Match /latest's insertion ordering even if timestamps tie or a clock moves.
+    with db.connect() as conn:
+        conn.execute(
+            "UPDATE recommendation_runs SET created_at=? WHERE recommendation_id=?",
+            ("2099-01-01T00:00:00+00:00", first["recommendation_id"]),
+        )
+    assert career.latest(EMPLOYEE)["recommendation_id"] == second["recommendation_id"]
+    assert attention_codes(career) == {"recommendation_unavailable"}
+
+
+@pytest.mark.parametrize("mutation", ["completion", "import", "goal"])
+def test_saved_recommendation_becomes_stale_after_state_change(workspace, mutation):
+    _, db, career = workspace
+    load(db, profiles=[profile()], records=[record("HR_RECENT", event_id="WORKFLOW_MANDATORY")])
+    saved = save_recommendation(career)
+    user = {"id": "hr-testactor", "role": "hr"}
+    if mutation == "completion":
+        career.complete(EMPLOYEE, user, completion(), "hr-invalidates-next-step")
+    elif mutation == "import":
+        commit_batch(db, [json_source("employees.json", {"meta": META, "employees": [profile(OTHER)]})])
+    else:
+        career.set_goal(
+            EMPLOYEE,
+            c.GoalUpdateRequest(
+                expected_state_version=1,
+                goal=c.Goal(target_role="Synthetic Role", target_grade="Senior"),
+            ),
+        )
+    assert career.latest(EMPLOYEE)["state_version"] == saved["state_version"]
+    assert attention_codes(career) == {"recommendation_stale"}
+    save_recommendation(career)
+    assert attention_codes(career) == set()
+
+
+@pytest.mark.parametrize("status", ["unavailable", "not_configured"])
+def test_stale_status_takes_precedence_over_previous_failure(workspace, status):
+    _, db, career = workspace
+    load(db, profiles=[profile()], records=[record("HR_RECENT", event_id="WORKFLOW_MANDATORY")])
+    save_recommendation(career, status)
+    career.complete(EMPLOYEE, {"id": "hr-testactor", "role": "hr"}, completion(), "hr-stale-failure")
+    assert attention_codes(career) == {"recommendation_stale"}
+
+
+@pytest.mark.parametrize("corrupt", ["empty_ok", "malformed_json"])
+def test_invalid_current_saved_response_is_not_a_next_step(workspace, corrupt):
+    _, db, career = workspace
+    load(db, profiles=[profile()], records=[record("HR_RECENT", event_id="WORKFLOW_MANDATORY")])
+    saved = save_recommendation(career)
+    saved["recommendations"] = []
+    payload = json.dumps(saved) if corrupt == "empty_ok" else "{invalid"
+    with db.connect() as conn:
+        conn.execute(
+            "UPDATE recommendation_runs SET response_json=? WHERE recommendation_id=?",
+            (payload, saved["recommendation_id"]),
+        )
+    assert attention_codes(career) == {"recommendation_unavailable"}
+
+
+def test_achieved_goal_needs_no_new_recommendation(workspace):
+    _, db, career = workspace
+    achieved = profile()
+    achieved["skills"] = {"WORKFLOW_HARD": 3, "WORKFLOW_SOFT": 3}
+    load(db, profiles=[achieved], records=[record("HR_RECENT", event_id="WORKFLOW_MANDATORY")])
+    assert attention_codes(career) == set()
+    response = save_recommendation(career, "not_configured")
+    assert response["status"] == "no_candidates"
+    assert attention_codes(career) == set()
+
+
+def test_latest_and_profiles_share_snapshot_during_concurrent_completion(tmp_path, monkeypatch):
+    settings = Settings(
+        database_path=tmp_path / "hr-concurrent.sqlite3",
+        app_env="test",
+        sqlite_wal=True,
+        sqlite_local_disk=True,
+    )
+    db = Database(settings)
+    db.migrate()
+    career = CareerService(db, AIAdapter())
+    load(db, profiles=[profile()], records=[record("HR_RECENT", event_id="WORKFLOW_MANDATORY")])
+    original_snapshot = career._snapshot
+    changed = False
+
+    def snapshot_with_concurrent_write(conn, employee_id):
+        nonlocal changed
+        snapshot = original_snapshot(conn, employee_id)
+        if not changed:
+            changed = True
+            career.complete(EMPLOYEE, {"id": "hr-testactor", "role": "hr"}, completion(), "hr-concurrent")
+            save_recommendation(career)
+        return snapshot
+
+    monkeypatch.setattr(career, "_snapshot", snapshot_with_concurrent_write)
+    first = c.HRAnalyticsResponse.model_validate(build_hr_analytics(career))
+    assert first.state_version == 1
+    assert {reason.code for person in first.attention for reason in person.reasons} == {
+        "recommendation_missing"
+    }
+    current = c.HRAnalyticsResponse.model_validate(build_hr_analytics(career))
+    assert current.state_version == 2
+    assert current.attention == []
 
 
 @pytest.fixture(scope="module")
