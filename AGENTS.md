@@ -78,6 +78,9 @@
 - Проверено перед checkpoint: `make check` —295 passed/1 optional AI skip +21 исходный тест+9 schema checks+Ruff;36 файлов format PASS, git diff --check PASS.12 новых тестов объяснений и14 smoke evidence regression включены в общий результат. Промежуточная совместная проверка с AI29791f1 —453 passed; финальный committed snapshot ещё предстоит проверить.
 - Передан отдельный ARM64 Docker-отчёт Олега: backend a3696ba + AI29791f1 с patch, container/live3 из3/UI/restart PASS. Здесь Docker CLI/Desktop/daemon отсутствуют; новой сборки, live-вызовов и публичного деплоя не было. Следующий шаг — committed integration с AI f10006a, обычный push/update PR #4 без merge; повторный --container на Docker-хосте. CI billing-blocked.
 
+- Финальная committed-проверка: `scripts/verify-integration --backend-ref HEAD --ai-ref origin/codex/ai-recommendations` на backend1723fb2 + AI f10006a — **468 passed**,21 исходный тест,9 schema checks,Ruff и два TCP-запуска PASS. Виртуальное tree1e1acb9 без конфликтов; русские cards/evidence/latest, completion/restart/точный idempotency replay и logout проверены без live-провайдера. После прерывания повторили команду до полученного exit0.
+- `scripts/check-container --require-ai`: exit2/NOT RUN (Docker отсутствует здесь). Переданный Docker-отчёт Олега сохранён как отдельная проверка предыдущих refs с patch; не подменяет container build текущей версии. Изменения ограничены backend/docs/инфраструктурой, diff AI/frontend/общих схем пустой. Следующий шаг — review PR #4 и повторный --container актуальных refs на Docker-хосте; merge не выполняется.
+
 ## Журнал — предметный backend
 
 - 2026-09-23, порция 1: добавлены чистые расчёты replay/caps, целей, прогресса и кандидатов; исходные JSON/CSV валидируются и импортируются через preview/token и атомарный commit. Каждая history-запись сохраняется по record_id; рост рассчитывается только для completed после review и до даты кита. Повторные mandatory не теряются.

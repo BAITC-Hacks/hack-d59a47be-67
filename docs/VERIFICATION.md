@@ -7,7 +7,9 @@
 - Принят [patch Олега](https://github.com/BAITC-Hacks/hack-d59a47be-67/blob/f10006a/backend/app/ai/verification/container-fixes.patch): исключение лишних AI-файлов из образа, semantic evidence проверки smoke вместо exact4. Последнее сравнение текста адаптировано к новому русскому formatter; возвращать машинные facts в HTTP не требуется.
 - [Docker-отчёт Олега](https://github.com/BAITC-Hacks/hack-d59a47be-67/blob/f10006a/backend/app/ai/DOCKER_REPORT.md) подтверждает ARM64 container acceptance, live OpenAI3/3 и frontend/completion/restart на backend a3696ba + AI29791f1 **с patch во временной копии**. Это переданный результат, не наш повторный запуск новой версии. Docker CLI/Desktop/daemon в текущей среде повторно не обнаружены; AMD64, новая container build и публичный deploy не заявляются.
 
-Схемы/OpenAPI, AI-код/тесты Олега и frontend не менялись. CI billing-blocked. Финальная проверка committed refs и публикация отражаются следующей записью после фактического выполнения.
+Схемы/OpenAPI, AI-код/тесты Олега и frontend не менялись. CI billing-blocked. Финальный `scripts/verify-integration --backend-ref HEAD --ai-ref origin/codex/ai-recommendations` завершился exit0: backend `1723fb21d008db31e87769d999068d7dbef2204f`, AI `f10006a13c056ae49983c6e8200711cea73afa6a`, виртуальное tree `1e1acb99690b578f39004923152720fa81ed8c3c` без конфликтов. **468 passed**, 21 исходный тест, 9 schema checks, Ruff и два TCP-запуска PASS. Настоящий AI-модуль использовал только синтетический selector; проверены русский текст/evidence, сохранённые карточки, restart, session, completion/idempotency replay после потери ответа и logout. После прерывания команду повторили до полученного полного результата; live-модель не вызывали. Одно известное upstream Starlette/httpx предупреждение.
+
+`scripts/check-container --require-ai` локально завершился exit2 / NOT RUN из-за отсутствия Docker. Изменения передаются через [PR #4](https://github.com/BAITC-Hacks/hack-d59a47be-67/pull/4), без merge. Для текущих refs остаётся контейнерный повтор на подходящем хосте.
 
 Ниже сохранены предыдущие проверки.
 
