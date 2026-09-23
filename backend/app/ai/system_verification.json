@@ -175,7 +175,7 @@
   "public_deploy": false,
   "cleanup": "Own UI container/volume/image, random credentials, browser and Vite cleaned; user resources retained",
   "limitations": [
-    "Single browser recommendation request 5033.10 ms exceeds 5 s; p95/SLA not established",
+    "5033.10 ms meets the original specification's 10 s AI limit; earlier 5 s comparison was a reporting error; p95/stability not established",
     "Only fixed synthetic quality cases",
     "Production/AMD64 not checked",
     "pnpm actual11.19.0 differs from declared11.25.0"
