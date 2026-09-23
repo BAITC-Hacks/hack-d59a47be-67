@@ -24,6 +24,8 @@
 - Ветка подготовки: `codex/architecture-foundation`. Данные raw и архив исключены из Git. `make setup-dev` устанавливает dev-окружение для схем и hook; `make check` работает на вымышленных fixtures без кита.
 - Внутренние AI states: actionable/no_target/target_satisfied/no_candidates/insufficient_evidence. HTTP выдаёт result + resolved explanations; latest сохраняет тот же envelope. Повтор Idempotency-Key возвращается до новой проверки revision, после проверки прав.
 - Аудит принятой политики: 10 no_target, 0 target_satisfied, 31 no_candidates, 159 actionable; аудит не оценивает качество ещё не подключённой модели.
+- Ветка опубликована в origin; черновой PR: https://github.com/BAITC-Hacks/hack-d59a47be-67/pull/1. Локальное дерево и origin синхронизируются обычным push, main не изменена.
+- 2026-09-23 GitHub Actions не запустил jobs: `The job was not started because your account is locked due to a billing issue.` Это внешний блокер CI; локальные проверки прошли. Не отмечать CI зелёным до устранения биллинга владельцем и реального повторного прогона.
 
 ## Журнал изменений
 
@@ -37,3 +39,4 @@
 | 2026-09-23 | Интегрирован аудит кита, источники сохранены локально; добавлены README, команды и CI | Найдены 544 mandatory повтора, proxy completion time и пробелы каталога; политика Lead/current-role синхронизирована | Финальный прогон проверок, Git commit и отправка ветки |
 | 2026-09-23 | По независимому review уточнены idempotency-before-revision, persistent explanations и ключ истории record_id; приёмка расширена до 31 сценария | Противоречия между API, моделью, AI и историей устранены; семантика зафиксирована документами | Реализовать и проверить эти инварианты в backend |
 | 2026-09-23 | Финальная проверка архитектурной базы, безопасного prepare и QA-инструментов; исправлены ZIP alias и non-finite JSON по review | `make check`: 21 synthetic unit test + 16 групп AI fixture checks PASS; аудит: 64 508 проверок, 0 нарушений; JSON отчёта валиден; ссылки проверены; guard отклоняет коммит без AGENTS.md; raw/ZIP/env исключены из Git | Отправить архитектурную ветку; затем участнику 1 реализовать AI validator/adapter/fallback, участнику 2 domain/import/API, участнику 3 UI на fixtures |
+| 2026-09-23 | Архитектурная ветка отправлена, создан draft PR #1, сохранено исходное форматирование ТЗ через .gitattributes | Push успешен; main сохранена; PR journal guard локально PASS; GitHub job не начат из-за подтверждённой billing lock (annotations check-run 107117871991) | Команда может начинать реализацию; владельцу GitHub устранить billing lock для запуска CI |
