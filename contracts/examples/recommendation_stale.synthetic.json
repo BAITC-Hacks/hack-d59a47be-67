@@ -1,9 +1,21 @@
 {
+  "data_version": "synthetic-fixture-v1",
+  "state_version": 0,
+  "scenario_date": "2026-10-01",
   "status": "ok",
   "engine": "oleg",
   "recommendations": [
     {
       "event_id": "SYNTHETIC_EVENT_001",
+      "title": "Синтетическое занятие",
+      "effects": [
+        {
+          "skill_id": "SYNTHETIC_SKILL_001",
+          "before": 1.0,
+          "after": 2.0,
+          "delta": 1.0
+        }
+      ],
       "explanation": {
         "text": "Синтетический пример: занятие уменьшает подтверждённый разрыв навыка.",
         "evidence_ids": [
@@ -12,5 +24,7 @@
         ]
       }
     }
-  ]
+  ],
+  "recommendation_id": "SYNTHETIC_RECOMMENDATION_001",
+  "stale": true
 }

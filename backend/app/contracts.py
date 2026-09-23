@@ -1,7 +1,7 @@
 """The single v1 schema source for the API and Oleg's recommendation boundary.
 
 These are team-owned API contracts, informed by the inspected source README.
-The source dataset is not bundled and the importer is not implemented.
+The source dataset is not bundled. Transport models do not replace source validation.
 The AI module must import these models instead of defining competing versions.
 """
 
@@ -151,11 +151,33 @@ class CatalogRole(ContractModel):
     critical_skills: list[Identifier]
 
 
+class CatalogSkillGain(ContractModel):
+    skill_id: Identifier
+    gain: Score
+    max_level: Score
+
+
+class CatalogEvent(ContractModel):
+    event_id: Identifier
+    title: Annotated[str, Field(min_length=1, max_length=200)]
+    description: Annotated[str, Field(max_length=4000)]
+    type: Literal["compliance", "onboarding", "course", "workshop", "mentoring", "certification", "meetup"]
+    format: Literal["online", "offline", "self_paced"]
+    duration_hours: Annotated[float, Field(ge=0, allow_inf_nan=False)]
+    mandatory: bool
+    target_roles: list[Identifier]
+    target_grades: list[Grade]
+    develops_skills: list[CatalogSkillGain]
+    prerequisites: dict[Identifier, Score]
+    upcoming_sessions: list[Annotated[date, Field(strict=False)]]
+
+
 class CatalogResponse(ContractModel):
     data_version: Version
     proficiency_scale: dict[str, str]
     skills: list[CatalogSkill]
     role_profiles: list[CatalogRole]
+    events: list[CatalogEvent] = Field(default_factory=list)
 
 
 class EmployeeProfile(ContractModel):
@@ -181,6 +203,39 @@ class CompletionRecord(ContractModel):
     effects: list[SkillEffect]
 
 
+class ActivityRecord(ContractModel):
+    record_id: Identifier
+    event_id: Identifier
+    status: Literal["completed", "in_progress", "dropped", "no_show", "declined", "overdue"]
+    activity_date: date = Field(strict=False)
+    date_source: Literal["historical_proxy", "completed_at"]
+    completed_at: AwareDatetime | None = Field(default=None, strict=False)
+    mode: Literal["import", "completion", "demo_simulation"] = "import"
+    effects: list[SkillEffect] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def consistent_date_source(self) -> "ActivityRecord":
+        if (self.date_source == "completed_at") != (self.completed_at is not None):
+            raise ValueError("Exact completion timestamps require date_source=completed_at")
+        return self
+
+
+class Progress(ContractModel):
+    percent: Annotated[float, Field(ge=0, le=100, allow_inf_nan=False)]
+    met_skills: Annotated[int, Field(ge=0)]
+    total_skills: Annotated[int, Field(ge=0)]
+    critical_met: Annotated[int, Field(ge=0)]
+    critical_total: Annotated[int, Field(ge=0)]
+
+    @model_validator(mode="after")
+    def consistent_counts(self) -> "Progress":
+        if self.met_skills > self.total_skills or self.critical_met > self.critical_total:
+            raise ValueError("Met counts cannot exceed their totals")
+        if self.critical_total > self.total_skills or self.critical_met > self.met_skills:
+            raise ValueError("Critical counts must be subsets of skill counts")
+        return self
+
+
 class EmployeeDetailResponse(ContractModel):
     data_version: Version
     state_version: Annotated[int, Field(ge=0)]
@@ -188,7 +243,10 @@ class EmployeeDetailResponse(ContractModel):
     goal: Goal | None
     current_skills: list[SkillLevel]
     gaps: list[SkillGap]
-    history: list[CompletionRecord]
+    history: list[ActivityRecord]
+    scenario_date: date = Field(default=date(2026, 10, 1), strict=False)
+    target_status: Literal["explicit", "next_grade", "no_target"] = "explicit"
+    progress: Progress | None = None
 
 
 class GoalUpdateRequest(ContractModel):
@@ -288,12 +346,20 @@ class RecommendationResponse(ContractModel):
     data_version: Version
     state_version: Annotated[int, Field(ge=0)]
     scenario_date: date = Field(strict=False)
-    status: Literal["ok", "no_candidates", "not_configured", "unavailable"]
+    status: Literal["ok", "no_candidates", "no_target", "not_configured", "unavailable"]
     engine: Literal["none", "oleg"]
     recommendations: Annotated[list[RecommendedEvent], Field(max_length=3)]
+    recommendation_id: Identifier | None = None
+    stale: bool = False
 
     @model_validator(mode="after")
     def consistent_result(self) -> "RecommendationResponse":
+        if self.status in {"no_target", "no_candidates"} and self.engine == "none":
+            if self.recommendations:
+                raise ValueError("Non-ok results cannot contain recommendations")
+            return self
+        if self.status == "no_target":
+            raise ValueError("no_target is determined by the backend with engine=none")
         RecommendationResult(
             status=self.status,
             engine=self.engine,
@@ -325,6 +391,7 @@ class CompletionRequest(ContractModel):
     expected_state_version: Annotated[int, Field(ge=0)]
     event_id: Identifier
     mode: Literal["completion", "demo_simulation"]
+    record_id: Identifier | None = None
 
 
 class CompletionResponse(ContractModel):
@@ -340,18 +407,35 @@ class HRSummaryResponse(ContractModel):
     demo_simulation_count: Annotated[int, Field(ge=0)]
 
 
-class ImportRequest(ContractModel):
-    """Opaque transport; inspected source shapes do not imply a working importer."""
+class SourceFile(ContractModel):
+    """Transport for an original source file; its content is validated by the importer."""
 
-    dry_run: bool = True
     source_filename: Literal["skills.json", "employees.json", "events.json", "activity_history.csv"]
     source_format: Literal["json", "csv"]
     content: Annotated[str, Field(min_length=1, max_length=2_000_000)]
 
     @model_validator(mode="after")
-    def matching_format(self) -> "ImportRequest":
+    def matching_format(self) -> "SourceFile":
         if not self.source_filename.endswith("." + self.source_format):
             raise ValueError("source_filename and source_format must agree")
+        return self
+
+
+class ImportRequest(SourceFile):
+    dry_run: bool = True
+    preview_token: Identifier | None = None
+
+
+class BatchImportRequest(ContractModel):
+    dry_run: bool = True
+    files: Annotated[list[SourceFile], Field(min_length=1, max_length=4)]
+    preview_token: Identifier | None = None
+
+    @model_validator(mode="after")
+    def unique_filenames(self) -> "BatchImportRequest":
+        filenames = [source.source_filename for source in self.files]
+        if len(set(filenames)) != len(filenames):
+            raise ValueError("A batch cannot contain duplicate source filenames")
         return self
 
 
@@ -361,3 +445,6 @@ class ImportResponse(ContractModel):
     data_version: Version | None
     imported_records: Annotated[int, Field(ge=0)]
     warnings: list[str] = Field(default_factory=list)
+    preview_token: Identifier | None = None
+    revision: Annotated[int, Field(ge=0)] = 0
+    counts: dict[str, Annotated[int, Field(ge=0)]] = Field(default_factory=dict)

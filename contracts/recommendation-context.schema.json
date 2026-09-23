@@ -1,598 +1,328 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "urn:career-quest:schema:recommendation-context:1.0",
-  "title": "Prepared recommendation context v1.0",
-  "description": "Trusted backend-derived input. Identifiers and all cross-field calculations require semantic validation; text values remain untrusted data.",
-  "type": "object",
-  "additionalProperties": false,
-  "required": [
-    "schema_version",
-    "context_id",
-    "data_revision",
-    "policy_version",
-    "as_of_date",
-    "employee",
-    "target",
-    "planning_state",
-    "candidates",
-    "evidence"
-  ],
-  "properties": {
-    "schema_version": {
-      "const": "1.0"
-    },
-    "context_id": {
-      "$ref": "#/$defs/id"
-    },
-    "data_revision": {
-      "$ref": "#/$defs/id"
-    },
-    "policy_version": {
-      "$ref": "#/$defs/id"
-    },
-    "as_of_date": {
-      "type": "string",
-      "format": "date"
-    },
-    "employee": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "employee_id",
-        "role",
-        "grade",
-        "current_skills"
-      ],
-      "properties": {
-        "employee_id": {
-          "$ref": "#/$defs/id"
-        },
-        "role": {
-          "type": "string",
-          "minLength": 1,
-          "maxLength": 160
-        },
-        "grade": {
-          "$ref": "#/$defs/grade"
-        },
-        "current_skills": {
-          "type": "object",
-          "propertyNames": {
-            "$ref": "#/$defs/id"
-          },
-          "additionalProperties": {
-            "$ref": "#/$defs/level"
-          }
-        }
-      }
-    },
-    "target": {
-      "anyOf": [
-        {
-          "$ref": "#/$defs/target"
-        },
-        {
-          "type": "null"
-        }
-      ]
-    },
-    "planning_state": {
-      "enum": [
-        "actionable",
-        "target_satisfied",
-        "no_target",
-        "no_candidates",
-        "insufficient_evidence"
-      ]
-    },
-    "candidates": {
-      "type": "array",
-      "items": {
-        "$ref": "#/$defs/candidate"
-      }
-    },
-    "evidence": {
-      "type": "array",
-      "items": {
-        "$ref": "#/$defs/evidence"
-      }
-    }
-  },
-  "allOf": [
-    {
-      "if": {
-        "properties": {
-          "planning_state": {
-            "const": "actionable"
-          }
-        }
-      },
-      "then": {
-        "properties": {
-          "target": {
-            "$ref": "#/$defs/target"
-          },
-          "candidates": {
-            "minItems": 1
-          },
-          "evidence": {
-            "minItems": 3
-          }
-        }
-      },
-      "else": {
-        "properties": {
-          "candidates": {
-            "maxItems": 0
-          },
-          "evidence": {
-            "maxItems": 0
-          }
-        }
-      }
-    },
-    {
-      "if": {
-        "properties": {
-          "planning_state": {
-            "const": "no_target"
-          }
-        }
-      },
-      "then": {
-        "properties": {
-          "target": {
-            "type": "null"
-          }
-        }
-      },
-      "else": {
-        "properties": {
-          "target": {
-            "$ref": "#/$defs/target"
-          }
-        }
-      }
-    }
-  ],
+  "$comment": "Generated from backend.app.contracts.RecommendationContext; do not edit by hand.",
   "$defs": {
-    "id": {
-      "type": "string",
-      "minLength": 1,
-      "maxLength": 128,
-      "pattern": "^[A-Za-z0-9_.:-]+$"
-    },
-    "level": {
-      "type": "integer",
-      "minimum": 0,
-      "maximum": 5
-    },
-    "grade": {
-      "type": "string",
-      "enum": [
-        "Junior",
-        "Middle",
-        "Senior",
-        "Lead"
-      ]
-    },
-    "target": {
-      "type": "object",
+    "AnonymizedProfile": {
       "additionalProperties": false,
-      "required": [
-        "role",
-        "grade",
-        "source",
-        "required_skills",
-        "critical_skills"
-      ],
       "properties": {
-        "role": {
-          "type": "string",
+        "profile_ref": {
+          "maxLength": 128,
           "minLength": 1,
-          "maxLength": 160
+          "title": "Profile Ref",
+          "type": "string"
+        },
+        "role": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Role",
+          "type": "string"
         },
         "grade": {
-          "$ref": "#/$defs/grade"
-        },
-        "source": {
           "enum": [
-            "career_goal",
-            "next_grade"
-          ]
-        },
-        "required_skills": {
-          "type": "object",
-          "minProperties": 1,
-          "propertyNames": {
-            "$ref": "#/$defs/id"
-          },
-          "additionalProperties": {
-            "$ref": "#/$defs/level"
-          }
-        },
-        "critical_skills": {
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/id"
-          },
-          "uniqueItems": true
+            "Junior",
+            "Middle",
+            "Senior",
+            "Lead"
+          ],
+          "title": "Grade",
+          "type": "string"
         }
-      }
+      },
+      "required": [
+        "profile_ref",
+        "role",
+        "grade"
+      ],
+      "title": "AnonymizedProfile",
+      "type": "object"
     },
-    "candidate": {
-      "type": "object",
+    "EligibleCandidate": {
       "additionalProperties": false,
+      "properties": {
+        "event_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Event Id",
+          "type": "string"
+        },
+        "title": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        },
+        "effects": {
+          "items": {
+            "$ref": "#/$defs/SkillEffect"
+          },
+          "title": "Effects",
+          "type": "array"
+        },
+        "evidence_ids": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 1,
+            "type": "string"
+          },
+          "maxItems": 50,
+          "minItems": 1,
+          "title": "Evidence Ids",
+          "type": "array"
+        }
+      },
       "required": [
         "event_id",
         "title",
-        "type",
-        "format",
-        "duration_hours",
-        "session_date",
-        "projected_gains",
-        "evidence_ids",
-        "features"
+        "effects",
+        "evidence_ids"
       ],
+      "title": "EligibleCandidate",
+      "type": "object"
+    },
+    "EvidenceFact": {
+      "additionalProperties": false,
       "properties": {
-        "event_id": {
-          "$ref": "#/$defs/id"
-        },
-        "title": {
-          "type": "string",
+        "evidence_id": {
+          "maxLength": 128,
           "minLength": 1,
-          "maxLength": 160
+          "title": "Evidence Id",
+          "type": "string"
         },
-        "type": {
+        "kind": {
           "enum": [
-            "course",
-            "workshop",
-            "mentoring",
-            "certification",
-            "meetup"
-          ]
-        },
-        "format": {
-          "enum": [
-            "online",
-            "offline",
-            "self_paced"
-          ]
-        },
-        "duration_hours": {
-          "type": "number",
-          "exclusiveMinimum": 0
-        },
-        "session_date": {
-          "anyOf": [
-            {
-              "type": "string",
-              "format": "date"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "projected_gains": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "additionalProperties": false,
-            "required": [
-              "skill_id",
-              "current_level",
-              "result_level",
-              "effective_gain",
-              "target_gap_reduction",
-              "critical"
-            ],
-            "properties": {
-              "skill_id": {
-                "$ref": "#/$defs/id"
-              },
-              "current_level": {
-                "$ref": "#/$defs/level"
-              },
-              "result_level": {
-                "$ref": "#/$defs/level"
-              },
-              "effective_gain": {
-                "$ref": "#/$defs/level"
-              },
-              "target_gap_reduction": {
-                "$ref": "#/$defs/level"
-              },
-              "critical": {
-                "type": "boolean"
-              }
-            }
-          },
-          "minItems": 1
-        },
-        "evidence_ids": {
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/id"
-          },
-          "minItems": 3,
-          "uniqueItems": true
-        },
-        "features": {
-          "type": "object",
-          "additionalProperties": false,
-          "required": [
-            "critical_gap_gain",
-            "target_gap_gain",
-            "history_fit",
-            "effort_cost"
+            "skill",
+            "gap",
+            "goal",
+            "candidate",
+            "history"
           ],
-          "properties": {
-            "critical_gap_gain": {
-              "type": "number",
-              "minimum": 0,
-              "maximum": 1
-            },
-            "target_gap_gain": {
-              "type": "number",
-              "minimum": 0,
-              "maximum": 1
-            },
-            "history_fit": {
-              "type": "number",
-              "minimum": -1,
-              "maximum": 1
-            },
-            "effort_cost": {
-              "type": "number",
-              "minimum": 0,
-              "maximum": 1
-            }
-          }
-        }
-      }
-    },
-    "evidence": {
-      "oneOf": [
-        {
-          "$ref": "#/$defs/gradeEvidence"
+          "title": "Kind",
+          "type": "string"
         },
-        {
-          "$ref": "#/$defs/gapEvidence"
-        },
-        {
-          "$ref": "#/$defs/targetEvidence"
-        },
-        {
-          "$ref": "#/$defs/historyEvidence"
-        }
-      ]
-    },
-    "gradeEvidence": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "evidence_id",
-        "event_id",
-        "category",
-        "current_role",
-        "current_grade",
-        "event_target_roles",
-        "event_target_grades"
-      ],
-      "properties": {
-        "evidence_id": {
-          "$ref": "#/$defs/id"
-        },
-        "event_id": {
-          "$ref": "#/$defs/id"
-        },
-        "category": {
-          "const": "grade"
-        },
-        "current_role": {
-          "type": "string",
+        "subject_id": {
+          "maxLength": 128,
           "minLength": 1,
-          "maxLength": 160
+          "title": "Subject Id",
+          "type": "string"
         },
-        "current_grade": {
-          "$ref": "#/$defs/grade"
-        },
-        "event_target_roles": {
-          "type": "array",
-          "items": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 160
-          },
-          "minItems": 1,
-          "uniqueItems": true
-        },
-        "event_target_grades": {
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/grade"
-          },
-          "minItems": 1,
-          "uniqueItems": true
+        "fact": {
+          "maxLength": 2000,
+          "minLength": 1,
+          "title": "Fact",
+          "type": "string"
         }
-      }
-    },
-    "gapEvidence": {
-      "type": "object",
-      "additionalProperties": false,
+      },
       "required": [
         "evidence_id",
-        "event_id",
-        "category",
-        "skill_id",
-        "current_level",
-        "required_level",
-        "gap",
-        "effective_gain",
-        "target_gap_reduction"
+        "kind",
+        "subject_id",
+        "fact"
       ],
-      "properties": {
-        "evidence_id": {
-          "$ref": "#/$defs/id"
-        },
-        "event_id": {
-          "$ref": "#/$defs/id"
-        },
-        "category": {
-          "const": "skill_gap"
-        },
-        "skill_id": {
-          "$ref": "#/$defs/id"
-        },
-        "current_level": {
-          "$ref": "#/$defs/level"
-        },
-        "required_level": {
-          "$ref": "#/$defs/level"
-        },
-        "gap": {
-          "$ref": "#/$defs/level"
-        },
-        "effective_gain": {
-          "$ref": "#/$defs/level"
-        },
-        "target_gap_reduction": {
-          "$ref": "#/$defs/level"
-        }
-      }
+      "title": "EvidenceFact",
+      "type": "object"
     },
-    "targetEvidence": {
-      "type": "object",
+    "Goal": {
       "additionalProperties": false,
-      "required": [
-        "evidence_id",
-        "event_id",
-        "category",
-        "target_role",
-        "target_grade",
-        "skill_id",
-        "required_level",
-        "critical"
-      ],
       "properties": {
-        "evidence_id": {
-          "$ref": "#/$defs/id"
-        },
-        "event_id": {
-          "$ref": "#/$defs/id"
-        },
-        "category": {
-          "const": "target_requirement"
-        },
         "target_role": {
-          "type": "string",
+          "maxLength": 128,
           "minLength": 1,
-          "maxLength": 160
+          "title": "Target Role",
+          "type": "string"
         },
         "target_grade": {
-          "$ref": "#/$defs/grade"
-        },
-        "skill_id": {
-          "$ref": "#/$defs/id"
-        },
-        "required_level": {
-          "$ref": "#/$defs/level"
-        },
-        "critical": {
-          "type": "boolean"
+          "enum": [
+            "Junior",
+            "Middle",
+            "Senior",
+            "Lead"
+          ],
+          "title": "Target Grade",
+          "type": "string"
         }
-      }
-    },
-    "historyEvidence": {
-      "type": "object",
-      "additionalProperties": false,
+      },
       "required": [
-        "evidence_id",
-        "event_id",
-        "category",
-        "scope",
-        "event_type",
-        "event_format",
-        "window_start",
-        "window_end",
-        "sample_size",
-        "completed",
-        "in_progress",
-        "dropped",
-        "no_show",
-        "declined",
-        "overdue"
+        "target_role",
+        "target_grade"
       ],
+      "title": "Goal",
+      "type": "object"
+    },
+    "SkillEffect": {
+      "additionalProperties": false,
       "properties": {
-        "evidence_id": {
-          "$ref": "#/$defs/id"
+        "skill_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Skill Id",
+          "type": "string"
         },
-        "event_id": {
-          "$ref": "#/$defs/id"
+        "before": {
+          "maximum": 5,
+          "minimum": 0,
+          "title": "Before",
+          "type": "number"
         },
-        "category": {
-          "const": "history"
+        "after": {
+          "maximum": 5,
+          "minimum": 0,
+          "title": "After",
+          "type": "number"
         },
-        "scope": {
-          "enum": [
-            "event",
-            "type_and_format"
-          ]
-        },
-        "event_type": {
-          "enum": [
-            "course",
-            "workshop",
-            "mentoring",
-            "certification",
-            "meetup"
-          ]
-        },
-        "event_format": {
-          "enum": [
-            "online",
-            "offline",
-            "self_paced"
-          ]
-        },
-        "window_start": {
-          "type": "string",
-          "format": "date"
-        },
-        "window_end": {
-          "type": "string",
-          "format": "date"
-        },
-        "sample_size": {
-          "type": "integer",
-          "minimum": 0
-        },
-        "completed": {
-          "type": "integer",
-          "minimum": 0
-        },
-        "in_progress": {
-          "type": "integer",
-          "minimum": 0
-        },
-        "dropped": {
-          "type": "integer",
-          "minimum": 0
-        },
-        "no_show": {
-          "type": "integer",
-          "minimum": 0
-        },
-        "declined": {
-          "type": "integer",
-          "minimum": 0
-        },
-        "overdue": {
-          "type": "integer",
-          "minimum": 0
+        "delta": {
+          "maximum": 5,
+          "minimum": -5,
+          "title": "Delta",
+          "type": "number"
         }
-      }
+      },
+      "required": [
+        "skill_id",
+        "before",
+        "after",
+        "delta"
+      ],
+      "title": "SkillEffect",
+      "type": "object"
+    },
+    "SkillGap": {
+      "additionalProperties": false,
+      "properties": {
+        "skill_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Skill Id",
+          "type": "string"
+        },
+        "current_level": {
+          "maximum": 5,
+          "minimum": 0,
+          "title": "Current Level",
+          "type": "number"
+        },
+        "target_level": {
+          "maximum": 5,
+          "minimum": 0,
+          "title": "Target Level",
+          "type": "number"
+        },
+        "gap": {
+          "maximum": 5,
+          "minimum": 0,
+          "title": "Gap",
+          "type": "number"
+        }
+      },
+      "required": [
+        "skill_id",
+        "current_level",
+        "target_level",
+        "gap"
+      ],
+      "title": "SkillGap",
+      "type": "object"
+    },
+    "SkillLevel": {
+      "additionalProperties": false,
+      "properties": {
+        "skill_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Skill Id",
+          "type": "string"
+        },
+        "level": {
+          "maximum": 5,
+          "minimum": 0,
+          "title": "Level",
+          "type": "number"
+        }
+      },
+      "required": [
+        "skill_id",
+        "level"
+      ],
+      "title": "SkillLevel",
+      "type": "object"
     }
-  }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "contract_version": {
+      "const": "1",
+      "default": "1",
+      "title": "Contract Version",
+      "type": "string"
+    },
+    "data_version": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Data Version",
+      "type": "string"
+    },
+    "state_version": {
+      "minimum": 0,
+      "title": "State Version",
+      "type": "integer"
+    },
+    "scenario_date": {
+      "format": "date",
+      "title": "Scenario Date",
+      "type": "string"
+    },
+    "profile": {
+      "$ref": "#/$defs/AnonymizedProfile"
+    },
+    "goal": {
+      "$ref": "#/$defs/Goal"
+    },
+    "current_skills": {
+      "items": {
+        "$ref": "#/$defs/SkillLevel"
+      },
+      "title": "Current Skills",
+      "type": "array"
+    },
+    "gaps": {
+      "items": {
+        "$ref": "#/$defs/SkillGap"
+      },
+      "title": "Gaps",
+      "type": "array"
+    },
+    "eligible_candidates": {
+      "items": {
+        "$ref": "#/$defs/EligibleCandidate"
+      },
+      "title": "Eligible Candidates",
+      "type": "array"
+    },
+    "facts": {
+      "items": {
+        "$ref": "#/$defs/EvidenceFact"
+      },
+      "title": "Facts",
+      "type": "array"
+    },
+    "limit": {
+      "default": 3,
+      "maximum": 3,
+      "minimum": 1,
+      "title": "Limit",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "data_version",
+    "state_version",
+    "scenario_date",
+    "profile",
+    "goal",
+    "current_skills",
+    "gaps",
+    "eligible_candidates",
+    "facts"
+  ],
+  "title": "RecommendationContext",
+  "type": "object"
 }

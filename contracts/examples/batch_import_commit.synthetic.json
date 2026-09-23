@@ -1,0 +1,16 @@
+{
+  "dry_run": false,
+  "files": [
+    {
+      "source_filename": "employees.json",
+      "source_format": "json",
+      "content": "{\"meta\": {\"dataset\": \"SYNTHETIC_TEAM_FIXTURE\", \"version\": \"synthetic-v1\", \"as_of_date\": \"2026-10-01\"}, \"employees\": [{\"employee_id\": \"SYNTHETIC_EMPLOYEE_001\", \"full_name\": \"Синтетический сотрудник 001\", \"department\": \"Синтетический отдел\", \"role\": \"Synthetic Analyst\", \"grade\": \"Junior\", \"manager_id\": null, \"hire_date\": \"2026-01-01\", \"tenure_months\": 9, \"work_format\": \"remote\", \"preferred_language\": \"ru\", \"career_goal\": {\"target_role\": \"Synthetic Analyst\", \"target_grade\": \"Middle\"}, \"skills\": {\"SYNTHETIC_SKILL_001\": 1.0}, \"last_review_date\": \"2026-09-01\"}]}"
+    },
+    {
+      "source_filename": "activity_history.csv",
+      "source_format": "csv",
+      "content": "record_id,employee_id,event_id,date,due_date,status,completion_pct,score,feedback_rating,assigned_by\nSYNTHETIC_RECORD_001,SYNTHETIC_EMPLOYEE_001,SYNTHETIC_EVENT_001,2026-09-20,,completed,100,90,5,self\n"
+    }
+  ],
+  "preview_token": "SYNTHETIC_PREVIEW_TOKEN_001"
+}

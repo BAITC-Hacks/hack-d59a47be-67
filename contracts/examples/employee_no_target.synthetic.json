@@ -6,26 +6,16 @@
     "full_name": "Синтетический сотрудник 001",
     "department": "Синтетический отдел",
     "role": "Synthetic Analyst",
-    "grade": "Junior"
+    "grade": "Lead"
   },
-  "goal": {
-    "target_role": "Synthetic Analyst",
-    "target_grade": "Middle"
-  },
+  "goal": null,
   "current_skills": [
     {
       "skill_id": "SYNTHETIC_SKILL_001",
       "level": 1.0
     }
   ],
-  "gaps": [
-    {
-      "skill_id": "SYNTHETIC_SKILL_001",
-      "current_level": 1.0,
-      "target_level": 3.0,
-      "gap": 2.0
-    }
-  ],
+  "gaps": [],
   "history": [
     {
       "record_id": "SYNTHETIC_RECORD_001",
@@ -49,12 +39,6 @@
     }
   ],
   "scenario_date": "2026-10-01",
-  "target_status": "explicit",
-  "progress": {
-    "percent": 33.333333333333336,
-    "met_skills": 0,
-    "total_skills": 1,
-    "critical_met": 0,
-    "critical_total": 1
-  }
+  "target_status": "no_target",
+  "progress": null
 }

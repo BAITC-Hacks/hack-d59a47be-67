@@ -1,0 +1,10 @@
+{
+  "data_version": "synthetic-fixture-v1",
+  "state_version": 0,
+  "scenario_date": "2026-10-01",
+  "recommendation_id": "SYNTHETIC_RECOMMENDATION_001",
+  "stale": false,
+  "status": "no_target",
+  "engine": "none",
+  "recommendations": []
+}

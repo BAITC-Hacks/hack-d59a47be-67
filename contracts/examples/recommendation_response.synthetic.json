@@ -24,5 +24,7 @@
         ]
       }
     }
-  ]
+  ],
+  "recommendation_id": "SYNTHETIC_RECOMMENDATION_001",
+  "stale": false
 }

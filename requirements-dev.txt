@@ -1,2 +1,2 @@
-# Artifact/schema QA only. Runtime application dependencies are not chosen yet.
-jsonschema==4.26.0
+# One pinned dependency set for the backend and artifact checks.
+-r requirements-dev.lock

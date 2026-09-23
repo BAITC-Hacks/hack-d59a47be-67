@@ -28,5 +28,34 @@
         "SYNTHETIC_SKILL_001"
       ]
     }
+  ],
+  "events": [
+    {
+      "event_id": "SYNTHETIC_EVENT_001",
+      "title": "Синтетический самостоятельный курс",
+      "description": "Вымышленное мероприятие команды для проверки контракта.",
+      "type": "course",
+      "format": "self_paced",
+      "duration_hours": 4.0,
+      "mandatory": false,
+      "target_roles": [
+        "Synthetic Analyst"
+      ],
+      "target_grades": [
+        "Junior",
+        "Middle"
+      ],
+      "develops_skills": [
+        {
+          "skill_id": "SYNTHETIC_SKILL_001",
+          "gain": 1.0,
+          "max_level": 3.0
+        }
+      ],
+      "prerequisites": {
+        "SYNTHETIC_SKILL_001": 1.0
+      },
+      "upcoming_sessions": []
+    }
   ]
 }

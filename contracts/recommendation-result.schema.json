@@ -1,202 +1,90 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "urn:career-quest:schema:recommendation-result:1.0",
-  "title": "Validated recommendation service result v1.0",
-  "description": "The service writes provenance and empty state. The LLM may return only the $defs/modelOutput shape. References, ranks, and category coverage require semantic validation.",
-  "type": "object",
-  "additionalProperties": false,
-  "required": [
-    "schema_version",
-    "context_id",
-    "data_revision",
-    "policy_version",
-    "status",
-    "source",
-    "fallback_reason",
-    "empty_reason",
-    "recommendations"
-  ],
-  "properties": {
-    "schema_version": {
-      "const": "1.0"
-    },
-    "context_id": {
-      "$ref": "#/$defs/id"
-    },
-    "data_revision": {
-      "$ref": "#/$defs/id"
-    },
-    "policy_version": {
-      "$ref": "#/$defs/id"
-    },
-    "status": {
-      "enum": [
-        "ready",
-        "empty"
-      ]
-    },
-    "source": {
-      "enum": [
-        "llm",
-        "fallback",
-        "none"
-      ]
-    },
-    "fallback_reason": {
-      "enum": [
-        null,
-        "timeout",
-        "provider_unavailable",
-        "invalid_output"
-      ]
-    },
-    "empty_reason": {
-      "enum": [
-        null,
-        "target_satisfied",
-        "no_target",
-        "no_candidates",
-        "insufficient_evidence"
-      ]
-    },
-    "recommendations": {
-      "type": "array",
-      "items": {
-        "$ref": "#/$defs/recommendation"
-      },
-      "maxItems": 3
-    }
-  },
-  "allOf": [
-    {
-      "if": {
-        "properties": {
-          "status": {
-            "const": "ready"
-          }
-        }
-      },
-      "then": {
-        "properties": {
-          "source": {
-            "enum": [
-              "llm",
-              "fallback"
-            ]
-          },
-          "empty_reason": {
-            "type": "null"
-          },
-          "recommendations": {
-            "minItems": 1
-          }
-        }
-      },
-      "else": {
-        "properties": {
-          "source": {
-            "const": "none"
-          },
-          "fallback_reason": {
-            "type": "null"
-          },
-          "empty_reason": {
-            "enum": [
-              "target_satisfied",
-              "no_target",
-              "no_candidates",
-              "insufficient_evidence"
-            ]
-          },
-          "recommendations": {
-            "maxItems": 0
-          }
-        }
-      }
-    },
-    {
-      "if": {
-        "properties": {
-          "source": {
-            "const": "fallback"
-          }
-        }
-      },
-      "then": {
-        "properties": {
-          "fallback_reason": {
-            "enum": [
-              "timeout",
-              "provider_unavailable",
-              "invalid_output"
-            ]
-          }
-        }
-      },
-      "else": {
-        "properties": {
-          "fallback_reason": {
-            "type": "null"
-          }
-        }
-      }
-    }
-  ],
+  "$comment": "Generated from backend.app.contracts.RecommendationResult; do not edit by hand.",
   "$defs": {
-    "id": {
-      "type": "string",
-      "minLength": 1,
-      "maxLength": 128,
-      "pattern": "^[A-Za-z0-9_.:-]+$"
-    },
-    "recommendation": {
-      "type": "object",
+    "Explanation": {
       "additionalProperties": false,
-      "required": [
-        "event_id",
-        "rank",
-        "evidence_ids"
-      ],
       "properties": {
-        "event_id": {
-          "$ref": "#/$defs/id"
-        },
-        "rank": {
-          "type": "integer",
-          "minimum": 1,
-          "maximum": 3
+        "text": {
+          "maxLength": 2000,
+          "minLength": 1,
+          "title": "Text",
+          "type": "string"
         },
         "evidence_ids": {
-          "type": "array",
           "items": {
-            "$ref": "#/$defs/id"
+            "maxLength": 128,
+            "minLength": 1,
+            "type": "string"
           },
-          "minItems": 3,
-          "maxItems": 12,
-          "uniqueItems": true
-        }
-      }
-    },
-    "modelOutput": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "context_id",
-        "recommendations"
-      ],
-      "properties": {
-        "context_id": {
-          "$ref": "#/$defs/id"
-        },
-        "recommendations": {
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/recommendation"
-          },
+          "maxItems": 50,
           "minItems": 1,
-          "maxItems": 3
+          "title": "Evidence Ids",
+          "type": "array"
         }
-      }
+      },
+      "required": [
+        "text",
+        "evidence_ids"
+      ],
+      "title": "Explanation",
+      "type": "object"
+    },
+    "RecommendationSelection": {
+      "additionalProperties": false,
+      "properties": {
+        "event_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Event Id",
+          "type": "string"
+        },
+        "explanation": {
+          "$ref": "#/$defs/Explanation"
+        }
+      },
+      "required": [
+        "event_id",
+        "explanation"
+      ],
+      "title": "RecommendationSelection",
+      "type": "object"
     }
-  }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "status": {
+      "enum": [
+        "ok",
+        "no_candidates",
+        "not_configured",
+        "unavailable"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "engine": {
+      "enum": [
+        "none",
+        "oleg"
+      ],
+      "title": "Engine",
+      "type": "string"
+    },
+    "recommendations": {
+      "items": {
+        "$ref": "#/$defs/RecommendationSelection"
+      },
+      "maxItems": 3,
+      "title": "Recommendations",
+      "type": "array"
+    }
+  },
+  "required": [
+    "status",
+    "engine",
+    "recommendations"
+  ],
+  "title": "RecommendationResult",
+  "type": "object"
 }

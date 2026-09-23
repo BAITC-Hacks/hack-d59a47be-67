@@ -64,3 +64,6 @@
 - Найден выданный origin `https://github.com/BAITC-Hacks/hack-d59a47be-67.git`, ветка `codex/architecture-foundation` получена fetch. В ней найдены первичное ТЗ и план. Следующий шаг: сохранить её историю/документы, подключить HTTP/completions/recommendations и пройти acceptance.
 
 - 2026-09-23, интеграция истории: присоединена выданная ветка origin/codex/architecture-foundation без force-push и удаления истории. Исходное ТЗ, инструменты аудита, frontend/README.md и документы сохранены. Конфликты README/AGENTS/.gitignore разрешены с сохранением командного содержания и последними ролями. Следующий шаг — консолидировать единственный контракт и закончить HTTP acceptance.
+
+- 2026-09-23, порция 2 — единый контракт: владелец задачи явно согласовал docs/CONTRACT_CHANGE_PROPOSAL.md. Сохранён Python-интерфейс Олега; добавлены HTTP history/date_source/progress, no_target/stale/latest, обязательный Idempotency-Key и batch import с preview_token. Старые проектные JSON Schema теперь генерируются из тех же Python-моделей, без второй несовместимой схемы. Командные документы сохранены с отметкой текущего контракта и уточнёнными владельцами.
+- Проверено: 55 контрактных тестов, 9 artifact checks и Ruff passed. Следующий шаг: полный HTTP acceptance и сверка свежего remote перед push/PR; GitHub CI по-прежнему billing-blocked.

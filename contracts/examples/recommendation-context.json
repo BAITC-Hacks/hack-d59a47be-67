@@ -1,197 +1,61 @@
 {
-  "schema_version": "1.0",
-  "context_id": "FIX_CONTEXT_001",
-  "data_revision": "FIX_DATA_001",
-  "policy_version": "heuristic-v1",
-  "as_of_date": "2026-10-01",
-  "employee": {
-    "employee_id": "FIX_EMP_001",
-    "role": "Fixture Platform Specialist",
-    "grade": "Middle",
-    "current_skills": {
-      "FIX_SKILL_PATH": 2,
-      "FIX_SKILL_TALK": 0
-    }
+  "contract_version": "1",
+  "data_version": "synthetic-fixture-v1",
+  "state_version": 0,
+  "scenario_date": "2026-10-01",
+  "profile": {
+    "profile_ref": "synthetic-anonymous-001",
+    "role": "Synthetic Analyst",
+    "grade": "Junior"
   },
-  "target": {
-    "role": "Fixture Platform Specialist",
-    "grade": "Senior",
-    "source": "next_grade",
-    "required_skills": {
-      "FIX_SKILL_PATH": 4,
-      "FIX_SKILL_TALK": 2
-    },
-    "critical_skills": [
-      "FIX_SKILL_PATH"
-    ]
+  "goal": {
+    "target_role": "Synthetic Analyst",
+    "target_grade": "Middle"
   },
-  "planning_state": "actionable",
-  "candidates": [
+  "current_skills": [
     {
-      "event_id": "FIX_EVENT_PATH",
-      "title": "Fixture: Design Lab",
-      "type": "mentoring",
-      "format": "online",
-      "duration_hours": 6,
-      "session_date": "2026-10-12",
-      "projected_gains": [
-        {
-          "skill_id": "FIX_SKILL_PATH",
-          "current_level": 2,
-          "result_level": 3,
-          "effective_gain": 1,
-          "target_gap_reduction": 1,
-          "critical": true
-        }
-      ],
-      "evidence_ids": [
-        "FIX_EVENT_PATH_E_GRADE",
-        "FIX_EVENT_PATH_E_GAP",
-        "FIX_EVENT_PATH_E_TARGET",
-        "FIX_EVENT_PATH_E_HISTORY"
-      ],
-      "features": {
-        "critical_gap_gain": 0.5,
-        "target_gap_gain": 0.25,
-        "history_fit": 0.5,
-        "effort_cost": 0.15
-      }
-    },
-    {
-      "event_id": "FIX_EVENT_TALK",
-      "title": "Fixture: Demo Practice",
-      "type": "workshop",
-      "format": "offline",
-      "duration_hours": 4,
-      "session_date": "2026-10-15",
-      "projected_gains": [
-        {
-          "skill_id": "FIX_SKILL_TALK",
-          "current_level": 0,
-          "result_level": 1,
-          "effective_gain": 1,
-          "target_gap_reduction": 1,
-          "critical": false
-        }
-      ],
-      "evidence_ids": [
-        "FIX_EVENT_TALK_E_GRADE",
-        "FIX_EVENT_TALK_E_GAP",
-        "FIX_EVENT_TALK_E_TARGET",
-        "FIX_EVENT_TALK_E_HISTORY"
-      ],
-      "features": {
-        "critical_gap_gain": 0,
-        "target_gap_gain": 0.25,
-        "history_fit": -0.6,
-        "effort_cost": 0.1
-      }
+      "skill_id": "SYNTHETIC_SKILL_001",
+      "level": 1.0
     }
   ],
-  "evidence": [
+  "gaps": [
     {
-      "evidence_id": "FIX_EVENT_PATH_E_GRADE",
-      "event_id": "FIX_EVENT_PATH",
-      "category": "grade",
-      "current_role": "Fixture Platform Specialist",
-      "current_grade": "Middle",
-      "event_target_roles": [
-        "Fixture Platform Specialist"
-      ],
-      "event_target_grades": [
-        "Middle",
-        "Senior"
-      ]
-    },
-    {
-      "evidence_id": "FIX_EVENT_PATH_E_GAP",
-      "event_id": "FIX_EVENT_PATH",
-      "category": "skill_gap",
-      "skill_id": "FIX_SKILL_PATH",
-      "current_level": 2,
-      "required_level": 4,
-      "gap": 2,
-      "effective_gain": 1,
-      "target_gap_reduction": 1
-    },
-    {
-      "evidence_id": "FIX_EVENT_PATH_E_TARGET",
-      "event_id": "FIX_EVENT_PATH",
-      "category": "target_requirement",
-      "target_role": "Fixture Platform Specialist",
-      "target_grade": "Senior",
-      "skill_id": "FIX_SKILL_PATH",
-      "required_level": 4,
-      "critical": true
-    },
-    {
-      "evidence_id": "FIX_EVENT_PATH_E_HISTORY",
-      "event_id": "FIX_EVENT_PATH",
-      "category": "history",
-      "scope": "type_and_format",
-      "event_type": "mentoring",
-      "event_format": "online",
-      "window_start": "2024-10-01",
-      "window_end": "2026-09-30",
-      "sample_size": 2,
-      "completed": 2,
-      "in_progress": 0,
-      "dropped": 0,
-      "no_show": 0,
-      "declined": 0,
-      "overdue": 0
-    },
-    {
-      "evidence_id": "FIX_EVENT_TALK_E_GRADE",
-      "event_id": "FIX_EVENT_TALK",
-      "category": "grade",
-      "current_role": "Fixture Platform Specialist",
-      "current_grade": "Middle",
-      "event_target_roles": [
-        "Fixture Platform Specialist"
-      ],
-      "event_target_grades": [
-        "Middle",
-        "Senior"
-      ]
-    },
-    {
-      "evidence_id": "FIX_EVENT_TALK_E_GAP",
-      "event_id": "FIX_EVENT_TALK",
-      "category": "skill_gap",
-      "skill_id": "FIX_SKILL_TALK",
-      "current_level": 0,
-      "required_level": 2,
-      "gap": 2,
-      "effective_gain": 1,
-      "target_gap_reduction": 1
-    },
-    {
-      "evidence_id": "FIX_EVENT_TALK_E_TARGET",
-      "event_id": "FIX_EVENT_TALK",
-      "category": "target_requirement",
-      "target_role": "Fixture Platform Specialist",
-      "target_grade": "Senior",
-      "skill_id": "FIX_SKILL_TALK",
-      "required_level": 2,
-      "critical": false
-    },
-    {
-      "evidence_id": "FIX_EVENT_TALK_E_HISTORY",
-      "event_id": "FIX_EVENT_TALK",
-      "category": "history",
-      "scope": "type_and_format",
-      "event_type": "workshop",
-      "event_format": "offline",
-      "window_start": "2024-10-01",
-      "window_end": "2026-09-30",
-      "sample_size": 3,
-      "completed": 0,
-      "in_progress": 0,
-      "dropped": 0,
-      "no_show": 3,
-      "declined": 0,
-      "overdue": 0
+      "skill_id": "SYNTHETIC_SKILL_001",
+      "current_level": 1.0,
+      "target_level": 3.0,
+      "gap": 2.0
     }
-  ]
+  ],
+  "eligible_candidates": [
+    {
+      "event_id": "SYNTHETIC_EVENT_001",
+      "title": "Синтетическое занятие",
+      "effects": [
+        {
+          "skill_id": "SYNTHETIC_SKILL_001",
+          "before": 1.0,
+          "after": 2.0,
+          "delta": 1.0
+        }
+      ],
+      "evidence_ids": [
+        "synthetic-event-001"
+      ]
+    }
+  ],
+  "facts": [
+    {
+      "evidence_id": "synthetic-gap-001",
+      "kind": "gap",
+      "subject_id": "SYNTHETIC_SKILL_001",
+      "fact": "Синтетический разрыв: текущий уровень 1, целевой 3, разрыв 2."
+    },
+    {
+      "evidence_id": "synthetic-event-001",
+      "kind": "candidate",
+      "subject_id": "SYNTHETIC_EVENT_001",
+      "fact": "Синтетическое занятие доступно; эффект навыка рассчитан backend: +1."
+    }
+  ],
+  "limit": 3
 }

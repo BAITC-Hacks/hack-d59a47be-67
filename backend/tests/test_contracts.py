@@ -9,6 +9,7 @@ from fastapi.testclient import TestClient
 from pydantic import ValidationError
 
 from backend.app import contracts as c
+from scripts.check_contracts import check as check_generated_contracts
 
 EXAMPLES = Path(__file__).resolve().parents[2] / "contracts" / "examples"
 MODELS = {
@@ -23,6 +24,7 @@ MODELS = {
     "catalog": c.CatalogResponse,
     "employees": c.EmployeeListResponse,
     "employee": c.EmployeeDetailResponse,
+    "employee_no_target": c.EmployeeDetailResponse,
     "goal_request": c.GoalUpdateRequest,
     "recommendation_request": c.RecommendationRequest,
     "ai_context": c.RecommendationContext,
@@ -30,12 +32,18 @@ MODELS = {
     "ai_not_configured": c.RecommendationResult,
     "ai_no_candidates": c.RecommendationResult,
     "recommendation_response": c.RecommendationResponse,
+    "recommendation_stale": c.RecommendationResponse,
+    "recommendation_no_target": c.RecommendationResponse,
+    "recommendation_no_candidates": c.RecommendationResponse,
     "preview_request": c.PreviewRequest,
     "preview_response": c.PreviewResponse,
     "completion_request": c.CompletionRequest,
+    "completion_assigned_request": c.CompletionRequest,
     "completion_response": c.CompletionResponse,
     "hr_summary": c.HRSummaryResponse,
     "import_request": c.ImportRequest,
+    "batch_import_request": c.BatchImportRequest,
+    "batch_import_commit": c.BatchImportRequest,
     "import_response": c.ImportResponse,
 }
 
@@ -45,7 +53,14 @@ def fixture(name):
 
 
 def test_every_example_has_a_schema():
-    assert {p.name for p in EXAMPLES.glob("*.json")} == {f"{name}.synthetic.json" for name in MODELS}
+    aliases = {"recommendation-context.json", "recommendation-result.json"}
+    assert {p.name for p in EXAMPLES.glob("*.json")} == {
+        f"{name}.synthetic.json" for name in MODELS
+    } | aliases
+
+
+def test_generated_schemas_and_compatibility_examples_match_canonical_models():
+    assert check_generated_contracts() == 9
 
 
 @pytest.mark.parametrize("name,model", MODELS.items())
@@ -143,11 +158,88 @@ def test_simulation_is_explicit_and_preview_cannot_claim_persistence():
         c.PreviewResponse.model_validate({**fixture("preview_response"), "persisted": True})
 
 
-def test_import_transport_uses_verified_names_without_claiming_source_validation():
+def test_import_transport_uses_verified_names_with_separate_source_validation():
     payload = fixture("import_request")
     with pytest.raises(ValidationError):
         c.ImportRequest.model_validate({**payload, "source_filename": "invented.csv"})
     with pytest.raises(ValidationError):
         c.ImportRequest.model_validate({**payload, "source_format": "json"})
-    # Source parsing is deliberately absent; transport validation is not an importer.
+    # Source parsing belongs to the importer; transport validation cannot validate source data.
     assert c.ImportRequest.model_validate({**payload, "content": "opaque"}).content == "opaque"
+
+
+def test_batch_import_requires_unique_nonempty_original_files():
+    payload = fixture("batch_import_request")
+    with pytest.raises(ValidationError):
+        c.BatchImportRequest.model_validate({**payload, "files": []})
+    with pytest.raises(ValidationError):
+        c.BatchImportRequest.model_validate({**payload, "files": [payload["files"][0]] * 2})
+
+
+def test_history_preserves_distinct_records_and_date_provenance():
+    employee = c.EmployeeDetailResponse.model_validate(fixture("employee"))
+    assert len(employee.history) == 2
+    assert employee.history[0].event_id == employee.history[1].event_id
+    assert employee.history[0].record_id != employee.history[1].record_id
+    record = employee.history[0].model_dump(mode="json")
+    with pytest.raises(ValidationError):
+        c.ActivityRecord.model_validate({**record, "date_source": "completed_at"})
+    with pytest.raises(ValidationError):
+        c.ActivityRecord.model_validate({**record, "completed_at": "2026-10-01T12:00:00Z"})
+    c.ActivityRecord.model_validate(
+        {**record, "date_source": "completed_at", "completed_at": "2026-10-01T12:00:00Z"}
+    )
+    with pytest.raises(ValidationError):
+        c.ActivityRecord.model_validate(
+            {**record, "date_source": "completed_at", "completed_at": "2026-10-01T12:00:00"}
+        )
+
+
+@pytest.mark.parametrize("status", ["no_target", "no_candidates"])
+def test_backend_can_return_empty_reason_without_calling_ai(status):
+    payload = fixture("recommendation_no_target")
+    response = c.RecommendationResponse.model_validate({**payload, "status": status})
+    assert response.engine == "none"
+    with pytest.raises(ValidationError):
+        c.RecommendationResponse.model_validate(
+            {
+                **payload,
+                "status": status,
+                "recommendations": fixture("recommendation_response")["recommendations"],
+            }
+        )
+
+
+def test_backend_http_extensions_do_not_change_ai_result_contract():
+    with pytest.raises(ValidationError):
+        c.RecommendationResult(status="no_target", engine="none", recommendations=[])
+    with pytest.raises(ValidationError):
+        c.RecommendationResult(status="no_candidates", engine="none", recommendations=[])
+    payload = fixture("recommendation_no_target")
+    with pytest.raises(ValidationError):
+        c.RecommendationResponse.model_validate({**payload, "engine": "oleg"})
+
+
+@pytest.mark.parametrize(
+    "changes",
+    [
+        {"percent": 101.0},
+        {"met_skills": 2},
+        {"critical_total": 2},
+        {"critical_met": 1},
+    ],
+)
+def test_progress_rejects_invalid_counts_and_percent(changes):
+    with pytest.raises(ValidationError):
+        c.Progress.model_validate({**fixture("employee")["progress"], **changes})
+
+
+def test_catalog_events_include_source_rules_not_client_authority():
+    event = c.CatalogResponse.model_validate(fixture("catalog")).events[0]
+    assert event.develops_skills[0].gain == 1.0
+    assert event.prerequisites == {"SYNTHETIC_SKILL_001": 1.0}
+    assert event.upcoming_sessions == []
+    payload = fixture("catalog")
+    payload["events"][0]["develops_skills"][0]["max_level"] = 5.1
+    with pytest.raises(ValidationError):
+        c.CatalogResponse.model_validate(payload)
