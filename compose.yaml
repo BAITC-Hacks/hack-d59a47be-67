@@ -13,7 +13,10 @@ services:
       SESSION_TTL_SECONDS: ${SESSION_TTL_SECONDS:-3600}
       SQLITE_WAL: "false"
       SQLITE_LOCAL_DISK: "false"
-      AI_ENABLED: "false"
+      AI_ENABLED: ${AI_ENABLED:-false}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4.1-mini-2025-04-14}
+      AI_TIMEOUT_SECONDS: ${AI_TIMEOUT_SECONDS:-6.0}
     volumes:
       - sqlite_data:/data
     deploy:

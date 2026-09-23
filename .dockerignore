@@ -6,6 +6,9 @@
 !backend/__init__.py
 !backend/app/
 !backend/app/*.py
+!backend/app/ai/
+!backend/app/ai/*.py
+!backend/app/ai/requirements.txt
 !backend/migrations/
 !backend/migrations/*.sql
 backend/app/**/__pycache__/
@@ -15,4 +18,3 @@ backend/app/**/*.db
 backend/app/**/*.sqlite*
 backend/app/**/*.pem
 backend/app/**/*.key
-backend/app/ai/

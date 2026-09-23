@@ -3,7 +3,7 @@ name = "career-quest-backend"
 version = "1.0.0"
 description = "Career Quest single-process demo backend"
 requires-python = ">=3.12,<3.13"
-dependencies = ["fastapi==0.141.1", "pydantic==2.13.5", "uvicorn==0.53.0", "python-dotenv==1.2.3", "tzdata==2026.4"]
+dependencies = ["fastapi==0.141.1", "pydantic==2.13.5", "uvicorn==0.53.0", "python-dotenv==1.2.3", "tzdata==2026.4", "httpx==0.28.1"]
 
 [tool.pytest.ini_options]
 testpaths = ["backend/tests"]
