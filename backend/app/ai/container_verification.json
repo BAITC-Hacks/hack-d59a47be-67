@@ -1,0 +1,112 @@
+{
+  "mode": "live_synthetic_backend_evaluation",
+  "synthetic_only": true,
+  "quality_evaluated": true,
+  "prompt_version": "career-quest-selection-v1",
+  "case_count": 3,
+  "passed_count": 3,
+  "failed_count": 0,
+  "cases": [
+    {
+      "case_id": "backend_critical_over_lowest",
+      "passed": true,
+      "verdict": "passed",
+      "status": "ok",
+      "latency_ms": 2871.01,
+      "selected_event_ids": [
+        "SYNTH_BE_EVENT_B"
+      ],
+      "requires_enriched_facts": true
+    },
+    {
+      "case_id": "backend_repeated_format_nonparticipation",
+      "passed": true,
+      "verdict": "passed",
+      "status": "ok",
+      "latency_ms": 1878.16,
+      "selected_event_ids": [
+        "SYNTH_BE_EVENT_B"
+      ],
+      "requires_enriched_facts": true
+    },
+    {
+      "case_id": "backend_no_history",
+      "passed": true,
+      "verdict": "passed",
+      "status": "ok",
+      "latency_ms": 3216.92,
+      "selected_event_ids": [
+        "SYNTH_BE_EVENT_A"
+      ],
+      "requires_enriched_facts": true
+    }
+  ],
+  "model": "gpt-4.1-mini-2025-04-14",
+  "context_origin": "synthetic source import -> SQLite -> CareerService._context",
+  "backend_service_sha256": "73640485db72826855affa198459bc966444c68e2f9710de0725f5bd6a7f46b6",
+  "contexts": [
+    {
+      "case_id": "backend_critical_over_lowest",
+      "sha256": "b73454721ebdbda91294fdcb71c3f22a4426769321fa0dc7449a925ceda113f4",
+      "candidate_count": 2,
+      "fact_count": 10
+    },
+    {
+      "case_id": "backend_repeated_format_nonparticipation",
+      "sha256": "dbc1087978a03177aa50c1dcf9a886333566a54f782af7632f6958869bfc88ed",
+      "candidate_count": 2,
+      "fact_count": 9
+    },
+    {
+      "case_id": "backend_no_history",
+      "sha256": "5d64b9de63ebde3e0fea4ef74ef91bc27dc1f4459b4d4eeecf475ec8efd163e2",
+      "candidate_count": 2,
+      "fact_count": 9
+    }
+  ],
+  "verification_date": "2026-09-23",
+  "execution": {
+    "runtime": "Docker Desktop",
+    "docker_server": "28.0.4",
+    "compose": "2.34.0-desktop.1",
+    "platform": "linux/arm64",
+    "python": "3.12.14",
+    "backend_commit": "a3696ba32fcea02fa94c65b8a142cd6c6fdfc4e3",
+    "ai_commit": "29791f1f9f516bc8a82fc8ceaa91afc6db431f19",
+    "combined_tree": "bfa2ea0d37d85aca021ef682bd9cd23928d9dbe0",
+    "image_id": "sha256:f373877c30711764b4348b88faaa18cebd4335cbfd3f17a0943967db0c0a7fc8",
+    "required_patch": "verification/container-fixes.patch",
+    "patch_applied_only_to_temporary_snapshot": true,
+    "patch_sha256": "1f8287740ad092c8c71df20385fe77a9608c5bbaa2ab96c683ea0934fd7ab41e"
+  },
+  "browser_smoke": {
+    "frontend_commit": "5b85eb318e397b8faf2d839db4ed4292009cb949",
+    "transport": "Vite loopback proxy -> Docker backend -> live OpenAI",
+    "http_recommendation_latency_ms": 1202,
+    "status": "ok",
+    "engine": "oleg",
+    "recommendation_count": 3,
+    "evidence_counts": [
+      5,
+      5,
+      5
+    ],
+    "completion_mode": "completion",
+    "synthetic_only": true,
+    "skill_before": 2,
+    "skill_after": 3,
+    "progress_before": 56.25,
+    "progress_after": 62.5,
+    "state_version_before": 1,
+    "state_version_after": 2,
+    "after_container_restart": {
+      "session_preserved": true,
+      "progress": 62.5,
+      "history_count": 3,
+      "recommendation_count": 3,
+      "stale": true
+    },
+    "ephemeral_port_changed_on_restart": true,
+    "proxy_updated_for_new_port": true
+  }
+}
