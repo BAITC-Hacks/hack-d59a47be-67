@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 
 from . import contracts as c
-from . import domain
+from . import domain, explanations
 from .errors import APIError
 from .imports import HISTORY_FIELDS
 
@@ -382,7 +382,7 @@ class CareerService:
             return response
 
     @staticmethod
-    def _history_evidence(evidence_id, subject_id, rows, as_of, *, scope, **cohort):
+    def _history_evidence(evidence_id, subject_id, rows, as_of, *, scope, display_facts=None, **cohort):
         dates = [domain.effective_date(row) for row in rows]
         statuses = dict.fromkeys(("completed", "in_progress", "dropped", "no_show", "declined", "overdue"), 0)
         date_sources = {"historical_proxy": 0, "completed_at": 0}
@@ -399,6 +399,8 @@ class CareerService:
             "status_counts": statuses,
             "date_sources": date_sources,
         }
+        if display_facts is not None:
+            display_facts[evidence_id] = explanations.history_text(summary)
         return c.EvidenceFact(
             evidence_id=evidence_id,
             kind="history",
@@ -410,7 +412,7 @@ class CareerService:
         )
 
     @staticmethod
-    def _goal_evidence(snap, target):
+    def _goal_evidence(snap, target, display_facts=None):
         # Normally one compact fact. Large valid catalogs are split without losing
         # identifiers or exceeding EvidenceFact's bound; the model sees every part.
         parts, current = [], []
@@ -420,7 +422,7 @@ class CareerService:
                 current = []
             current.append(skill_id)
         parts.append(current)
-        return [
+        facts = [
             c.EvidenceFact(
                 evidence_id="profile-grade" if index == 0 else f"profile-goal-part-{index + 1}",
                 kind="goal",
@@ -441,19 +443,32 @@ class CareerService:
             )
             for index, skills in enumerate(parts)
         ]
+        if display_facts is not None:
+            for fact in facts:
+                display_facts[fact.evidence_id] = explanations.goal_text(snap["employee"], target)
+        return facts
 
     def _context(self, snap, candidates, limit):
+        return self._prepare_context(snap, candidates, limit)[0]
+
+    def _prepare_context(self, snap, candidates, limit):
+        display_facts = {}
         target = next(
             profile
             for profile in snap["catalog"]["role_profiles"]
             if (profile["role"], profile["grade"])
             == (snap["goal"]["target_role"], snap["goal"]["target_grade"])
         )
-        facts = self._goal_evidence(snap, target)
+        facts = self._goal_evidence(snap, target, display_facts)
+        skill_names = {skill["skill_id"]: skill["name"] for skill in snap["catalog"]["skills"]}
         for gap in snap["gaps"]:
+            evidence_id = "gap-" + hashlib.sha256(gap["skill_id"].encode()).hexdigest()[:24]
+            display_facts[evidence_id] = explanations.gap_text(
+                gap, skill_names[gap["skill_id"]], gap["skill_id"] in target["critical_skills"]
+            )
             facts.append(
                 c.EvidenceFact(
-                    evidence_id="gap-" + hashlib.sha256(gap["skill_id"].encode()).hexdigest()[:24],
+                    evidence_id=evidence_id,
                     kind="gap",
                     subject_id=gap["skill_id"],
                     fact=f"Skill {gap['skill_id']}: current level {gap['current_level']}; "
@@ -463,12 +478,20 @@ class CareerService:
             )
         history = [row for row in snap["history"] if domain.effective_date(row) <= snap["as_of"]]
         facts.append(
-            self._history_evidence("history-summary", "profile", history, snap["as_of"], scope="profile")
+            self._history_evidence(
+                "history-summary",
+                "profile",
+                history,
+                snap["as_of"],
+                scope="profile",
+                display_facts=display_facts,
+            )
         )
         prepared = []
         for event in candidates:
             suffix = hashlib.sha256(event["event_id"].encode()).hexdigest()[:24]
             evidence_id = "candidate-" + suffix
+            display_facts[evidence_id] = explanations.candidate_text(event)
             same_event = [row for row in history if row["event_id"] == event["event_id"]]
             comparable = [
                 row
@@ -480,7 +503,12 @@ class CareerService:
             facts.extend(
                 [
                     self._history_evidence(
-                        "history-event-" + suffix, event["event_id"], same_event, snap["as_of"], scope="event"
+                        "history-event-" + suffix,
+                        event["event_id"],
+                        same_event,
+                        snap["as_of"],
+                        scope="event",
+                        display_facts=display_facts,
                     ),
                     self._history_evidence(
                         "history-format-" + suffix,
@@ -488,6 +516,7 @@ class CareerService:
                         comparable,
                         snap["as_of"],
                         scope="same_type_format_other_events",
+                        display_facts=display_facts,
                         event_type=event["type"],
                         event_format=event["format"],
                     ),
@@ -511,7 +540,7 @@ class CareerService:
                     evidence_ids=[evidence_id],
                 )
             )
-        return c.RecommendationContext(
+        context = c.RecommendationContext(
             data_version=self.version(snap["state"]),
             state_version=snap["state"]["revision"],
             scenario_date=snap["as_of"],
@@ -527,6 +556,7 @@ class CareerService:
             facts=facts,
             limit=limit,
         )
+        return context, display_facts
 
     async def recommend(self, employee_id, payload):
         snap = self.snapshot(employee_id)  # This connection/transaction closes before any AI call.
@@ -536,7 +566,7 @@ class CareerService:
         if snap["goal"] and not candidates:
             result_status = "no_candidates"
         elif candidates:
-            context = self._context(snap, candidates, payload.limit)
+            context, display_facts = self._prepare_context(snap, candidates, payload.limit)
             result = await self.adapter.recommend(context)
             result_status, engine = result.status, result.engine
             by_id = {item["event_id"]: item for item in candidates}
@@ -545,13 +575,24 @@ class CareerService:
                 event = by_id[item.event_id]
                 evidence = [by_evidence[key] for key in dict.fromkeys(item.explanation.evidence_ids)]
                 affected = {effect["skill_id"] for effect in event["effects"] if effect["delta"] > 0}
-                if not {"goal", "gap", "history"} <= {fact.kind for fact in evidence} or not any(
-                    fact.kind == "gap" and fact.subject_id in affected for fact in evidence
+                profile_subjects = {"profile", context.profile.profile_ref}
+                allowed_subjects = {
+                    "goal": profile_subjects,
+                    "history": profile_subjects | {item.event_id},
+                    "candidate": {item.event_id},
+                }
+                if (
+                    not {"goal", "gap", "history"} <= {fact.kind for fact in evidence}
+                    or not any(fact.kind == "gap" and fact.subject_id in affected for fact in evidence)
+                    or any(
+                        fact.kind in allowed_subjects and fact.subject_id not in allowed_subjects[fact.kind]
+                        for fact in evidence
+                    )
                 ):
                     result_status, engine, cards = "unavailable", "oleg", []
                     break
                 # Render trusted backend facts, never unsupported free-form model claims.
-                resolved_text = " ".join(fact.fact for fact in evidence)
+                resolved_text = explanations.render(evidence, display_facts)
                 if len(resolved_text) > 2000:
                     result_status, engine, cards = "unavailable", "oleg", []
                     break

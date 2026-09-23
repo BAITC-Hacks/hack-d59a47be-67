@@ -71,6 +71,13 @@
 
 - Финальная snapshot-команда на backend960187e + AI8f0dc05:438 passed +21 исходный тест+9 checks+Ruff; два TCP-запуска AI smoke PASS. Git tree без конфликтов, refs/PR не изменялись. Данные/ключи не отправлялись; контейнерный путь остаётся NOT RUN из-за отсутствия Docker. Следующий шаг — командный review обновлённого PR #4 и фактический `--container` на Docker-хосте.
 
+## Backend — понятные объяснения и принятие Docker patch
+
+- 2026-09-23: внешний explanation.text формируется русскими шаблонами из проверенного snapshot; названия каталога, точные уровни без округления, формат/нагрузка и раздельные сведения истории. Машинные facts и evidence_ids для Олега сохранены. Отвергаются candidate/history другого события; request-local mapping не смешивает параллельные профили. Новые карточки сохраняют текст через restart/stale, старые требуют повторной генерации.
+- Принят patch Олега из AI PR #3 f10006a: `.dockerignore` повторно исключает AI-артефакты перед разрешением runtime Python; smoke проверяет категории/принадлежность/обе истории вместо ровно4 evidence. Сравнение текста адаптировано к русскому renderer. AI/frontend/схемы не менялись.
+- Проверено перед checkpoint: `make check` —295 passed/1 optional AI skip +21 исходный тест+9 schema checks+Ruff;36 файлов format PASS, git diff --check PASS.12 новых тестов объяснений и14 smoke evidence regression включены в общий результат. Промежуточная совместная проверка с AI29791f1 —453 passed; финальный committed snapshot ещё предстоит проверить.
+- Передан отдельный ARM64 Docker-отчёт Олега: backend a3696ba + AI29791f1 с patch, container/live3 из3/UI/restart PASS. Здесь Docker CLI/Desktop/daemon отсутствуют; новой сборки, live-вызовов и публичного деплоя не было. Следующий шаг — committed integration с AI f10006a, обычный push/update PR #4 без merge; повторный --container на Docker-хосте. CI billing-blocked.
+
 ## Журнал — предметный backend
 
 - 2026-09-23, порция 1: добавлены чистые расчёты replay/caps, целей, прогресса и кандидатов; исходные JSON/CSV валидируются и импортируются через preview/token и атомарный commit. Каждая history-запись сохраняется по record_id; рост рассчитывается только для completed после review и до даты кита. Повторные mandatory не теряются.

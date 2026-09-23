@@ -1,3 +1,18 @@
+# Русские объяснения и принятие Docker patch — 2026-09-23
+
+Внешний `explanation.text` больше не склеивает английские JSON-facts. Backend строит русский текст из того же snapshot, сохраняет evidence_ids и внутренний AI-контекст. Уровни не округляются скрыто; history/candidate другого события отклоняются. Новые карточки сохраняют исходный текст при restart/stale; старые нужно запросить заново.
+
+- `make check`: **295 passed, 1 optional AI skip**, 21 исходный тест, 9 schema checks, Ruff PASS. Новые проверки: 12 explanation cases (точность, scopes/provenance, чужие evidence, restart/stale, параллельные запросы), 14 smoke evidence cases.
+- `.venv/bin/ruff format --check backend scripts/smoke.py scripts/check_contracts.py scripts/verify_integration.py scripts/check_container.py`: **36 файлов PASS**; `git diff --check` PASS. Промежуточная совместная копия AI29791f1 с изменениями объяснений:453 passed; это не финальный committed snapshot.
+- Принят [patch Олега](https://github.com/BAITC-Hacks/hack-d59a47be-67/blob/f10006a/backend/app/ai/verification/container-fixes.patch): исключение лишних AI-файлов из образа, semantic evidence проверки smoke вместо exact4. Последнее сравнение текста адаптировано к новому русскому formatter; возвращать машинные facts в HTTP не требуется.
+- [Docker-отчёт Олега](https://github.com/BAITC-Hacks/hack-d59a47be-67/blob/f10006a/backend/app/ai/DOCKER_REPORT.md) подтверждает ARM64 container acceptance, live OpenAI3/3 и frontend/completion/restart на backend a3696ba + AI29791f1 **с patch во временной копии**. Это переданный результат, не наш повторный запуск новой версии. Docker CLI/Desktop/daemon в текущей среде повторно не обнаружены; AMD64, новая container build и публичный deploy не заявляются.
+
+Схемы/OpenAPI, AI-код/тесты Олега и frontend не менялись. CI billing-blocked. Финальная проверка committed refs и публикация отражаются следующей записью после фактического выполнения.
+
+Ниже сохранены предыдущие проверки.
+
+---
+
 # Воспроизводимая интеграция и контейнерная приёмка — 2026-09-23
 
 Проверено командой `scripts/verify-integration --backend-ref HEAD --ai-ref origin/codex/ai-recommendations` на backend `960187ef069b552130f5cc51612d3193cfa23a87` и AI `8f0dc053b769a9b965fc648b9b67d3cd01a14981`. Виртуальное объединение без конфликтов: tree `c4fcd058af2986d6b8d2019180bf5d59edeb9b87`. Проверка экспортировала только tracked tree во временную папку, не переключала рабочую ветку и не сливала PR.

@@ -15,11 +15,52 @@ import httpx
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+from backend.app import explanations  # noqa: E402
 from backend.app.auth import hash_password  # noqa: E402
 from backend.app.config import Settings  # noqa: E402
 from backend.app.database import Database  # noqa: E402
 from backend.app.imports import ImportService  # noqa: E402
+from backend.app.service import CareerService  # noqa: E402
 from backend.tests.test_workflow import EMPLOYEE, EVENT, OTHER, source_batch  # noqa: E402
+
+
+def assert_recommendation_evidence(card, context, display_facts):
+    """Validate the small smoke fixture's citations and backend-rendered UI text."""
+    explanation = card["explanation"]
+    evidence_ids = explanation["evidence_ids"]
+    facts = {fact.evidence_id: fact for fact in context.facts}
+    assert 4 <= len(evidence_ids) <= 50
+    assert len(evidence_ids) == len(set(evidence_ids))
+    assert set(evidence_ids) <= facts.keys()
+    evidence = [facts[evidence_id] for evidence_id in evidence_ids]
+    candidates = {item.event_id: item for item in context.eligible_candidates}
+    assert card["event_id"] in candidates
+    candidate = candidates[card["event_id"]]
+    positive_gaps = {gap.skill_id for gap in context.gaps if gap.gap > 0}
+    affected = {effect.skill_id for effect in candidate.effects if effect.delta > 0} & positive_gaps
+    profile_subjects = {"profile", context.profile.profile_ref}
+    assert {"goal", "gap", "history", "candidate"} <= {fact.kind for fact in evidence}
+    for fact in evidence:
+        assert (
+            (fact.kind == "goal" and fact.subject_id in profile_subjects)
+            or (fact.kind == "gap" and fact.subject_id in affected)
+            or (fact.kind == "history" and fact.subject_id in profile_subjects | {candidate.event_id})
+            or (
+                fact.kind == "candidate"
+                and fact.subject_id == candidate.event_id
+                and fact.evidence_id in candidate.evidence_ids
+            )
+        )
+    # This small fixture supplies event and same-type/format history; both fit the text budget.
+    event_history = {
+        fact.evidence_id
+        for fact in context.facts
+        if fact.kind == "history" and fact.subject_id == candidate.event_id
+    }
+    assert len(event_history) == 2
+    assert event_history <= set(evidence_ids)
+    assert explanation["text"] == explanations.render(evidence, display_facts)
+    assert 1 <= len(explanation["text"]) <= 2000
 
 
 def main():
@@ -128,8 +169,13 @@ def main():
                             recommendation = recommended.json()
                             assert (recommendation["status"], recommendation["engine"]) == ("ok", "oleg")
                             assert recommendation["recommendations"][0]["event_id"] == EVENT
-                            assert (
-                                len(recommendation["recommendations"][0]["explanation"]["evidence_ids"]) == 4
+                            service = CareerService(db, None)
+                            snap = service.snapshot(EMPLOYEE)
+                            context, display_facts = service._prepare_context(
+                                snap, service._candidates(snap), 3
+                            )
+                            assert_recommendation_evidence(
+                                recommendation["recommendations"][0], context, display_facts
                             )
                             assert recommendation["recommendations"][0]["effects"]
                         payload = {

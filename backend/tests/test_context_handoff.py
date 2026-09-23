@@ -348,7 +348,12 @@ def test_optional_real_plugin_uses_backend_context_and_persists_cards(tmp_path, 
         facts = {fact.evidence_id: fact for fact in context.facts}
         selected_facts = [facts[key] for key in card.explanation.evidence_ids]
         assert {fact.kind for fact in selected_facts} == {"goal", "gap", "history", "candidate"}
-        assert card.explanation.text == " ".join(fact.fact for fact in selected_facts)
+        assert "Ваша цель" in card.explanation.text
+        assert "Навык" in card.explanation.text
+        assert "По этому мероприятию" in card.explanation.text
+        assert "Resolved career goal" not in card.explanation.text
+        assert "status_counts" not in card.explanation.text
+        assert "{" not in card.explanation.text
         assert client.get(f"/api/employees/{OTHER}").status_code == 403
         assert (
             client.post(
