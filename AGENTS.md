@@ -56,6 +56,31 @@
 - Перед checkpoint проверить затронутые сценарии, показать результат и ограничения. Docker build нельзя считать проверенным без фактического запуска.
 - `.local-legacy/` хранит неизменённый параллельный черновик локально; он не часть приложения, коммита или образа. Его не удалять автоматически.
 
+## Backend — передача AI PR #3
+
+- 2026-09-23, инфраструктура AI: ветка codex/backend-ai-handoff создана от актуальной architecture-foundation, которая уже содержит PR #2. PR #3 не сливался, AI/frontend не менялись. Docker allowlist разрешает Python/requirements AI, Compose передаёт только явные runtime-настройки с AI выключенным по умолчанию; ключ не добавляется в образ.
+- HTTP transport pins Олега перенесены из dev в единый runtime lock. Проверено: чистый временный venv только с requirements.lock, pip check, импорт async AI из изолированной копии PR #3 и configured/not_configured без вызова провайдера. Docker отсутствует; build/Compose runtime не проверены. Следующий шаг — обогащение backend facts и совместная HTTP-приёмка без изменения контракта.
+
+- 2026-09-23, факты/приёмка AI: backend добавляет target critical_skills и раздельные history counts/event/type+format с sample, периодом, provenance и cutoff. Python/HTTP-схемы неизменны. Старые минимальные fixtures сохранены для тестов Олега, новые расширенные примеры проверяются теми же моделями.
+- Проверено: backend244 passed/1 optional skip; совместно с неизменённым PR #3 —413 passed, плюс21 исходный тест,9 schema checks,Ruff/format. Все159 actionable контекстов кита проходят AI validator локально, без сетевых запросов/вывода данных. Сквозной тест конфликтующего профиля подтверждает facts/evidence/latest/403; качество live-модели не заявляется. Следующий шаг: отдельный PR в architecture-foundation, проверить совместимость Git с PR #3; review команды, Docker/live evaluation в подходящей среде.
+
+- Публикация: обычный push codex/backend-ai-handoff, открыт PR #4 https://github.com/BAITC-Hacks/hack-d59a47be-67/pull/4 в architecture-foundation. Виртуальный git merge-tree с AI PR #3 прошёл без конфликтов, включая AGENTS; refs/PR не объединялись. Следующий шаг — review команды и фактический Docker/live synthetic запуск после подключения обеих порций.
+
+- 2026-09-23, воспроизводимая приёмка: добавлены scripts/verify-integration для виртуального объединения закоммиченных backend/AI refs в временный snapshot, scripts/smoke --ai с настоящим AI-модулем и тестовым selector по TCP, scripts/check-container для изолированного Compose project. Docker CLI/Desktop/daemon отсутствуют; глобальные установки/очистка не выполнялись.
+- Проверено до checkpoint: прямой AI TCP smoke (два запуска, cards/latest stale/session/точный idempotency replay) PASS;25 тестов контейнерного runner, make check backend269 passed/1 optional skip +21 исходный тест+9 checks+Ruff/format. Контейнерная команда честно возвращает2/NOT RUN; build/runtime не заявлены. Следующий шаг — прогнать новую snapshot-команду на точном checkpoint, обновить PR #4 и проверить Docker на доступном хосте.
+
+- Финальная snapshot-команда на backend960187e + AI8f0dc05:438 passed +21 исходный тест+9 checks+Ruff; два TCP-запуска AI smoke PASS. Git tree без конфликтов, refs/PR не изменялись. Данные/ключи не отправлялись; контейнерный путь остаётся NOT RUN из-за отсутствия Docker. Следующий шаг — командный review обновлённого PR #4 и фактический `--container` на Docker-хосте.
+
+## Backend — понятные объяснения и принятие Docker patch
+
+- 2026-09-23: внешний explanation.text формируется русскими шаблонами из проверенного snapshot; названия каталога, точные уровни без округления, формат/нагрузка и раздельные сведения истории. Машинные facts и evidence_ids для Олега сохранены. Отвергаются candidate/history другого события; request-local mapping не смешивает параллельные профили. Новые карточки сохраняют текст через restart/stale, старые требуют повторной генерации.
+- Принят patch Олега из AI PR #3 f10006a: `.dockerignore` повторно исключает AI-артефакты перед разрешением runtime Python; smoke проверяет категории/принадлежность/обе истории вместо ровно4 evidence. Сравнение текста адаптировано к русскому renderer. AI/frontend/схемы не менялись.
+- Проверено перед checkpoint: `make check` —295 passed/1 optional AI skip +21 исходный тест+9 schema checks+Ruff;36 файлов format PASS, git diff --check PASS.12 новых тестов объяснений и14 smoke evidence regression включены в общий результат. Промежуточная совместная проверка с AI29791f1 —453 passed; финальный committed snapshot ещё предстоит проверить.
+- Передан отдельный ARM64 Docker-отчёт Олега: backend a3696ba + AI29791f1 с patch, container/live3 из3/UI/restart PASS. Здесь Docker CLI/Desktop/daemon отсутствуют; новой сборки, live-вызовов и публичного деплоя не было. Следующий шаг — committed integration с AI f10006a, обычный push/update PR #4 без merge; повторный --container на Docker-хосте. CI billing-blocked.
+
+- Финальная committed-проверка: `scripts/verify-integration --backend-ref HEAD --ai-ref origin/codex/ai-recommendations` на backend1723fb2 + AI f10006a — **468 passed**,21 исходный тест,9 schema checks,Ruff и два TCP-запуска PASS. Виртуальное tree1e1acb9 без конфликтов; русские cards/evidence/latest, completion/restart/точный idempotency replay и logout проверены без live-провайдера. После прерывания повторили команду до полученного exit0.
+- `scripts/check-container --require-ai`: exit2/NOT RUN (Docker отсутствует здесь). Переданный Docker-отчёт Олега сохранён как отдельная проверка предыдущих refs с patch; не подменяет container build текущей версии. Изменения ограничены backend/docs/инфраструктурой, diff AI/frontend/общих схем пустой. Следующий шаг — review PR #4 и повторный --container актуальных refs на Docker-хосте; merge не выполняется.
+
 ## Журнал — предметный backend
 
 - 2026-09-23, порция 1: добавлены чистые расчёты replay/caps, целей, прогресса и кандидатов; исходные JSON/CSV валидируются и импортируются через preview/token и атомарный commit. Каждая history-запись сохраняется по record_id; рост рассчитывается только для completed после review и до даты кита. Повторные mandatory не теряются.
@@ -100,3 +125,8 @@
 - Проверено в браузере: раскрытые объяснения на 390/320 px без горизонтального переполнения, desktop 1440 px; настоящий вход и запрос рекомендаций с корректным `not_configured`, затем каталог → preview → завершение тестовой активности → Python 3 → 4, прогресс 62.5% → 68.75%, сохранение после перезагрузки и запись в истории. Локальная синтетическая база сохранена, ключи и данные не включены в Git.
 - Повторные 52 frontend-теста, HTTP smoke с временной БД, TypeScript/build и Prettier — PASS. Полный путь с настоящей AI-рекомендацией здесь остаётся непроверенным: пользователь подтвердил, что API с включённым AI пока нет. Обновлён `frontend/VERIFICATION.md` с точным разграничением браузерной проверки вёрстки, настоящего API и тестовых клиентов.
 - Fetch подтвердил AI `f10006a` и backend-handoff `a3696ba`; прочитан новый отчёт Олега об интеграции в его окружении. Следующий шаг команды — объединить готовые изменения, настроить ключ только локально и повторить рекомендация → завершение в обычном `pnpm start`. Ветки не объединялись, платных вызовов в этом задании не было.
+
+## Общая продуктовая интеграция
+
+- 2026-09-23: пользователь явно поручил завершить работу всех трёх ролей, отправить общую версию в репозиторий и подготовить публичную платформу. Для этого создан отдельный worktree и ветка feat/product-ready от frontend f91638b; исходная рабочая копия и её данные сохранены. Ограничение прежних ролей для этой задачи заменено прямым поручением пользователя.
+- Присоединены готовые изменения backend-ai-handoff 3b85bab без force-push и изменения main. Конфликты отсутствуют; это интеграционный checkpoint, функциональные проверки объединённой версии будут выполнены после подключения AI. Следующий шаг: AI, обязательная HR-аналитика, воспроизводимый запуск и публичная версия на собственных синтетических данных.

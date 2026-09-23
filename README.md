@@ -49,7 +49,7 @@ FastAPI + React/TypeScript + SQLite в одном backend-процессе дл�
 async recommend(context: RecommendationContext) -> RecommendationResult
 ```
 
-Вход/выход и вымышленные `FIX_*` примеры: [contracts/](contracts/README.md). Алихан готовит контекст и HTTP API; Батыр строит UI сначала на общем примере, затем подключает API. `docker compose up --build` добавлен; контейнерный запуск пока не проверен из-за отсутствия Docker. Локальный запуск через venv проверен.
+Вход/выход и вымышленные `FIX_*` примеры: [contracts/](contracts/README.md). Алихан готовит контекст и HTTP API; Батыр строит UI сначала на общем примере, затем подключает API. `docker compose up --build` добавлен; Олег передал успешную ARM64-проверку контейнера с двумя инфраструктурными исправлениями, принятыми в backend-ветке. Повторная проверка текущего commit требует Docker-хоста; детали и версии — [HANDOFF](docs/HANDOFF.md). Локальный запуск через venv проверен.
 
 ## Frontend / UX — участник 3
 

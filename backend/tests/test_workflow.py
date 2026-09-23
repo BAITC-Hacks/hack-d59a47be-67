@@ -182,6 +182,9 @@ def valid_ai_result(context):
         if fact.kind == "gap"
         and fact.subject_id in {effect.skill_id for effect in candidate.effects if effect.delta > 0}
     )
+    facts["history"] = next(
+        fact.evidence_id for fact in context.facts if fact.kind == "history" and fact.subject_id == "profile"
+    )
     evidence = [candidate.evidence_ids[0], facts["goal"], facts["gap"], facts["history"]]
     return c.RecommendationResult(
         status="ok",

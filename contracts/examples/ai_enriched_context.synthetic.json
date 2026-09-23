@@ -1,0 +1,79 @@
+{
+  "contract_version": "1",
+  "data_version": "synthetic-fixture-v1",
+  "state_version": 0,
+  "scenario_date": "2026-10-01",
+  "profile": {
+    "profile_ref": "synthetic-anonymous-001",
+    "role": "Synthetic Analyst",
+    "grade": "Junior"
+  },
+  "goal": {
+    "target_role": "Synthetic Analyst",
+    "target_grade": "Middle"
+  },
+  "current_skills": [
+    {
+      "skill_id": "SYNTHETIC_SKILL_001",
+      "level": 1.0
+    }
+  ],
+  "gaps": [
+    {
+      "skill_id": "SYNTHETIC_SKILL_001",
+      "current_level": 1.0,
+      "target_level": 3.0,
+      "gap": 2.0
+    }
+  ],
+  "eligible_candidates": [
+    {
+      "event_id": "SYNTHETIC_EVENT_001",
+      "title": "Синтетическое занятие",
+      "effects": [
+        {
+          "skill_id": "SYNTHETIC_SKILL_001",
+          "before": 1.0,
+          "after": 2.0,
+          "delta": 1.0
+        }
+      ],
+      "evidence_ids": [
+        "synthetic-event-001"
+      ]
+    }
+  ],
+  "facts": [
+    {
+      "evidence_id": "synthetic-gap-001",
+      "kind": "gap",
+      "subject_id": "SYNTHETIC_SKILL_001",
+      "fact": "Synthetic skill SYNTHETIC_SKILL_001: current level 1; target 3; gap 2; critical for target: True."
+    },
+    {
+      "evidence_id": "synthetic-event-001",
+      "kind": "candidate",
+      "subject_id": "SYNTHETIC_EVENT_001",
+      "fact": "Synthetic eligible course / self_paced event; duration 2 hours. Backend checked current role/grade, prerequisites, schedule and history; projected effects calculated by backend."
+    },
+    {
+      "evidence_id": "synthetic-goal-001",
+      "kind": "goal",
+      "subject_id": "profile",
+      "fact": "Resolved career goal: {\"critical_skills\":[\"SYNTHETIC_SKILL_001\"],\"critical_skills_part\":1,\"critical_skills_parts\":1,\"current_grade\":\"Junior\",\"current_role\":\"Synthetic Analyst\",\"target_grade\":\"Middle\",\"target_role\":\"Synthetic Analyst\"}. Criticality comes from the target role/grade catalog; all parts form the full list."
+    },
+    {
+      "evidence_id": "synthetic-history-001",
+      "kind": "history",
+      "subject_id": "SYNTHETIC_EVENT_001",
+      "fact": "Recorded participation: {\"as_of\":\"2026-10-01\",\"date_sources\":{\"completed_at\":0,\"historical_proxy\":0},\"observed_from\":null,\"observed_to\":null,\"sample_size\":0,\"scope\":\"event\",\"status_counts\":{\"completed\":0,\"declined\":0,\"dropped\":0,\"in_progress\":0,\"no_show\":0,\"overdue\":0}}. Observed dates are not a coverage guarantee; imported dates are proxies, not proof of timeliness. Counts, including zero samples, do not establish stable preferences."
+    },
+    {
+      "evidence_id": "synthetic-comparable-history-001",
+      "kind": "history",
+      "subject_id": "SYNTHETIC_EVENT_001",
+      "fact": "Recorded participation: {\"as_of\":\"2026-10-01\",\"date_sources\":{\"completed_at\":0,\"historical_proxy\":0},\"event_format\":\"self_paced\",\"event_type\":\"course\",\"observed_from\":null,\"observed_to\":null,\"sample_size\":0,\"scope\":\"same_type_format_other_events\",\"status_counts\":{\"completed\":0,\"declined\":0,\"dropped\":0,\"in_progress\":0,\"no_show\":0,\"overdue\":0}}. Observed dates are not a coverage guarantee; imported dates are proxies, not proof of timeliness. Counts, including zero samples, do not establish stable preferences."
+    }
+  ],
+  "limit": 3
+}
