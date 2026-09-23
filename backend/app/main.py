@@ -16,6 +16,8 @@ from .auth import COOKIE, digest, login, require_employee, require_hr, require_u
 from .config import Settings
 from .database import Database, MigrationError
 from .errors import APIError
+from .imports import ImportService
+from .service import CareerService
 
 log = logging.getLogger("career_quest")
 
@@ -24,6 +26,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     config = settings or Settings.from_env()
     database = Database(config)
     adapter = AIAdapter(config.ai_enabled)
+    career = CareerService(database, adapter)
+    importer = ImportService(database)
 
     @asynccontextmanager
     async def lifespan(app):
@@ -37,17 +41,18 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         title="Career Quest API",
         version="1.0.0",
         lifespan=lifespan,
-        description="Implemented: health, readiness, version and demo auth. "
-        "Domain routes are planned: authenticated requests return 501. "
-        "Preview is a team addition. Dataset importer and AI core are not implemented.",
+        description="Career Quest demo backend: protected profiles, progression, atomic import, "
+        "idempotent completions and persisted recommendations. AI is optional and explicitly disabled by default. "
+        "Preview is a team addition. All arithmetic is performed by the backend.",
     )
     app.state.settings, app.state.database, app.state.ai_adapter = config, database, adapter
+    app.state.career = career
     app.add_middleware(
         CORSMiddleware,
         allow_origins=list(config.allowed_origins),
         allow_credentials=True,
         allow_methods=["GET", "POST", "PATCH"],
-        allow_headers=["Content-Type", "X-CSRF-Token"],
+        allow_headers=["Content-Type", "X-CSRF-Token", "Idempotency-Key"],
         expose_headers=["X-Request-ID"],
     )
 
@@ -122,7 +127,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         )
 
     def capabilities():
-        return {"ai": adapter.capability, "dataset": {"status": "not_loaded", "version": None}}
+        try:
+            dataset = career.capabilities()
+        except (sqlite3.Error, OSError):
+            dataset = {"status": "not_loaded", "version": None}
+        return {"ai": adapter.capability, "dataset": dataset}
 
     implemented = {"x-implementation-status": "implemented"}
 
@@ -200,63 +209,74 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     def me(user=Depends(require_user)):
         return user
 
-    def planned():
-        raise APIError(
-            501,
-            "NOT_IMPLEMENTED",
-            "This domain endpoint is planned for a later step.",
-            {"capabilities": capabilities()},
-        )
+    domain_errors = {status: {"model": c.ErrorResponse} for status in [401, 403, 404, 409, 422, 503]}
+    domain_options = dict(responses=domain_errors, tags=["implemented"], openapi_extra=implemented)
 
-    domain_errors = {status: {"model": c.ErrorResponse} for status in [401, 403, 404, 409, 422, 501, 503]}
-    planned_options = dict(
-        status_code=501,
-        response_model=c.ErrorResponse,
-        responses=domain_errors,
-        tags=["planned"],
-        openapi_extra={"x-implementation-status": "planned"},
-        description="Planned v1 domain operation. Access checks are implemented; domain logic returns 501.",
-    )
-
-    @app.get("/api/catalog", **planned_options)
+    @app.get("/api/catalog", response_model=c.CatalogResponse, **domain_options)
     def catalog(user=Depends(require_user)):
-        planned()
+        return career.catalog()
 
-    @app.get("/api/employees", **planned_options)
+    @app.get("/api/employees", response_model=c.EmployeeListResponse, **domain_options)
     def employees(
         limit: Annotated[int, Query(ge=1, le=100)] = 20,
         offset: Annotated[int, Query(ge=0)] = 0,
         user=Depends(require_hr),
     ):
-        planned()
+        return career.employees(limit, offset)
 
-    @app.get("/api/employees/{employee_id}", **planned_options)
-    def employee(user=Depends(require_employee)):
-        planned()
+    @app.get("/api/employees/{employee_id}", response_model=c.EmployeeDetailResponse, **domain_options)
+    def employee(employee_id: str, user=Depends(require_employee)):
+        return career.detail(employee_id)
 
-    @app.patch("/api/employees/{employee_id}/goal", **planned_options)
-    def goal(payload: c.GoalUpdateRequest, user=Depends(require_employee)):
-        planned()
+    @app.patch("/api/employees/{employee_id}/goal", response_model=c.EmployeeDetailResponse, **domain_options)
+    def goal(employee_id: str, payload: c.GoalUpdateRequest, user=Depends(require_employee)):
+        return career.set_goal(employee_id, payload)
 
-    @app.post("/api/employees/{employee_id}/recommendations", **planned_options)
-    def recommendations(payload: c.RecommendationRequest, user=Depends(require_employee)):
-        planned()
+    @app.post(
+        "/api/employees/{employee_id}/recommendations",
+        response_model=c.RecommendationResponse,
+        **domain_options,
+    )
+    async def recommendations(
+        employee_id: str, payload: c.RecommendationRequest, user=Depends(require_employee)
+    ):
+        return await career.recommend(employee_id, payload)
 
-    @app.post("/api/employees/{employee_id}/preview", **planned_options)
-    def preview(payload: c.PreviewRequest, user=Depends(require_employee)):
-        planned()
+    @app.get(
+        "/api/employees/{employee_id}/recommendations/latest",
+        response_model=c.RecommendationResponse,
+        **domain_options,
+    )
+    def latest(employee_id: str, user=Depends(require_employee)):
+        return career.latest(employee_id)
 
-    @app.post("/api/employees/{employee_id}/completions", **planned_options)
-    def completions(payload: c.CompletionRequest, user=Depends(require_employee)):
-        planned()
+    @app.post("/api/employees/{employee_id}/preview", response_model=c.PreviewResponse, **domain_options)
+    def preview(employee_id: str, payload: c.PreviewRequest, user=Depends(require_employee)):
+        return career.preview(employee_id, payload)
 
-    @app.get("/api/hr/summary", **planned_options)
+    @app.post(
+        "/api/employees/{employee_id}/completions", response_model=c.CompletionResponse, **domain_options
+    )
+    def completions(
+        employee_id: str, payload: c.CompletionRequest, request: Request, user=Depends(require_employee)
+    ):
+        return career.complete(employee_id, user, payload, request.headers.get("Idempotency-Key"))
+
+    @app.get("/api/hr/summary", response_model=c.HRSummaryResponse, **domain_options)
     def summary(user=Depends(require_hr)):
-        planned()
+        return career.summary()
 
-    @app.post("/api/hr/import", **planned_options)
-    def import_data(payload: c.ImportRequest, user=Depends(require_hr)):
-        planned()
+    @app.post("/api/hr/import", response_model=c.ImportResponse, **domain_options)
+    def import_data(payload: c.ImportRequest | c.BatchImportRequest, user=Depends(require_hr)):
+        if isinstance(payload, c.BatchImportRequest):
+            files = [file.model_dump(mode="json") for file in payload.files]
+        else:
+            files = [{key: getattr(payload, key) for key in ("source_filename", "source_format", "content")}]
+        if payload.dry_run:
+            return importer.preview(files)
+        if not payload.preview_token:
+            raise APIError(409, "PREVIEW_REQUIRED", "Validate the same batch with dry_run=true first.")
+        return importer.commit(files, payload.preview_token)
 
     # A single contract module defines both implemented and future HTTP schemas.
     original_openapi = app.openapi
@@ -275,8 +295,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         for path, methods in document["paths"].items():
             for method, operation in methods.items():
                 if method in {"get", "post", "patch"} and (
-                    operation.get("x-implementation-status") == "planned"
-                    or path in {"/api/me", "/api/auth/logout"}
+                    path.startswith("/api/")
+                    and path not in {"/api/auth/login", "/api/health", "/api/health/ready", "/api/version"}
                 ):
                     operation["security"] = [{"DemoSession": []}]
                     if method in {"post", "patch"}:
@@ -293,6 +313,17 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                             "schema": {"type": "string"},
                         }
                     )
+        operation = document["paths"]["/api/employees/{employee_id}/completions"]["post"]
+        if not any(item.get("name") == "Idempotency-Key" for item in operation.get("parameters", [])):
+            operation.setdefault("parameters", []).append(
+                {
+                    "name": "Idempotency-Key",
+                    "in": "header",
+                    "required": True,
+                    "schema": {"type": "string", "minLength": 1, "maxLength": 128},
+                    "description": "Reuse with the identical body after a lost response; checked after authorization and before revision.",
+                }
+            )
         return document
 
     app.openapi = openapi

@@ -31,7 +31,7 @@ class AIAdapter:
         if self._recommend is None:
             return RecommendationResult(status="not_configured", engine="none", recommendations=[])
         try:
-            result = await asyncio.wait_for(self._recommend(context.model_copy(deep=True)), timeout=10)
+            result = await asyncio.wait_for(self._recommend(context.model_copy(deep=True)), timeout=7)
             if isinstance(result, RecommendationResult):
                 result = result.model_dump()
             result = RecommendationResult.model_validate(result)

@@ -67,6 +67,42 @@ def test_replay_uses_chronological_order_with_record_id_tiebreaker():
     assert actual["SYNTH_PYTHON"] == 4
 
 
+@pytest.mark.parametrize("later_timestamp", ["2026-10-01T11:00:00+05:00", "2026-10-01T06:00:00Z"])
+def test_exact_same_day_completions_use_aware_time_before_random_record_id(later_timestamp):
+    low = event("SYNTH_LOW", develops_skills=[{"skill_id": "SYNTH_PYTHON", "gain": 1, "max_level": 2}])
+    high = event("SYNTH_HIGH", develops_skills=[{"skill_id": "SYNTH_PYTHON", "gain": 1, "max_level": 5}])
+    rows = [
+        history("A_SECOND", event_id="SYNTH_HIGH", date_source="completed_at", completed_at=later_timestamp),
+        history(
+            "Z_FIRST",
+            event_id="SYNTH_LOW",
+            date_source="completed_at",
+            completed_at="2026-10-01T10:00:00+05:00",
+        ),
+    ]
+    events = {"SYNTH_LOW": low, "SYNTH_HIGH": high}
+    assert replay(employee(), events, rows, SKILL_IDS, DEMO_DATE)["SYNTH_PYTHON"] == 3
+    assert replay(employee(), events, rows[::-1], SKILL_IDS, DEMO_DATE)["SYNTH_PYTHON"] == 3
+
+
+def test_historical_proxies_on_same_day_precede_exact_completion_times():
+    low = event("SYNTH_LOW", develops_skills=[{"skill_id": "SYNTH_PYTHON", "gain": 1, "max_level": 2}])
+    high = event("SYNTH_HIGH", develops_skills=[{"skill_id": "SYNTH_PYTHON", "gain": 1, "max_level": 5}])
+    rows = [
+        history(
+            "A_EXACT",
+            event_id="SYNTH_HIGH",
+            date_source="completed_at",
+            completed_at="2026-10-01T00:00:00+05:00",
+        ),
+        history("Z_PROXY", event_id="SYNTH_LOW", date="2026-10-01"),
+    ]
+    assert (
+        replay(employee(), {"SYNTH_LOW": low, "SYNTH_HIGH": high}, rows, SKILL_IDS, DEMO_DATE)["SYNTH_PYTHON"]
+        == 3
+    )
+
+
 @pytest.mark.parametrize(
     ("before", "gain", "cap", "after"),
     [

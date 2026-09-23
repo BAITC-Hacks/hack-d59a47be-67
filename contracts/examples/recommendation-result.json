@@ -8,7 +8,9 @@
         "text": "Синтетический пример: занятие уменьшает подтверждённый разрыв навыка.",
         "evidence_ids": [
           "synthetic-gap-001",
-          "synthetic-event-001"
+          "synthetic-event-001",
+          "synthetic-goal-001",
+          "synthetic-history-001"
         ]
       }
     }

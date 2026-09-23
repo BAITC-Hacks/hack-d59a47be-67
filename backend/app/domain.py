@@ -9,7 +9,7 @@ new actions supply ``effective_date`` separately from their real ``completed_at`
 from __future__ import annotations
 
 from collections.abc import Collection, Mapping, Sequence
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from math import isfinite
 from typing import Any
 
@@ -62,6 +62,23 @@ def effective_date(record: Mapping[str, Any]) -> date:
             raise DomainError("invalid_date", "Completion effective_date conflicts with completed_at")
         return completed_on
     return _day(record.get("effective_date") or record.get("date"))
+
+
+def _completion_order(record: Mapping[str, Any]) -> tuple[date, int, datetime, str]:
+    """Keep proxy history deterministic, then replay exact facts in time order.
+
+    Event caps are not commutative: random completion IDs must never reorder
+    exact same-day actions. Imported proxies sort before exact actions on that
+    date; without a historical completion time, only record_id can break ties.
+    """
+    day = effective_date(record)
+    exact = record.get("date_source") == "completed_at"
+    timestamp = (
+        datetime.fromisoformat(record["completed_at"]).astimezone(timezone.utc)
+        if exact
+        else datetime.min.replace(tzinfo=timezone.utc)
+    )
+    return day, int(exact), timestamp, record["record_id"]
 
 
 def apply_event(skills: Mapping[str, float], event: Mapping[str, Any]) -> tuple[dict, list[dict]]:
@@ -117,7 +134,7 @@ def replay(
         for row in history
         if row["employee_id"] == employee["employee_id"] and row["status"] == "completed"
     ]
-    records.sort(key=lambda row: (effective_date(row), row["record_id"]))
+    records.sort(key=_completion_order)
     for record in records:
         completed_on = effective_date(record)
         if completed_on > cutoff:

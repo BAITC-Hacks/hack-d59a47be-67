@@ -32,7 +32,9 @@ def test_migrations_preserve_data_across_repeated_startup(tmp_path: Path) -> Non
         assert (
             connection.execute("SELECT display_name FROM employees").fetchone()[0] == "Synthetic Employee One"
         )
-        assert connection.execute("SELECT COUNT(*) FROM schema_migrations").fetchone()[0] == len(database._migrations())
+        assert connection.execute("SELECT COUNT(*) FROM schema_migrations").fetchone()[0] == len(
+            database._migrations()
+        )
         assert connection.execute("PRAGMA foreign_keys").fetchone()[0] == 1
         assert connection.execute("PRAGMA busy_timeout").fetchone()[0] == 5000
         assert connection.execute("PRAGMA journal_mode").fetchone()[0] == "delete"
@@ -93,7 +95,10 @@ def test_failed_migration_is_atomic(tmp_path: Path) -> None:
     with pytest.raises(sqlite3.OperationalError):
         database.migrate()
     with database.connect() as connection:
-        assert connection.execute("SELECT COUNT(*) FROM schema_migrations").fetchone()[0] == len(database._migrations()) - 1
+        assert (
+            connection.execute("SELECT COUNT(*) FROM schema_migrations").fetchone()[0]
+            == len(database._migrations()) - 1
+        )
         assert (
             connection.execute("SELECT name FROM sqlite_master WHERE name = 'synthetic_partial'").fetchone()
             is None

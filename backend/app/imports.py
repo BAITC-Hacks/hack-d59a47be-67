@@ -148,6 +148,7 @@ class StagedImport:
     employees: dict[str, dict]
     history: dict[str, dict]
     counts: dict[str, int]
+    warnings: list[str]
 
     @property
     def count(self) -> int:
@@ -159,7 +160,7 @@ class StagedImport:
             "data_version": self.data_version,
             "imported_records": self.count,
             "counts": self.counts,
-            "warnings": [],
+            "warnings": self.warnings,
         }
 
 
@@ -205,21 +206,23 @@ class ImportService:
                 _invalid("Event refers to unknown skills", "events")
             if not set(event["target_roles"]) <= roles:
                 _invalid("Event audience refers to an unknown role", "target_roles")
-        existing_profiles = {
-            row["employee_id"]: json.loads(row["profile_json"])
-            for row in conn.execute("SELECT * FROM employee_profiles")
+        stored_profiles = conn.execute("SELECT * FROM employee_profiles").fetchall()
+        existing_profiles = {row["employee_id"]: json.loads(row["profile_json"]) for row in stored_profiles}
+        source_profiles = {
+            row["employee_id"]: json.loads(row["source_json"] or row["profile_json"])
+            for row in stored_profiles
         }
         input_profiles = _unique(documents.get("employees", {}).get("employees", []), "employee_id")
         if any(
-            key in existing_profiles and existing_profiles[key] != value
-            for key, value in input_profiles.items()
+            key in source_profiles and source_profiles[key] != value for key, value in input_profiles.items()
         ):
             raise APIError(
                 409,
                 "employee_conflict",
                 "An existing employee_id has different contents; replacement is not supported",
             )
-        all_profiles = existing_profiles | input_profiles
+        # Validate current local goals, and never overwrite them during an identical reimport.
+        all_profiles = input_profiles | existing_profiles
         for profile in all_profiles.values():
             if not set(profile["skills"]) <= skills.keys():
                 _invalid("Employee profile refers to unknown skills", "employees.skills")
@@ -228,6 +231,11 @@ class ImportService:
             goal = profile["career_goal"]
             if goal and (goal["target_role"], goal["target_grade"]) not in role_profiles:
                 _invalid("Employee goal has no catalog profile", "employees.career_goal")
+            if not goal and profile["grade"] != "Lead":
+                grades = ("Junior", "Middle", "Senior", "Lead")
+                next_grade = grades[grades.index(profile["grade"]) + 1]
+                if (profile["role"], next_grade) not in role_profiles:
+                    _invalid("Employee implicit next grade has no catalog profile", "role_profiles")
             if not profile["hire_date"] <= profile["last_review_date"] <= meta["as_of_date"]:
                 _invalid("Employee review must be between hire and scenario dates", "last_review_date")
             manager_id = profile["manager_id"]
@@ -247,7 +255,8 @@ class ImportService:
         for record in input_history:
             existing = existing_history.get(record["record_id"])
             if existing is not None:
-                if {key: existing.get(key) for key in HISTORY_FIELDS} != {
+                source_record = existing.get("source_record", existing)
+                if {key: source_record.get(key) for key in HISTORY_FIELDS} != {
                     key: record[key] for key in HISTORY_FIELDS
                 }:
                     raise APIError(409, "history_conflict", "An existing record_id has different contents")
@@ -271,7 +280,7 @@ class ImportService:
             if record["score"] is not None and event["type"] not in {"course", "certification", "compliance"}:
                 _invalid("Score is only allowed for courses, certifications and compliance", "score")
         pending_profiles = {
-            key: value for key, value in input_profiles.items() if existing_profiles.get(key) != value
+            key: value for key, value in input_profiles.items() if key not in existing_profiles
         }
         new_skills = skills_doc if skills_doc != old_skills else None
         new_events = events_doc if events_doc != old_events else None
@@ -291,6 +300,13 @@ class ImportService:
             pending_profiles,
             pending_history,
             counts,
+            [
+                "Catalog replacement recalculates profiles from their baseline and history; "
+                "saved recommendations become stale after commit."
+            ]
+            if (new_skills is not None and old_skills is not None)
+            or (new_events is not None and old_events is not None)
+            else [],
         )
 
     def preview(self, files: list[dict]) -> dict:
@@ -333,9 +349,8 @@ class ImportService:
                     (profile["employee_id"], profile["full_name"]),
                 )
                 conn.execute(
-                    "INSERT INTO employee_profiles VALUES (?,?) "
-                    "ON CONFLICT(employee_id) DO UPDATE SET profile_json=excluded.profile_json",
-                    (profile["employee_id"], canonical(profile)),
+                    "INSERT INTO employee_profiles(employee_id,profile_json,source_json) VALUES (?,?,?)",
+                    (profile["employee_id"], canonical(profile), canonical(profile)),
                 )
             for record in staged.history.values():
                 conn.execute(

@@ -12,4 +12,5 @@ python-dotenv==1.2.3
 starlette==1.7.0
 typing-extensions==4.16.0
 typing-inspection==0.4.4
+tzdata==2026.4
 uvicorn==0.53.0

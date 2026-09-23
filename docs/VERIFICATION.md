@@ -1,3 +1,28 @@
+# Приёмка предметного backend — 2026-09-23
+
+Командная ветка `origin/codex/architecture-foundation` получена по URL пользователя. Её история присоединена локально; исходное ТЗ, подготовка/аудит данных, frontend и документы сохранены. Работа/PR — отдельная `codex/backend-foundation`; main/base не обновлялись напрямую.
+
+Фактический финальный локальный `make check`:
+
+- `.venv/bin/python -m unittest discover -s tests -v` — **21 passed**, исходные тесты команды.
+- `.venv/bin/python -m pytest backend/tests -q` — **234 passed** (финальный прогон с `PYTHONTZPATH=""`, включая проверку замены каталога).
+- `.venv/bin/python scripts/check_contracts.py` — **9 checks passed**; два JSON Schema генерируются из единственных Pydantic-моделей, live AI не вызывается.
+- `.venv/bin/python -m ruff check backend scripts/smoke.py scripts/check_contracts.py` — all checks passed.
+- `scripts/export-openapi` — экспорт из приложения; предметные endpoints implemented, cookie/CSRF/Origin/Idempotency-Key описаны.
+- `scripts/smoke` — два реальных TCP-запуска с временным синтетическим импортом: login, profile, completion, потеря ответа, restart, точный idempotency replay, чужой профиль403, logout/revocation.
+
+Регрессии проверяют: replay строго review<completed<=cutoff, missing=0/unknown skill error; caps никогда не уменьшают навык; точный временной порядок новых completed_at; повторные mandatory; EV_036 с двумя разными сессиями; текущее role/grade/prerequisites/calendar/history; no_target; preview без записи; samekey/body до revision, другое тело409 и запрет второй награды; rollback при внутренней SQL-ошибке; совместный import нового профиля/истории с ошибкой середины партии; source baseline после local goal/completion и no-op reimport; saved full recommendation cards после restart; stale после каждого изменения; write во время await AI доказывает отсутствие удерживаемой DB-транзакции, ответ старой revision отклоняется409; минимум три категории evidence, свободный текст модели не публикуется.
+
+Полный реальный кит проверен локально в отдельной временной SQLite, без копирования исходных данных в Git/образ или их вывода: 60 skills,32 role_profiles,40 events,200 employees,2743 history. Импорт/повторный запуск/no-op reimport сохраняют revision=1; повтор добавляет0 записей. Все200 HTTP profile projections и каталог проходят Pydantic. Доменное распределение совпало с исходным командным аудитом:159 actionable,10 no_target,31 no_candidates. Совместный проход профилей/HR/reimport занял около0.503 s; это локальная проверка функций, не измерение p95 API и не оценка LLM.
+
+Закреплён tzdata==2026.4; Asia/Almaty проверена без системной базы зон через `PYTHONTZPATH=""`. Замена каталога явно предупреждает о пересчёте и отдельно проверена тестом.
+
+Остаётся одно upstream предупреждение Starlette о deprecated httpx TestClient. GitHub Actions заблокирован биллингом организации; CI не объявлен зелёным. Docker отсутствует, container build и Compose не проверены. AI-код/провайдер/frontend не реализовывались этой веткой. HR endpoint пока выдаёт базовые counts; расширенная аналитика gaps/участия и explicit replace существующих employee_id/record_id — отдельный следующий срез.
+
+Ниже сохранён исторический отчёт предыдущего инфраструктурного checkpoint; его planned/501/missing-origin сведения относятся только к тому этапу.
+
+---
+
 # Фактические проверки — 2026-09-23
 
 Проверялся локальный каркас Алихана. Каталоги `backend/app/ai/` и `frontend/` не создавались и не изменялись. Исходный параллельный черновик сохранён в игнорируемой `.local-legacy/foundation-draft/`; он не включён в проверяемое приложение и checkpoint.

@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Career Quest API",
-    "description": "Implemented: health, readiness, version and demo auth. Domain routes are planned: authenticated requests return 501. Preview is a team addition. Dataset importer and AI core are not implemented.",
+    "description": "Career Quest demo backend: protected profiles, progression, atomic import, idempotent completions and persisted recommendations. AI is optional and explicitly disabled by default. Preview is a team addition. All arithmetic is performed by the backend.",
     "version": "1.0.0"
   },
   "paths": {
@@ -344,18 +344,17 @@
     "/api/catalog": {
       "get": {
         "tags": [
-          "planned"
+          "implemented"
         ],
         "summary": "Catalog",
-        "description": "Planned v1 domain operation. Access checks are implemented; domain logic returns 501.",
         "operationId": "catalog_api_catalog_get",
         "responses": {
-          "501": {
+          "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
+                  "$ref": "#/components/schemas/CatalogResponse"
                 }
               }
             }
@@ -421,7 +420,7 @@
             }
           }
         },
-        "x-implementation-status": "planned",
+        "x-implementation-status": "implemented",
         "security": [
           {
             "DemoSession": []
@@ -432,10 +431,9 @@
     "/api/employees": {
       "get": {
         "tags": [
-          "planned"
+          "implemented"
         ],
         "summary": "Employees",
-        "description": "Planned v1 domain operation. Access checks are implemented; domain logic returns 501.",
         "operationId": "employees_api_employees_get",
         "parameters": [
           {
@@ -463,12 +461,12 @@
           }
         ],
         "responses": {
-          "501": {
+          "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
+                  "$ref": "#/components/schemas/EmployeeListResponse"
                 }
               }
             }
@@ -534,7 +532,7 @@
             "description": "Service Unavailable"
           }
         },
-        "x-implementation-status": "planned",
+        "x-implementation-status": "implemented",
         "security": [
           {
             "DemoSession": []
@@ -545,10 +543,9 @@
     "/api/employees/{employee_id}": {
       "get": {
         "tags": [
-          "planned"
+          "implemented"
         ],
         "summary": "Employee",
-        "description": "Planned v1 domain operation. Access checks are implemented; domain logic returns 501.",
         "operationId": "employee_api_employees__employee_id__get",
         "parameters": [
           {
@@ -562,12 +559,12 @@
           }
         ],
         "responses": {
-          "501": {
+          "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
+                  "$ref": "#/components/schemas/EmployeeDetailResponse"
                 }
               }
             }
@@ -633,7 +630,7 @@
             "description": "Service Unavailable"
           }
         },
-        "x-implementation-status": "planned",
+        "x-implementation-status": "implemented",
         "security": [
           {
             "DemoSession": []
@@ -644,10 +641,9 @@
     "/api/employees/{employee_id}/goal": {
       "patch": {
         "tags": [
-          "planned"
+          "implemented"
         ],
         "summary": "Goal",
-        "description": "Planned v1 domain operation. Access checks are implemented; domain logic returns 501.",
         "operationId": "goal_api_employees__employee_id__goal_patch",
         "parameters": [
           {
@@ -680,12 +676,12 @@
           }
         },
         "responses": {
-          "501": {
+          "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
+                  "$ref": "#/components/schemas/EmployeeDetailResponse"
                 }
               }
             }
@@ -751,7 +747,7 @@
             "description": "Service Unavailable"
           }
         },
-        "x-implementation-status": "planned",
+        "x-implementation-status": "implemented",
         "security": [
           {
             "DemoSession": [],
@@ -763,10 +759,9 @@
     "/api/employees/{employee_id}/recommendations": {
       "post": {
         "tags": [
-          "planned"
+          "implemented"
         ],
         "summary": "Recommendations",
-        "description": "Planned v1 domain operation. Access checks are implemented; domain logic returns 501.",
         "operationId": "recommendations_api_employees__employee_id__recommendations_post",
         "parameters": [
           {
@@ -799,12 +794,12 @@
           }
         },
         "responses": {
-          "501": {
+          "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
+                  "$ref": "#/components/schemas/RecommendationResponse"
                 }
               }
             }
@@ -870,7 +865,7 @@
             "description": "Service Unavailable"
           }
         },
-        "x-implementation-status": "planned",
+        "x-implementation-status": "implemented",
         "security": [
           {
             "DemoSession": [],
@@ -879,13 +874,110 @@
         ]
       }
     },
+    "/api/employees/{employee_id}/recommendations/latest": {
+      "get": {
+        "tags": [
+          "implemented"
+        ],
+        "summary": "Latest",
+        "operationId": "latest_api_employees__employee_id__recommendations_latest_get",
+        "parameters": [
+          {
+            "name": "employee_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Employee Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecommendationResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "x-implementation-status": "implemented",
+        "security": [
+          {
+            "DemoSession": []
+          }
+        ]
+      }
+    },
     "/api/employees/{employee_id}/preview": {
       "post": {
         "tags": [
-          "planned"
+          "implemented"
         ],
         "summary": "Preview",
-        "description": "Planned v1 domain operation. Access checks are implemented; domain logic returns 501.",
         "operationId": "preview_api_employees__employee_id__preview_post",
         "parameters": [
           {
@@ -918,12 +1010,12 @@
           }
         },
         "responses": {
-          "501": {
+          "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
+                  "$ref": "#/components/schemas/PreviewResponse"
                 }
               }
             }
@@ -989,7 +1081,7 @@
             "description": "Service Unavailable"
           }
         },
-        "x-implementation-status": "planned",
+        "x-implementation-status": "implemented",
         "security": [
           {
             "DemoSession": [],
@@ -1001,10 +1093,9 @@
     "/api/employees/{employee_id}/completions": {
       "post": {
         "tags": [
-          "planned"
+          "implemented"
         ],
         "summary": "Completions",
-        "description": "Planned v1 domain operation. Access checks are implemented; domain logic returns 501.",
         "operationId": "completions_api_employees__employee_id__completions_post",
         "parameters": [
           {
@@ -1024,6 +1115,17 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            },
+            "description": "Reuse with the identical body after a lost response; checked after authorization and before revision."
           }
         ],
         "requestBody": {
@@ -1037,12 +1139,12 @@
           }
         },
         "responses": {
-          "501": {
+          "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
+                  "$ref": "#/components/schemas/CompletionResponse"
                 }
               }
             }
@@ -1108,7 +1210,7 @@
             "description": "Service Unavailable"
           }
         },
-        "x-implementation-status": "planned",
+        "x-implementation-status": "implemented",
         "security": [
           {
             "DemoSession": [],
@@ -1120,18 +1222,17 @@
     "/api/hr/summary": {
       "get": {
         "tags": [
-          "planned"
+          "implemented"
         ],
         "summary": "Summary",
-        "description": "Planned v1 domain operation. Access checks are implemented; domain logic returns 501.",
         "operationId": "summary_api_hr_summary_get",
         "responses": {
-          "501": {
+          "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
+                  "$ref": "#/components/schemas/HRSummaryResponse"
                 }
               }
             }
@@ -1197,7 +1298,7 @@
             }
           }
         },
-        "x-implementation-status": "planned",
+        "x-implementation-status": "implemented",
         "security": [
           {
             "DemoSession": []
@@ -1208,28 +1309,35 @@
     "/api/hr/import": {
       "post": {
         "tags": [
-          "planned"
+          "implemented"
         ],
         "summary": "Import Data",
-        "description": "Planned v1 domain operation. Access checks are implemented; domain logic returns 501.",
         "operationId": "import_data_api_hr_import_post",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ImportRequest"
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/ImportRequest"
+                  },
+                  {
+                    "$ref": "#/components/schemas/BatchImportRequest"
+                  }
+                ],
+                "title": "Payload"
               }
             }
           },
           "required": true
         },
         "responses": {
-          "501": {
+          "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
+                  "$ref": "#/components/schemas/ImportResponse"
                 }
               }
             }
@@ -1295,7 +1403,7 @@
             }
           }
         },
-        "x-implementation-status": "planned",
+        "x-implementation-status": "implemented",
         "security": [
           {
             "DemoSession": [],
@@ -1345,6 +1453,123 @@
         ],
         "title": "AICapability"
       },
+      "ActivityRecord": {
+        "properties": {
+          "record_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Record Id"
+          },
+          "event_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Event Id"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "completed",
+              "in_progress",
+              "dropped",
+              "no_show",
+              "declined",
+              "overdue"
+            ],
+            "title": "Status"
+          },
+          "activity_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Activity Date"
+          },
+          "date_source": {
+            "type": "string",
+            "enum": [
+              "historical_proxy",
+              "completed_at"
+            ],
+            "title": "Date Source"
+          },
+          "completed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed At"
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "import",
+              "completion",
+              "demo_simulation"
+            ],
+            "title": "Mode",
+            "default": "import"
+          },
+          "effects": {
+            "items": {
+              "$ref": "#/components/schemas/SkillEffect"
+            },
+            "type": "array",
+            "title": "Effects"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "record_id",
+          "event_id",
+          "status",
+          "activity_date",
+          "date_source"
+        ],
+        "title": "ActivityRecord"
+      },
+      "BatchImportRequest": {
+        "properties": {
+          "dry_run": {
+            "type": "boolean",
+            "title": "Dry Run",
+            "default": true
+          },
+          "files": {
+            "items": {
+              "$ref": "#/components/schemas/SourceFile"
+            },
+            "type": "array",
+            "maxItems": 4,
+            "minItems": 1,
+            "title": "Files"
+          },
+          "preview_token": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 128,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Preview Token"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "files"
+        ],
+        "title": "BatchImportRequest"
+      },
       "Capabilities": {
         "properties": {
           "ai": {
@@ -1361,6 +1586,344 @@
           "dataset"
         ],
         "title": "Capabilities"
+      },
+      "CatalogEvent": {
+        "properties": {
+          "event_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Event Id"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Title"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 4000,
+            "title": "Description"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "compliance",
+              "onboarding",
+              "course",
+              "workshop",
+              "mentoring",
+              "certification",
+              "meetup"
+            ],
+            "title": "Type"
+          },
+          "format": {
+            "type": "string",
+            "enum": [
+              "online",
+              "offline",
+              "self_paced"
+            ],
+            "title": "Format"
+          },
+          "duration_hours": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Duration Hours"
+          },
+          "mandatory": {
+            "type": "boolean",
+            "title": "Mandatory"
+          },
+          "target_roles": {
+            "items": {
+              "type": "string",
+              "maxLength": 128,
+              "minLength": 1
+            },
+            "type": "array",
+            "title": "Target Roles"
+          },
+          "target_grades": {
+            "items": {
+              "type": "string",
+              "enum": [
+                "Junior",
+                "Middle",
+                "Senior",
+                "Lead"
+              ]
+            },
+            "type": "array",
+            "title": "Target Grades"
+          },
+          "develops_skills": {
+            "items": {
+              "$ref": "#/components/schemas/CatalogSkillGain"
+            },
+            "type": "array",
+            "title": "Develops Skills"
+          },
+          "prerequisites": {
+            "additionalProperties": {
+              "type": "number",
+              "maximum": 5.0,
+              "minimum": 0.0
+            },
+            "propertyNames": {
+              "maxLength": 128,
+              "minLength": 1
+            },
+            "type": "object",
+            "title": "Prerequisites"
+          },
+          "upcoming_sessions": {
+            "items": {
+              "type": "string",
+              "format": "date"
+            },
+            "type": "array",
+            "title": "Upcoming Sessions"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "event_id",
+          "title",
+          "description",
+          "type",
+          "format",
+          "duration_hours",
+          "mandatory",
+          "target_roles",
+          "target_grades",
+          "develops_skills",
+          "prerequisites",
+          "upcoming_sessions"
+        ],
+        "title": "CatalogEvent"
+      },
+      "CatalogResponse": {
+        "properties": {
+          "data_version": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Data Version"
+          },
+          "proficiency_scale": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Proficiency Scale"
+          },
+          "skills": {
+            "items": {
+              "$ref": "#/components/schemas/CatalogSkill"
+            },
+            "type": "array",
+            "title": "Skills"
+          },
+          "role_profiles": {
+            "items": {
+              "$ref": "#/components/schemas/CatalogRole"
+            },
+            "type": "array",
+            "title": "Role Profiles"
+          },
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/CatalogEvent"
+            },
+            "type": "array",
+            "title": "Events"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "data_version",
+          "proficiency_scale",
+          "skills",
+          "role_profiles"
+        ],
+        "title": "CatalogResponse"
+      },
+      "CatalogRole": {
+        "properties": {
+          "role": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Role"
+          },
+          "grade": {
+            "type": "string",
+            "enum": [
+              "Junior",
+              "Middle",
+              "Senior",
+              "Lead"
+            ],
+            "title": "Grade"
+          },
+          "required_skills": {
+            "additionalProperties": {
+              "type": "number",
+              "maximum": 5.0,
+              "minimum": 0.0
+            },
+            "propertyNames": {
+              "maxLength": 128,
+              "minLength": 1
+            },
+            "type": "object",
+            "title": "Required Skills"
+          },
+          "critical_skills": {
+            "items": {
+              "type": "string",
+              "maxLength": 128,
+              "minLength": 1
+            },
+            "type": "array",
+            "title": "Critical Skills"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "role",
+          "grade",
+          "required_skills",
+          "critical_skills"
+        ],
+        "title": "CatalogRole"
+      },
+      "CatalogSkill": {
+        "properties": {
+          "skill_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Skill Id"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "hard",
+              "soft"
+            ],
+            "title": "Type"
+          },
+          "category": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Category"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 1000,
+            "title": "Description"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "skill_id",
+          "name",
+          "type",
+          "category",
+          "description"
+        ],
+        "title": "CatalogSkill"
+      },
+      "CatalogSkillGain": {
+        "properties": {
+          "skill_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Skill Id"
+          },
+          "gain": {
+            "type": "number",
+            "maximum": 5.0,
+            "minimum": 0.0,
+            "title": "Gain"
+          },
+          "max_level": {
+            "type": "number",
+            "maximum": 5.0,
+            "minimum": 0.0,
+            "title": "Max Level"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "skill_id",
+          "gain",
+          "max_level"
+        ],
+        "title": "CatalogSkillGain"
+      },
+      "CompletionRecord": {
+        "properties": {
+          "completion_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Completion Id"
+          },
+          "event_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Event Id"
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "completion",
+              "demo_simulation"
+            ],
+            "title": "Mode"
+          },
+          "completed_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Completed At"
+          },
+          "effects": {
+            "items": {
+              "$ref": "#/components/schemas/SkillEffect"
+            },
+            "type": "array",
+            "title": "Effects"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "completion_id",
+          "event_id",
+          "mode",
+          "completed_at",
+          "effects"
+        ],
+        "title": "CompletionRecord"
       },
       "CompletionRequest": {
         "properties": {
@@ -1382,6 +1945,19 @@
               "demo_simulation"
             ],
             "title": "Mode"
+          },
+          "record_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 128,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Record Id"
           }
         },
         "additionalProperties": false,
@@ -1392,6 +1968,25 @@
           "mode"
         ],
         "title": "CompletionRequest"
+      },
+      "CompletionResponse": {
+        "properties": {
+          "state_version": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "State Version"
+          },
+          "completion": {
+            "$ref": "#/components/schemas/CompletionRecord"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "state_version",
+          "completion"
+        ],
+        "title": "CompletionResponse"
       },
       "DatasetCapability": {
         "properties": {
@@ -1423,6 +2018,177 @@
           "status"
         ],
         "title": "DatasetCapability"
+      },
+      "EmployeeDetailResponse": {
+        "properties": {
+          "data_version": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Data Version"
+          },
+          "state_version": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "State Version"
+          },
+          "profile": {
+            "$ref": "#/components/schemas/EmployeeProfile"
+          },
+          "goal": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Goal"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "current_skills": {
+            "items": {
+              "$ref": "#/components/schemas/SkillLevel"
+            },
+            "type": "array",
+            "title": "Current Skills"
+          },
+          "gaps": {
+            "items": {
+              "$ref": "#/components/schemas/SkillGap"
+            },
+            "type": "array",
+            "title": "Gaps"
+          },
+          "history": {
+            "items": {
+              "$ref": "#/components/schemas/ActivityRecord"
+            },
+            "type": "array",
+            "title": "History"
+          },
+          "scenario_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Scenario Date",
+            "default": "2026-10-01"
+          },
+          "target_status": {
+            "type": "string",
+            "enum": [
+              "explicit",
+              "next_grade",
+              "no_target"
+            ],
+            "title": "Target Status",
+            "default": "explicit"
+          },
+          "progress": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Progress"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "data_version",
+          "state_version",
+          "profile",
+          "goal",
+          "current_skills",
+          "gaps",
+          "history"
+        ],
+        "title": "EmployeeDetailResponse"
+      },
+      "EmployeeListResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/EmployeeProfile"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Total"
+          },
+          "limit": {
+            "type": "integer",
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Limit"
+          },
+          "offset": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Offset"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "title": "EmployeeListResponse"
+      },
+      "EmployeeProfile": {
+        "properties": {
+          "employee_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Employee Id"
+          },
+          "full_name": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Full Name"
+          },
+          "department": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Department"
+          },
+          "role": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Role"
+          },
+          "grade": {
+            "type": "string",
+            "enum": [
+              "Junior",
+              "Middle",
+              "Senior",
+              "Lead"
+            ],
+            "title": "Grade"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "employee_id",
+          "full_name",
+          "department",
+          "role",
+          "grade"
+        ],
+        "title": "EmployeeProfile"
       },
       "ErrorResponse": {
         "properties": {
@@ -1460,6 +2226,34 @@
           "request_id"
         ],
         "title": "ErrorResponse"
+      },
+      "Explanation": {
+        "properties": {
+          "text": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Text"
+          },
+          "evidence_ids": {
+            "items": {
+              "type": "string",
+              "maxLength": 128,
+              "minLength": 1
+            },
+            "type": "array",
+            "maxItems": 50,
+            "minItems": 1,
+            "title": "Evidence Ids"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "text",
+          "evidence_ids"
+        ],
+        "title": "Explanation"
       },
       "Goal": {
         "properties": {
@@ -1507,6 +2301,46 @@
         ],
         "title": "GoalUpdateRequest"
       },
+      "HRSummaryResponse": {
+        "properties": {
+          "data_version": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Data Version"
+          },
+          "employee_count": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Employee Count"
+          },
+          "employees_with_goal": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Employees With Goal"
+          },
+          "completion_count": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Completion Count"
+          },
+          "demo_simulation_count": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Demo Simulation Count"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "data_version",
+          "employee_count",
+          "employees_with_goal",
+          "completion_count",
+          "demo_simulation_count"
+        ],
+        "title": "HRSummaryResponse"
+      },
       "HealthResponse": {
         "properties": {
           "status": {
@@ -1528,11 +2362,6 @@
       },
       "ImportRequest": {
         "properties": {
-          "dry_run": {
-            "type": "boolean",
-            "title": "Dry Run",
-            "default": true
-          },
           "source_filename": {
             "type": "string",
             "enum": [
@@ -1556,6 +2385,24 @@
             "maxLength": 2000000,
             "minLength": 1,
             "title": "Content"
+          },
+          "dry_run": {
+            "type": "boolean",
+            "title": "Dry Run",
+            "default": true
+          },
+          "preview_token": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 128,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Preview Token"
           }
         },
         "additionalProperties": false,
@@ -1565,8 +2412,84 @@
           "source_format",
           "content"
         ],
-        "title": "ImportRequest",
-        "description": "Opaque transport; inspected source shapes do not imply a working importer."
+        "title": "ImportRequest"
+      },
+      "ImportResponse": {
+        "properties": {
+          "dry_run": {
+            "type": "boolean",
+            "title": "Dry Run"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "validated",
+              "imported"
+            ],
+            "title": "Status"
+          },
+          "data_version": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 128,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data Version"
+          },
+          "imported_records": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Imported Records"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings"
+          },
+          "preview_token": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 128,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Preview Token"
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Revision",
+            "default": 0
+          },
+          "counts": {
+            "additionalProperties": {
+              "type": "integer",
+              "minimum": 0.0
+            },
+            "type": "object",
+            "title": "Counts"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "dry_run",
+          "status",
+          "data_version",
+          "imported_records"
+        ],
+        "title": "ImportResponse"
       },
       "JsonValue": {},
       "LoginRequest": {
@@ -1640,6 +2563,104 @@
         ],
         "title": "PreviewRequest"
       },
+      "PreviewResponse": {
+        "properties": {
+          "data_version": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Data Version"
+          },
+          "state_version": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "State Version"
+          },
+          "scenario_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Scenario Date"
+          },
+          "persisted": {
+            "type": "boolean",
+            "const": false,
+            "title": "Persisted",
+            "default": false
+          },
+          "effects": {
+            "items": {
+              "$ref": "#/components/schemas/SkillEffect"
+            },
+            "type": "array",
+            "title": "Effects"
+          },
+          "projected_skills": {
+            "items": {
+              "$ref": "#/components/schemas/SkillLevel"
+            },
+            "type": "array",
+            "title": "Projected Skills"
+          },
+          "projected_gaps": {
+            "items": {
+              "$ref": "#/components/schemas/SkillGap"
+            },
+            "type": "array",
+            "title": "Projected Gaps"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "data_version",
+          "state_version",
+          "scenario_date",
+          "effects",
+          "projected_skills",
+          "projected_gaps"
+        ],
+        "title": "PreviewResponse"
+      },
+      "Progress": {
+        "properties": {
+          "percent": {
+            "type": "number",
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Percent"
+          },
+          "met_skills": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Met Skills"
+          },
+          "total_skills": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Total Skills"
+          },
+          "critical_met": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Critical Met"
+          },
+          "critical_total": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Critical Total"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "percent",
+          "met_skills",
+          "total_skills",
+          "critical_met",
+          "critical_total"
+        ],
+        "title": "Progress"
+      },
       "ReadinessResponse": {
         "properties": {
           "status": {
@@ -1694,6 +2715,117 @@
         ],
         "title": "RecommendationRequest"
       },
+      "RecommendationResponse": {
+        "properties": {
+          "data_version": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Data Version"
+          },
+          "state_version": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "State Version"
+          },
+          "scenario_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Scenario Date"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "no_candidates",
+              "no_target",
+              "not_configured",
+              "unavailable"
+            ],
+            "title": "Status"
+          },
+          "engine": {
+            "type": "string",
+            "enum": [
+              "none",
+              "oleg"
+            ],
+            "title": "Engine"
+          },
+          "recommendations": {
+            "items": {
+              "$ref": "#/components/schemas/RecommendedEvent"
+            },
+            "type": "array",
+            "maxItems": 3,
+            "title": "Recommendations"
+          },
+          "recommendation_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 128,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recommendation Id"
+          },
+          "stale": {
+            "type": "boolean",
+            "title": "Stale",
+            "default": false
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "data_version",
+          "state_version",
+          "scenario_date",
+          "status",
+          "engine",
+          "recommendations"
+        ],
+        "title": "RecommendationResponse"
+      },
+      "RecommendedEvent": {
+        "properties": {
+          "event_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Event Id"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Title"
+          },
+          "effects": {
+            "items": {
+              "$ref": "#/components/schemas/SkillEffect"
+            },
+            "type": "array",
+            "title": "Effects"
+          },
+          "explanation": {
+            "$ref": "#/components/schemas/Explanation"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "event_id",
+          "title",
+          "effects",
+          "explanation"
+        ],
+        "title": "RecommendedEvent"
+      },
       "SessionResponse": {
         "properties": {
           "user": {
@@ -1719,6 +2851,140 @@
           "expires_at"
         ],
         "title": "SessionResponse"
+      },
+      "SkillEffect": {
+        "properties": {
+          "skill_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Skill Id"
+          },
+          "before": {
+            "type": "number",
+            "maximum": 5.0,
+            "minimum": 0.0,
+            "title": "Before"
+          },
+          "after": {
+            "type": "number",
+            "maximum": 5.0,
+            "minimum": 0.0,
+            "title": "After"
+          },
+          "delta": {
+            "type": "number",
+            "maximum": 5.0,
+            "minimum": -5.0,
+            "title": "Delta"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "skill_id",
+          "before",
+          "after",
+          "delta"
+        ],
+        "title": "SkillEffect"
+      },
+      "SkillGap": {
+        "properties": {
+          "skill_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Skill Id"
+          },
+          "current_level": {
+            "type": "number",
+            "maximum": 5.0,
+            "minimum": 0.0,
+            "title": "Current Level"
+          },
+          "target_level": {
+            "type": "number",
+            "maximum": 5.0,
+            "minimum": 0.0,
+            "title": "Target Level"
+          },
+          "gap": {
+            "type": "number",
+            "maximum": 5.0,
+            "minimum": 0.0,
+            "title": "Gap"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "skill_id",
+          "current_level",
+          "target_level",
+          "gap"
+        ],
+        "title": "SkillGap"
+      },
+      "SkillLevel": {
+        "properties": {
+          "skill_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Skill Id"
+          },
+          "level": {
+            "type": "number",
+            "maximum": 5.0,
+            "minimum": 0.0,
+            "title": "Level"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "skill_id",
+          "level"
+        ],
+        "title": "SkillLevel"
+      },
+      "SourceFile": {
+        "properties": {
+          "source_filename": {
+            "type": "string",
+            "enum": [
+              "skills.json",
+              "employees.json",
+              "events.json",
+              "activity_history.csv"
+            ],
+            "title": "Source Filename"
+          },
+          "source_format": {
+            "type": "string",
+            "enum": [
+              "json",
+              "csv"
+            ],
+            "title": "Source Format"
+          },
+          "content": {
+            "type": "string",
+            "maxLength": 2000000,
+            "minLength": 1,
+            "title": "Content"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "source_filename",
+          "source_format",
+          "content"
+        ],
+        "title": "SourceFile",
+        "description": "Transport for an original source file; its content is validated by the importer."
       },
       "UserIdentity": {
         "properties": {

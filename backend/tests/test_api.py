@@ -95,7 +95,7 @@ def assert_error(response, status: int, code: str):
 
 
 # These are API contract examples, not representations of organisers' source files.
-PLANNED_REQUESTS = [
+DOMAIN_REQUESTS = [
     ("GET", "/api/catalog", None),
     ("GET", "/api/employees?limit=20&offset=0", None),
     ("GET", f"/api/employees/{EMPLOYEE}", None),
@@ -275,25 +275,29 @@ def test_expired_and_tampered_session_rejected(client):
 
 def test_employee_scope_and_hr_scope(client):
     sign_in(client)
-    assert_error(client.get(f"/api/employees/{EMPLOYEE}"), 501, "NOT_IMPLEMENTED")
+    assert_error(client.get(f"/api/employees/{EMPLOYEE}"), 503, "DATASET_NOT_LOADED")
     assert_error(client.get(f"/api/employees/{OTHER_EMPLOYEE}"), 403, "FORBIDDEN")
     assert_error(client.get("/api/employees/not-present"), 403, "FORBIDDEN")
     assert_error(client.get("/api/employees"), 403, "FORBIDDEN")
     assert_error(client.get("/api/hr/summary"), 403, "FORBIDDEN")
     client.cookies.clear()
     sign_in(client, "synthetic.hr")
-    assert_error(client.get(f"/api/employees/{OTHER_EMPLOYEE}"), 501, "NOT_IMPLEMENTED")
+    assert_error(client.get(f"/api/employees/{OTHER_EMPLOYEE}"), 503, "DATASET_NOT_LOADED")
     assert_error(client.get("/api/employees/not-present"), 404, "EMPLOYEE_NOT_FOUND")
     assert_error(client.get("/api/employees?limit=0"), 422, "VALIDATION_ERROR")
 
 
-@pytest.mark.parametrize("method,path,payload", PLANNED_REQUESTS)
-def test_every_domain_route_authenticates_and_returns_explicit_501(client, method, path, payload):
+@pytest.mark.parametrize("method,path,payload", DOMAIN_REQUESTS)
+def test_every_domain_route_authenticates_and_requires_valid_data(client, method, path, payload):
     assert_error(client.request(method, path, json=payload), 401, "UNAUTHENTICATED")
     login_response = sign_in(client, "synthetic.hr")
     response = client.request(method, path, json=payload, headers=mutation_headers(login_response))
-    body = assert_error(response, 501, "NOT_IMPLEMENTED")
-    assert body.details["capabilities"]["ai"] == {"status": "not_configured", "engine": "none"}
+    if path == "/api/hr/import":
+        assert_error(response, 422, "invalid_source")
+    elif path.endswith("/completions"):
+        assert_error(response, 422, "IDEMPOTENCY_KEY_REQUIRED")
+    else:
+        assert_error(response, 503, "DATASET_NOT_LOADED")
     with client.app.state.database.connect() as connection:
         assert connection.execute("SELECT COUNT(*) FROM employees").fetchone()[0] == 2
 
@@ -374,15 +378,15 @@ def test_consistent_safe_error_envelopes(client, path, status, code, private_tex
         assert private_text not in response.text
 
 
-def test_openapi_distinguishes_planned_and_implemented_and_cookie_auth(client):
+def test_openapi_describes_implemented_endpoints_and_cookie_auth(client):
     schema = client.get("/openapi.json").json()
     health = schema["paths"]["/api/health"]["get"]
     assert health["x-implementation-status"] == "implemented"
-    for method, path, _ in PLANNED_REQUESTS:
+    for method, path, _ in DOMAIN_REQUESTS:
         normalized = path.split("?")[0].replace(EMPLOYEE, "{employee_id}")
         operation = schema["paths"][normalized][method.lower()]
-        assert operation["x-implementation-status"] == "planned"
-        assert "501" in operation["responses"] and "200" not in operation["responses"]
+        assert operation["x-implementation-status"] == "implemented"
+        assert "200" in operation["responses"] and "501" not in operation["responses"]
         expected = {"DemoSession": []}
         if method in {"POST", "PATCH"}:
             expected["CsrfToken"] = []

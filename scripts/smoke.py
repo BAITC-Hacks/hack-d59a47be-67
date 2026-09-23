@@ -16,6 +16,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from backend.app.auth import hash_password  # noqa: E402
 from backend.app.config import Settings  # noqa: E402
 from backend.app.database import Database  # noqa: E402
+from backend.app.imports import ImportService  # noqa: E402
+from backend.tests.test_workflow import EMPLOYEE, EVENT, OTHER, source_batch  # noqa: E402
 
 
 def main():
@@ -23,14 +25,15 @@ def main():
         path = Path(directory) / "smoke.sqlite3"
         db = Database(Settings(database_path=path))
         db.migrate()
+        importer = ImportService(db)
+        batch = source_batch()
+        preview = importer.preview(batch)
+        importer.commit(batch, preview["preview_token"])
         password = secrets.token_urlsafe(24)
         with db.connect() as connection:
-            connection.executemany(
-                "INSERT INTO employees VALUES (?,?)", [("SYNTH_A", "Synthetic A"), ("SYNTH_B", "Synthetic B")]
-            )
             connection.execute(
                 "INSERT INTO accounts VALUES (?,?,?,?,?)",
-                ("SYNTH_ACCOUNT", "synthetic", hash_password(password), "employee", "SYNTH_A"),
+                ("SYNTH_ACCOUNT", "synthetic", hash_password(password), "employee", EMPLOYEE),
             )
         with socket.socket() as probe:
             probe.bind(("127.0.0.1", 0))
@@ -90,12 +93,27 @@ def main():
                         )
                         assert response.status_code == 200
                         csrf = response.json()["csrf_token"]
-                        assert client.get("/api/employees/SYNTH_A").status_code == 501
-                        assert client.get("/api/employees/SYNTH_B").status_code == 403
+                        detail = client.get(f"/api/employees/{EMPLOYEE}").json()
+                        payload = {
+                            "expected_state_version": detail["state_version"],
+                            "event_id": EVENT,
+                            "mode": "demo_simulation",
+                        }
+                        mutation = {**origin, "X-CSRF-Token": csrf, "Idempotency-Key": "tcp-lost-response"}
+                        response = client.post(
+                            f"/api/employees/{EMPLOYEE}/completions", headers=mutation, json=payload
+                        )
+                        assert response.status_code == 200
+                        saved = response.json()
+                        assert client.get(f"/api/employees/{OTHER}").status_code == 403
                         assert client.get("/api/hr/summary").status_code == 403
                         assert client.post("/api/auth/logout", headers=origin).status_code == 403
                     else:
-                        assert client.get("/api/me").json()["employee_id"] == "SYNTH_A"
+                        assert client.get("/api/me").json()["employee_id"] == EMPLOYEE
+                        replay = client.post(
+                            f"/api/employees/{EMPLOYEE}/completions", headers=mutation, json=payload
+                        )
+                        assert replay.json() == saved
                         assert (
                             client.post(
                                 "/api/auth/logout", headers={**origin, "X-CSRF-Token": csrf}
@@ -113,8 +131,12 @@ def main():
                         process.wait(timeout=5)
         with db.connect() as connection:
             assert connection.execute("SELECT COUNT(*) FROM employees").fetchone()[0] == 2
-            assert connection.execute("SELECT COUNT(*) FROM schema_migrations").fetchone()[0] == 1
-        print("Restart preserved profiles, migration version and active session; logout revoked session.")
+            assert connection.execute("SELECT COUNT(*) FROM schema_migrations").fetchone()[0] == len(
+                db._migrations()
+            )
+        print(
+            "Restart preserved profiles, migrations, session and exact completion result after lost response; logout revoked session."
+        )
 
 
 if __name__ == "__main__":

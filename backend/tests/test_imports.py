@@ -6,6 +6,7 @@ import copy
 import csv
 import io
 import json
+import shutil
 import sqlite3
 from pathlib import Path
 
@@ -156,6 +157,28 @@ def test_preview_commit_restart_and_noop_reimport(service: ImportService):
         assert row["date_source"] == "historical_proxy"
         assert row["completed_at"] is None
         assert row["mode"] == "import"
+
+
+def test_catalog_replacement_warns_before_atomic_commit(service: ImportService):
+    files = synthetic_files()
+    assert service.preview(files)["warnings"] == []
+    import_batch(service, files)
+    events = json.loads(files[1]["content"])
+    events["events"][0]["develops_skills"][0]["gain"] = 2
+    changed = [source_file("events.json", events)]
+    preview = service.preview(changed)
+    assert "recalculates profiles" in preview["warnings"][0]
+    assert state(service) == (1, 1, 1)
+    with service.db.connect() as conn:
+        saved = json.loads(conn.execute("SELECT events_json FROM dataset_state").fetchone()[0])
+        assert saved["events"][0]["develops_skills"][0]["gain"] == 1
+    committed = service.commit(changed, preview["preview_token"])
+    assert committed["warnings"] == preview["warnings"]
+    assert state(service) == (2, 1, 1)
+    with service.db.connect() as conn:
+        saved = json.loads(conn.execute("SELECT events_json FROM dataset_state").fetchone()[0])
+        assert saved == events
+    assert service.preview(changed)["warnings"] == []
 
 
 def test_jury_profiles_and_history_are_validated_together(service: ImportService):
@@ -412,3 +435,106 @@ def test_import_rejects_values_too_long_for_http_responses(service: ImportServic
         service.preview(files)
     assert error.value.status == 422
     assert state(service) == (0, 0, 0)
+
+
+def test_reimport_preserves_local_completion_of_original_assignment(service: ImportService):
+    files = synthetic_files()
+    files[3] = history_file([synthetic_record(status="in_progress", completion_pct=50)])
+    import_batch(service, files)
+    with service.db.connect() as conn:
+        record = json.loads(conn.execute("SELECT record_json FROM activity_history").fetchone()[0])
+        record["source_record"] = {key: record[key] for key in HISTORY_FIELDS}
+        record.update(
+            status="completed",
+            completion_pct=100,
+            mode="completion",
+            date_source="completed_at",
+            completed_at="2026-10-01T10:00:00+05:00",
+            effective_date="2026-10-01",
+        )
+        conn.execute("UPDATE activity_history SET record_json=?", (json.dumps(record),))
+        conn.execute("UPDATE dataset_state SET revision=revision+1")
+    result = import_batch(service, files)
+    assert result["imported_records"] == 0
+    assert state(service) == (2, 1, 1)
+    with service.db.connect() as conn:
+        stored = json.loads(conn.execute("SELECT record_json FROM activity_history").fetchone()[0])
+        assert stored == record
+        assert stored["status"] == "completed"
+        assert stored["source_record"]["status"] == "in_progress"
+    with pytest.raises(APIError) as error:
+        service.preview([history_file([synthetic_record(status="in_progress", completion_pct=75)])])
+    assert error.value.code == "history_conflict"
+
+
+def test_reimport_preserves_locally_changed_goal_and_immutable_source_profile(service: ImportService):
+    files = synthetic_files()
+    import_batch(service, files)
+    with service.db.connect() as conn:
+        profile = json.loads(conn.execute("SELECT profile_json FROM employee_profiles").fetchone()[0])
+        profile["career_goal"] = {"target_role": "Synthetic role", "target_grade": "Lead"}
+        conn.execute("UPDATE employee_profiles SET profile_json=?", (json.dumps(profile),))
+        conn.execute("UPDATE dataset_state SET revision=revision+1")
+    result = import_batch(service, files)
+    assert result["imported_records"] == 0
+    assert state(service) == (2, 1, 1)
+    with service.db.connect() as conn:
+        row = conn.execute("SELECT profile_json,source_json FROM employee_profiles").fetchone()
+        assert json.loads(row["profile_json"]) == profile
+        assert json.loads(row["source_json"])["career_goal"] is None
+    changed_source = source_file("employees.json", {"meta": META, "employees": [profile]})
+    with pytest.raises(APIError) as error:
+        service.preview([changed_source])
+    assert error.value.code == "employee_conflict"
+
+
+def test_missing_implicit_next_grade_is_rejected_before_commit(service: ImportService):
+    files = synthetic_files()
+    skills = json.loads(files[0]["content"])
+    skills["role_profiles"] = [role for role in skills["role_profiles"] if role["grade"] != "Middle"]
+    files[0] = source_file("skills.json", skills)
+    with pytest.raises(APIError) as error:
+        service.preview(files)
+    assert error.value.status == 422
+    assert state(service) == (0, 0, 0)
+
+
+def test_catalog_update_validates_current_goal_after_original_source_reimport(service: ImportService):
+    files = synthetic_files()
+    import_batch(service, files)
+    with service.db.connect() as conn:
+        profile = json.loads(conn.execute("SELECT profile_json FROM employee_profiles").fetchone()[0])
+        profile["career_goal"] = {"target_role": "Synthetic role", "target_grade": "Lead"}
+        conn.execute("UPDATE employee_profiles SET profile_json=?", (json.dumps(profile),))
+        conn.execute("UPDATE dataset_state SET revision=revision+1")
+    skills = json.loads(files[0]["content"])
+    skills["role_profiles"] = [role for role in skills["role_profiles"] if role["grade"] != "Lead"]
+    files[0] = source_file("skills.json", skills)
+    with pytest.raises(APIError) as error:
+        service.preview(files)
+    assert error.value.status == 422
+    assert state(service) == (2, 1, 1)
+
+
+def test_source_profile_migration_preserves_existing_profiles(tmp_path: Path):
+    migrations = tmp_path / "migrations"
+    migrations.mkdir()
+    installed = Path(__file__).resolve().parents[1] / "migrations"
+    for source in installed.glob("*.sql"):
+        if source.name < "004":
+            shutil.copy(source, migrations / source.name)
+    database = Database(Settings(database_path=tmp_path / "upgrade.sqlite3", app_env="test"), migrations)
+    database.migrate()
+    profile = synthetic_employee()
+    with database.connect() as conn:
+        conn.execute("INSERT INTO employees VALUES (?,?)", (profile["employee_id"], profile["full_name"]))
+        conn.execute(
+            "INSERT INTO employee_profiles VALUES (?,?)", (profile["employee_id"], json.dumps(profile))
+        )
+    shutil.copy(installed / "004_source_profiles.sql", migrations / "004_source_profiles.sql")
+    database.migrate()
+    database.migrate()
+    with database.connect() as conn:
+        row = conn.execute("SELECT profile_json,source_json FROM employee_profiles").fetchone()
+        assert json.loads(row["profile_json"]) == profile
+        assert json.loads(row["source_json"]) == profile

@@ -130,6 +130,16 @@ class Database:
                 connection.execute(
                     "SELECT bucket, failures, window_start, blocked_until FROM login_attempts LIMIT 0"
                 )
+                connection.execute(
+                    "SELECT revision, scenario_date, skills_json, events_json FROM dataset_state LIMIT 0"
+                )
+                connection.execute(
+                    "SELECT employee_id, profile_json, source_json FROM employee_profiles LIMIT 0"
+                )
+                connection.execute("SELECT record_id, record_json FROM activity_history LIMIT 0")
+                connection.execute("SELECT token_hash, payload_hash, revision FROM import_previews LIMIT 0")
+                connection.execute("SELECT idempotency_key, response_json FROM completion_requests LIMIT 0")
+                connection.execute("SELECT recommendation_id, response_json FROM recommendation_runs LIMIT 0")
                 return connection.execute("PRAGMA foreign_keys").fetchone()[0] == 1
         except (OSError, sqlite3.Error, MigrationError, UnicodeError):
             return False

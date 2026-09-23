@@ -201,9 +201,9 @@ def test_ai_exception_becomes_safe_unavailable(context):
     assert result.model_dump() == {"status": "unavailable", "engine": "oleg", "recommendations": []}
 
 
-def test_timeout_is_bounded_without_waiting_ten_seconds(monkeypatch, context):
+def test_timeout_is_bounded_without_waiting_for_deadline(monkeypatch, context):
     async def timeout(awaitable, *, timeout):
-        assert timeout == 10
+        assert timeout == 7
         awaitable.close()
         raise TimeoutError("synthetic timeout")
 

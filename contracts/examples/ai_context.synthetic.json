@@ -55,6 +55,18 @@
       "kind": "candidate",
       "subject_id": "SYNTHETIC_EVENT_001",
       "fact": "Синтетическое занятие доступно; эффект навыка рассчитан backend: +1."
+    },
+    {
+      "evidence_id": "synthetic-goal-001",
+      "kind": "goal",
+      "subject_id": "profile",
+      "fact": "Синтетический сотрудник Junior планирует целевой Middle."
+    },
+    {
+      "evidence_id": "synthetic-history-001",
+      "kind": "history",
+      "subject_id": "profile",
+      "fact": "Синтетическая история участия отсутствует; своевременность не утверждается."
     }
   ],
   "limit": 3

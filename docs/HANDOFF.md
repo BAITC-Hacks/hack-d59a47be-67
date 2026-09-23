@@ -1,165 +1,124 @@
-# Career Quest: передача backend-каркаса
+# Передача backend Career Quest
 
-Алихан отвечает за backend, данные, API, права, интеграцию и деплой. Олег — за `backend/app/ai/` и собственные тесты. Батыр — за `frontend/`. Этот каркас не меняет каталоги Олега и Батыра.
+Алихан: backend/данные/API/права/интеграция/деплой. Олег: `backend/app/ai/` и собственные тесты. Батыр: `frontend/`. Код AI и frontend не изменён. PR направляется из отдельной backend-ветки в `codex/architecture-foundation`, без самостоятельного merge.
 
-## Где контракт и что реализовано
+## Запуск и проверки
 
-- Единственные Python-схемы: [`backend/app/contracts.py`](../backend/app/contracts.py). Не копировать модели в AI-модуль и не вводить несовместимые поля в frontend.
-- HTTP v1: [`contracts/API.md`](../contracts/API.md); AI: [`contracts/AI_CONTRACT.md`](../contracts/AI_CONTRACT.md).
-- Экспорт приложения: [`contracts/openapi.json`](../contracts/openapi.json), обновление командой `scripts/export-openapi`.
-- В [`contracts/examples/`](../contracts/examples/) лежат отдельные синтетические fixtures команды, проверяемые `backend/tests/test_contracts.py`. Это примеры payloads, а не ответы работающей предметной логики и не копии стартового датасета.
+Нужен Python 3.12; на проверенной машине использован локальный Python 3.12.14. Глобальные установки не нужны.
 
-Реализованы `GET /api/health`, `GET /api/health/ready`, `GET /api/version`, `POST /api/auth/login`, `POST /api/auth/logout`, `GET /api/me`.
+```sh
+python3.12 -m venv .venv
+.venv/bin/python -m pip install -r requirements-dev.lock
+cp .env.example .env
+# Сначала validation; путь указывает на локальные 4 исходных файла, не ZIP:
+.venv/bin/python -m backend.app.cli import-kit /path/to/career_quest_dataset
+# Явный atomic commit после повторной validation:
+.venv/bin/python -m backend.app.cli import-kit /path/to/career_quest_dataset --commit
+.venv/bin/python -m backend.app.cli create-account --username demo-hr --role hr
+.venv/bin/python -m backend.app.cli create-account --username demo-employee --role employee --employee-id EXISTING_EMPLOYEE_ID
+scripts/dev
+```
 
-Предметные маршруты зарегистрированы, проверяют доступ и входные модели, затем возвращают **501 `NOT_IMPLEMENTED`**. Это catalog, список/профиль сотрудников, изменение цели, рекомендации, preview, completions, HR summary и import. В OpenAPI у них tag `planned` и `x-implementation-status: planned`; для готовых маршрутов — `implemented`. Правильно переданная форма запроса не означает, что изменение выполнено. Для чужого сотрудника сначала 403; HR/владельцу при отсутствующем employee — 404; без сессии — 401.
+Пароли CLI вводятся скрыто, 12–256 символов, общих паролей в Git нет. `--synthetic` создаёт только пустую синтетическую identity, а для предметных экранов нужен импорт полного синтетического профиля/кита. Менеджер из данных автоматически не получает HR-права.
 
-Текущие capabilities:
+```sh
+make check                # исходные 21 unit test + backend pytest + schemas + Ruff
+scripts/smoke             # реальный TCP-сценарий, временная синтетическая БД, два запуска
+scripts/export-openapi
+.venv/bin/ruff format --check backend scripts/smoke.py scripts/check_contracts.py
+.venv/bin/python scripts/check_agent_log.py --base origin/codex/architecture-foundation
+```
+
+Рабочий URL после `scripts/dev`: `http://127.0.0.1:8000/docs`. Один процесс, миграции без reset. Для контейнера: `COMMIT_SHA=$(git rev-parse HEAD) docker compose -f compose.yaml up --build`; постоянный `sqlite_data`, non-root, bind только `127.0.0.1:8000`. Docker на этой машине отсутствует, container build не проверен. GitHub Actions billing-blocked: локальные результаты не выдаются за зелёный CI.
+
+## Контракты
+
+Единственный источник: `backend/app/contracts.py`. `contracts/API.md`, `contracts/AI_CONTRACT.md`, `contracts/openapi.json`; JSON Schema AI с прежними именами теперь генерируется из этих же моделей. Все `contracts/examples/*.synthetic.json` — независимые вымышленные примеры, не профили кита. Точечное расширение согласовано владельцем задачи: `docs/CONTRACT_CHANGE_PROPOSAL.md`.
+
+Реализованы catalog, HR pagination, profile/history/goal/progress, preview, completion, HR counts, двухфазный import, recommendation generation boundary и latest. Предметные маршруты больше не возвращают planned 501. Без кита доменные запросы получают 503 `DATASET_NOT_LOADED`; инфраструктурная readiness при исправной БД остаётся 200 и отдельно показывает capabilities.
+
+`state_version` / `expected_state_version` — глобальная revision. `data_version` HTTP-профиля содержит версию кита и revision. Новая цель/завершение/изменяющий импорт делают прежние рекомендации stale. No-op импорт, preview, auth и сохранение рекомендации revision не увеличивают.
+
+## Батыр: cookie, CSRF и рабочий сценарий
+
+Cookie `cq_session`: HttpOnly, SameSite=Lax, Path=/api, TTL по умолчанию 3600 s. В HTTPS staging Secure обязателен. Браузер: `credentials: "include"`, frontend `http://localhost:5173` → API `http://localhost:8000` (одинаковый hostname из-за SameSite). CORS с credentials использует только точные allowed origins. Login требует Origin; остальные POST/PATCH также `X-CSRF-Token` из login. JS не устанавливает Origin вручную; curl должен его передавать. `/api/me` возвращает только UserIdentity; CSRF храните в sessionStorage либо повторно входите после потери токена.
+
+```js
+const base = "http://localhost:8000";
+const loginResponse = await fetch(`${base}/api/auth/login`, {
+  method: "POST", credentials: "include",
+  headers: {"Content-Type": "application/json"},
+  body: JSON.stringify({username, password}),
+});
+const session = await loginResponse.json(); // сначала проверьте loginResponse.ok
+const headers = {"Content-Type": "application/json", "X-CSRF-Token": session.csrf_token};
+const employeeId = session.user.employee_id; // сервер назначает role/employee_id
+const profile = await fetch(`${base}/api/employees/${employeeId}`, {credentials: "include"}).then(r => r.json());
+const recommendations = await fetch(`${base}/api/employees/${employeeId}/recommendations`, {
+  method: "POST", credentials: "include", headers,
+  body: JSON.stringify({scenario_date: profile.scenario_date, limit: 3}),
+}).then(r => r.json());
+// not_configured != no_candidates; не показывать отсутствующие рекомендации как готовое AI.
+const preview = await fetch(`${base}/api/employees/${employeeId}/preview`, {
+  method: "POST", credentials: "include", headers,
+  body: JSON.stringify({expected_state_version: profile.state_version,
+    scenario_date: profile.scenario_date, event_ids: [eventId]}),
+});
+// eventId — выбранное допустимое мероприятие каталога/рекомендации.
+const body = JSON.stringify({expected_state_version: profile.state_version,
+  event_id: eventId, mode: "demo_simulation"});
+const idempotencyKey = crypto.randomUUID();
+const complete = () => fetch(`${base}/api/employees/${employeeId}/completions`, {
+  method: "POST", credentials: "include", headers: {...headers, "Idempotency-Key": idempotencyKey}, body,
+});
+const result = await complete();
+// Если успешный ответ потерян, повторите complete() с ТЕМ ЖЕ body и key.
+// Не подменяйте revision в этом повторе: сохранённый результат возвращается до revision-check.
+const latest = await fetch(`${base}/api/employees/${employeeId}/recommendations/latest`, {credentials: "include"}).then(r => r.json());
+// latest сохраняет полные карточки/объяснения; stale=true требует нового расчёта.
+await fetch(`${base}/api/auth/logout`, {method: "POST", credentials: "include", headers});
+```
+
+Для конкретного существующего участия completion принимает `record_id`; mandatory допускается только как завершение существующего назначения. Повторные обязательные назначения сохраняются отдельными строками. Обычное завершение будущей сессии запрещено; явная demo_simulation отмечается в истории. EV_036 выбирает следующую незавершённую сессию. Preview не пишет данные.
+
+Реализованный HTTP-сценарий проверен в `backend/tests/test_workflow.py` и TCP `scripts/smoke`: login → профиль → preview → complete → потерянный ответ/повтор → restart → точный сохранённый ответ → logout. Тестовые ответы AI — только fake в тестах, не runtime fallback.
+
+Ошибки: `{code,message,request_id,details}`. 401 сессия; 403 чужой профиль/HR/Origin/CSRF; 404 объект; 409 revision/key/state; 422 схема; 429 login limit; 503 dataset/storage. Чужой доступ проверяется до idempotency-cache и выдачи данных.
+
+## HR: совместный импорт жюри
+
+`POST /api/hr/import`, только HR, cookie+Origin+CSRF:
 
 ```json
-{
-  "ai": {"status": "not_configured", "engine": "none"},
-  "dataset": {"status": "not_loaded", "version": null}
-}
+{"dry_run":true,"files":[
+  {"source_filename":"employees.json","source_format":"json","content":"<исходный JSON {meta,employees}>"},
+  {"source_filename":"activity_history.csv","source_format":"csv","content":"<исходный CSV с заголовком>"}
+]}
 ```
 
-Dataset пока не загружен. Наличие исходников на диске и созданной demo-учётной записи не меняет этот статус. Liveness проверяет только процесс. Readiness проверяет БД и миграции: при успехе 200 `ReadinessResponse`; при сбое 503 `ErrorResponse` с code `NOT_READY`, безопасными details.database/capabilities. Отсутствие AI или датасета не маскируется и само по себе не делает готовую БД недоступной. `/api/version` показывает API `1.0.0` и commit SHA либо `unknown`.
+Это иллюстрация transport; валидные JSON-примеры есть в contracts/examples. Получите `preview_token`, `revision`, `counts`; отправьте те же files с `dry_run=false, preview_token`. Token живёт 15 минут и связан с точным содержимым/текущей revision. Ошибка любой строки отменяет всю партию. Новые профили и их история валидируются совместно. `record_id` — ключ; разные ID не дедуплицируются по employee/event/date. Повтор исходного импорта после локального completion/изменения goal не стирает локальные действия: исходные source_record/source_json сохраняются отдельно.
 
-## Для Батыра: cookie, Origin и CSRF
+Изменённые существующие employee_id/record_id конфликтуют; режим их исправления/replace ещё не реализован. skills.json и events.json заменяют соответствующий каталог целиком после preview/commit и проверки всех сохранённых ссылок. Preview предупреждает о пересчёте профилей по новому каталогу и истории; commit обновляет revision и делает рекомендации stale. HR summary сейчас содержит counts сотрудников/целей/завершений/симуляций; расширенная аналитика разрывов/участия из проектной записки остаётся следующим срезом.
 
-Учётные записи и связи employee/HR создаются серверным оператором; браузер передаёт только username/password. Публичной регистрации и банковского SSO нет. Employee видит только собственный employee_id; HR имеет доступ к HR-маршрутам и профилям сотрудников.
+## Олег: in-process boundary
 
-Cookie называется **`cq_session`**: `HttpOnly`, `SameSite=Lax`, `Path=/api`, без Domain. TTL по умолчанию **3600 секунд** (`SESSION_TTL_SECONDS`). В HTTPS-staging `Secure` включён обязательно. Logout удаляет запись сессии и cookie. Пароли хешируются PBKDF2; в БД хранятся hash сессионного токена и hash CSRF.
-
-Login требует точный разрешённый **Origin**, но ещё не требует CSRF. Все последующие POST/PATCH требуют одновременно сессию, разрешённый Origin и **`X-CSRF-Token`**. GET не требует CSRF. Браузер устанавливает Origin автоматически; не пытайтесь подменять его JavaScript-заголовком. У небраузерного клиента Origin необходимо передать явно. Login ограничен по username и IP; 429 содержит `Retry-After: 900`.
-
-Raw CSRF возвращается **только при login** в `SessionResponse.csrf_token`. `/api/me` возвращает `UserIdentity` (`id,username,role,employee_id`) и не восстанавливает raw CSRF. Для восстановления после reload сохраняйте CSRF в `sessionStorage` и очищайте его при logout/401; если токен потерян, нужен повторный login. Сессионную cookie не переносить в JavaScript-хранилище; её читает только браузер. При новой авторизации используйте новый csrf_token.
-
-Для локальной интеграции используйте одинаковый hostname: например, frontend `http://localhost:5173` и API `http://localhost:8000`. При frontend на `127.0.0.1:5173` добавьте этот точный Origin в `ALLOWED_ORIGINS` и обращайтесь к API через `127.0.0.1:8000`. Смешивание `localhost` и `127.0.0.1` делает запрос cross-site, и SameSite=Lax мешает отправке cookie. В staging используйте HTTPS и same-site frontend/API, предпочтительно один origin через reverse proxy. Включённый CORS сам по себе не отменяет правила SameSite.
-
-Пример для браузерного frontend на `http://localhost:5173` (пароль приходит из формы, не из исходного кода):
-
-```javascript
-const API = "http://localhost:8000";
-
-async function login(username, password) {
-  const response = await fetch(`${API}/api/auth/login`, {
-    method: "POST",
-    credentials: "include",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({username, password}),
-  });
-  const body = await response.json();
-  if (!response.ok) throw new Error(`${body.code}: ${body.message}`);
-  sessionStorage.setItem("cq_csrf", body.csrf_token);
-  return body.user;
-}
-
-async function currentUser() {
-  const response = await fetch(`${API}/api/me`, {credentials: "include"});
-  const body = await response.json();
-  if (response.status === 401) sessionStorage.removeItem("cq_csrf");
-  if (!response.ok) throw new Error(`${body.code}: ${body.message}`);
-  return body;
-}
-
-async function logout() {
-  const response = await fetch(`${API}/api/auth/logout`, {
-    method: "POST",
-    credentials: "include",
-    headers: {"X-CSRF-Token": sessionStorage.getItem("cq_csrf") || ""},
-  });
-  const body = await response.json();
-  if (response.ok || response.status === 401) sessionStorage.removeItem("cq_csrf");
-  if (!response.ok) throw new Error(`${body.code}: ${body.message}`);
-  return body; // {status: "logged_out"}
-}
-```
-
-Пример будущего запроса рекомендаций для employee_id из собственной `UserIdentity`:
-
-```javascript
-const response = await fetch(
-  `${API}/api/employees/${encodeURIComponent(user.employee_id)}/recommendations`,
-  {
-    method: "POST",
-    credentials: "include",
-    headers: {
-      "Content-Type": "application/json",
-      "X-CSRF-Token": sessionStorage.getItem("cq_csrf") || "",
-    },
-    body: JSON.stringify({scenario_date: "2026-10-01", limit: 3}),
-  },
-);
-const body = await response.json();
-if (response.status === 501) {
-  // Покажите «Функция ещё не подключена»; не пустой список рекомендаций.
-} else if (!response.ok) {
-  // Обработайте code/message; request_id нужен для безопасной диагностики.
-}
-```
-
-Все ошибки имеют `{code,message,request_id,details}`. 401 — вход/сессия, 403 — права/Origin/CSRF, 404 — объект/маршрут, 409 — конфликт состояния, 422 — схема, 429 — login rate limit, 501 — planned, 503 — временная недоступность. `details` не содержит исходные значения паролей, импортов или профилей. Данные 409 и будущие успешные предметные ответы пока определены контрактом; это не реализованная логика.
-
-## Для Олега: вход и выход
-
-Backend-adapter находится в [`backend/app/ai_adapter.py`](../backend/app/ai_adapter.py), вне AI-каталога. При `AI_ENABLED=true` он пробует импортировать **`backend.app.ai`** и взять экспортированную **async** функцию `recommend`. Поэтому пакет Олега должен предоставить эту функцию из своего `__init__.py` либо другого эквивалентного entry point `backend.app.ai`. Адаптер вызывает её внутри того же процесса; отдельного HTTP AI-сервера и LLM-клиента этот каркас не создаёт.
+Экспорт из `backend.app.ai`:
 
 ```python
 from backend.app.contracts import RecommendationContext, RecommendationResult
 
 async def recommend(context: RecommendationContext) -> RecommendationResult:
-    ...  # Реализация принадлежит Олегу.
+    ...  # Реализация Олега; backend её не создаёт.
 ```
 
-`AI_ENABLED=false` по умолчанию. Отсутствующий/сломанный optional module не мешает запуску API: capability остаётся `not_configured/none`. При подключённой async-функции — `configured/oleg`. На вызов выделено 10 секунд; исключение, timeout, неверный engine, неизвестные event_id/evidence_ids, превышение лимита или `no_candidates` при наличии кандидатов приводят к `unavailable/oleg` с пустым списком. Адаптер передаёт глубокую копию context и не записывает данные.
+`AI_ENABLED=false` по умолчанию. Missing/broken module не мешает запуску. Включённый async export → capability configured/oleg. Timeout 7 s внутри бюджета API 10 s; функция не должна блокировать event loop. Backend закрывает DB transaction ДО await, затем повторно сверяет revision; изменения во время вызова →409 без сохранения устаревшего ответа.
 
-Context содержит `contract_version`, `data_version`, `state_version`, `scenario_date`, обезличенный `profile`, `goal`, `current_skills`, `gaps`, `eligible_candidates`, `facts` и `limit`. Профиль имеет только `profile_ref,role,grade`, без кадрового employee_id и ФИО. Кандидаты уже допустимы, их эффекты рассчитаны backend. Факты имеют `evidence_id`. Уровни навыков — 0–5; цель — `{target_role,target_grade}`; дата сценария примеров — 2026-10-01. Не добавляйте собственную шкалу и не подменяйте дату сценария системным временем.
+Context содержит обезличенный профиль, цель, версию и дату, вычисленные skills/gaps, допустимых полезных кандидатов с effects и facts/evidence_id. Выберите до трёх event_id; для каждого evidence_ids должны подтверждать минимум goal/grade, gap данного события и history (включая факт отсутствия истории). Backend проверяет ссылки и собирает HTTP-текст из доверенных facts: свободные утверждения модели не публикуются. Полные карточки сохраняются и возвращаются latest после перезапуска.
 
-Result:
+HTTP статусы: `ok/oleg`, `unavailable/oleg`, `not_configured/none`, `no_candidates/none`, `no_target/none`; stale — отдельный boolean. Python RecommendationResult не расширялся no_target: без цели/кандидатов backend не вызывает AI. Никакой LLM-интеграции, внешней отправки данных или отдельного AI-сервера эта ветка не добавляет.
 
-```json
-{
-  "status": "ok",
-  "engine": "oleg",
-  "recommendations": [
-    {
-      "event_id": "SYNTHETIC_EVENT_001",
-      "explanation": {
-        "text": "Синтетический пример: выбранное занятие сокращает разрыв навыка.",
-        "evidence_ids": ["synthetic-gap-001", "synthetic-event-001"]
-      }
-    }
-  ]
-}
-```
+## Время, навыки и ограничения
 
-| status / engine | Значение |
-| --- | --- |
-| `ok / oleg` | 1–3 выбранных кандидата, не больше context.limit |
-| `no_candidates / oleg` | Допустимых кандидатов нет; recommendations=[] |
-| `not_configured / none` | Движок не подключён; recommendations=[] |
-| `unavailable / oleg` | Подключённый движок не дал допустимого результата; recommendations=[] |
+Дата demo из metadata: 2026-10-01. Исторический date — proxy завершения, `completed_at=null`, `date_source=historical_proxy`. Начисляется каждый completed строго после last_review_date и до среза включительно; значения baseline не меняются. Новые completed_at используют серверные demo-часы Asia/Almaty, реальные UTC-часы сохраняются отдельно в recorded_at. На одинаковую дату новые факты сортируются по completed_at, не случайному ID. Gain/cap/0–5 никогда не снижают навык. Цель не расширяет текущую аудиторию события. Lead без явной цели — no_target.
 
-Эти статусы нельзя путать с текущим HTTP 501. Пустой список при `not_configured` не означает отсутствие подходящих активностей. AI выбирает только event_id из context и объясняет выбор через существующие evidence_ids. Backend выполняет арифметику, фильтрацию доступности, проверку прав, транзакционную запись и обогащает внешний HTTP-ответ названиями/эффектами. Данные не отправляются внешнему сервису без разрешения.
-
-## Локальные команды и ограничения
-
-Из корня репозитория, с подготовленным `.venv`:
-
-```sh
-.venv/bin/python -m backend.app.cli migrate
-.venv/bin/python -m backend.app.cli create-account --username demo.employee --role employee --employee-id SYNTH_EMPLOYEE_001 --synthetic
-.venv/bin/python -m backend.app.cli create-account --username demo.hr --role hr
-scripts/dev
-```
-
-CLI запрашивает пароль интерактивно и повторно; пароли не задаются аргументом команды и не имеют значений по умолчанию. `--synthetic` создаёт только явно синтетический employee с префиксом `SYNTH_`. Не используйте пароли из fixtures как реальные credentials. Другая команда/терминал:
-
-```sh
-scripts/test -q
-scripts/export-openapi
-```
-
-Приложение использует одну SQLite-БД, один backend-процесс и одну реплику. При запуске применяются версионированные миграции; существующие записи сохраняются. WAL выключен по умолчанию; включение требует локального диска одного хоста. Docker Compose и `.env.example` описаны в README. Локальные URL в этом документе — адреса настройки; фактические проверки запуска и ограничения окружения фиксируются в итоговом отчёте.
-
-Следующий этап — реализовать проверяемый импорт исходных JSON/CSV, доменные расчёты и предметные endpoints в рамках единого контракта; подключить код Олега через adapter; подключить frontend Батыра. Preview остаётся дополнительной функцией команды без записи. Каркас не заявляет готовое AI-ядро, совместимый работающий импорт или публичный деплой.
+AI-ядро/frontend остаются отдельной работой; публичного деплоя нет. Проверенные результаты и ограничения среды — `VERIFICATION.md`. Исходные файлы/ZIP/жюри/БД/.env/секреты в Git и Docker image не входят.
