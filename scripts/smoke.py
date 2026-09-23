@@ -1,5 +1,7 @@
 """Real TCP smoke + restart, using only isolated synthetic profiles and credentials."""
 
+import argparse
+import importlib.util
 import os
 import secrets
 import socket
@@ -21,6 +23,13 @@ from backend.tests.test_workflow import EMPLOYEE, EVENT, OTHER, source_batch  # 
 
 
 def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--ai", action="store_true", help="Use the real optional AI module with synthetic selection only"
+    )
+    args = parser.parse_args()
+    if args.ai and importlib.util.find_spec("backend.app.ai") is None:
+        parser.error("AI module is absent; run this check in the combined integration snapshot")
     with tempfile.TemporaryDirectory(prefix="career-quest-synthetic-smoke-") as directory:
         path = Path(directory) / "smoke.sqlite3"
         db = Database(Settings(database_path=path))
@@ -43,17 +52,24 @@ def main():
             **os.environ,
             "DATABASE_PATH": str(path),
             "APP_ENV": "test",
+            "SESSION_TTL_SECONDS": "3600",
             "ALLOWED_ORIGINS": '["http://127.0.0.1:8000"]',
-            "AI_ENABLED": "false",
+            "AI_ENABLED": "true" if args.ai else "false",
+            "OPENAI_API_KEY": "synthetic-tcp-never-sent" if args.ai else "",
+            "OPENAI_MODEL": "gpt-4.1-mini-2025-04-14",
+            "AI_TIMEOUT_SECONDS": "6.0",
             "COMMIT_SHA": "unknown",
             "SQLITE_WAL": "false",
+            "SQLITE_LOCAL_DISK": "false",
             "COOKIE_SECURE": "false",
         }
         origin = {"Origin": "http://127.0.0.1:8000"}
         with httpx.Client(base_url=base, trust_env=False, timeout=3) as client:
             for cycle in range(2):
-                process = subprocess.Popen(
-                    [
+                command = (
+                    [sys.executable, "-m", "backend.tests.ai_smoke_server", "--port", str(port)]
+                    if args.ai
+                    else [
                         sys.executable,
                         "-m",
                         "uvicorn",
@@ -66,7 +82,10 @@ def main():
                         "1",
                         "--no-proxy-headers",
                         "--no-access-log",
-                    ],
+                    ]
+                )
+                process = subprocess.Popen(
+                    command,
                     env=environment,
                     stdout=subprocess.DEVNULL,
                     stderr=subprocess.DEVNULL,
@@ -84,6 +103,11 @@ def main():
                     else:
                         raise RuntimeError("Smoke server did not become ready")
                     assert client.get("/api/health").status_code == 200
+                    assert client.get("/api/health").json()["capabilities"]["ai"] == (
+                        {"status": "configured", "engine": "oleg"}
+                        if args.ai
+                        else {"status": "not_configured", "engine": "none"}
+                    )
                     assert client.get("/api/version").json()["api_version"] == "1.0.0"
                     if cycle == 0:
                         response = client.post(
@@ -94,6 +118,20 @@ def main():
                         assert response.status_code == 200
                         csrf = response.json()["csrf_token"]
                         detail = client.get(f"/api/employees/{EMPLOYEE}").json()
+                        if args.ai:
+                            recommended = client.post(
+                                f"/api/employees/{EMPLOYEE}/recommendations",
+                                headers={**origin, "X-CSRF-Token": csrf},
+                                json={"scenario_date": detail["scenario_date"], "limit": 3},
+                            )
+                            assert recommended.status_code == 200
+                            recommendation = recommended.json()
+                            assert (recommendation["status"], recommendation["engine"]) == ("ok", "oleg")
+                            assert recommendation["recommendations"][0]["event_id"] == EVENT
+                            assert (
+                                len(recommendation["recommendations"][0]["explanation"]["evidence_ids"]) == 4
+                            )
+                            assert recommendation["recommendations"][0]["effects"]
                         payload = {
                             "expected_state_version": detail["state_version"],
                             "event_id": EVENT,
@@ -114,6 +152,9 @@ def main():
                             f"/api/employees/{EMPLOYEE}/completions", headers=mutation, json=payload
                         )
                         assert replay.json() == saved
+                        if args.ai:
+                            latest = client.get(f"/api/employees/{EMPLOYEE}/recommendations/latest").json()
+                            assert latest == {**recommendation, "stale": True}
                         assert (
                             client.post(
                                 "/api/auth/logout", headers={**origin, "X-CSRF-Token": csrf}
@@ -137,6 +178,10 @@ def main():
         print(
             "Restart preserved profiles, migrations, session and exact completion result after lost response; logout revoked session."
         )
+        if args.ai:
+            print(
+                "Real AI module over TCP: validated facts/cards persisted across restart; remote selection was synthetic, no live model call."
+            )
 
 
 if __name__ == "__main__":

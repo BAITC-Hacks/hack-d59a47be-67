@@ -66,6 +66,9 @@
 
 - Публикация: обычный push codex/backend-ai-handoff, открыт PR #4 https://github.com/BAITC-Hacks/hack-d59a47be-67/pull/4 в architecture-foundation. Виртуальный git merge-tree с AI PR #3 прошёл без конфликтов, включая AGENTS; refs/PR не объединялись. Следующий шаг — review команды и фактический Docker/live synthetic запуск после подключения обеих порций.
 
+- 2026-09-23, воспроизводимая приёмка: добавлены scripts/verify-integration для виртуального объединения закоммиченных backend/AI refs в временный snapshot, scripts/smoke --ai с настоящим AI-модулем и тестовым selector по TCP, scripts/check-container для изолированного Compose project. Docker CLI/Desktop/daemon отсутствуют; глобальные установки/очистка не выполнялись.
+- Проверено до checkpoint: прямой AI TCP smoke (два запуска, cards/latest stale/session/точный idempotency replay) PASS;25 тестов контейнерного runner, make check backend269 passed/1 optional skip +21 исходный тест+9 checks+Ruff/format. Контейнерная команда честно возвращает2/NOT RUN; build/runtime не заявлены. Следующий шаг — прогнать новую snapshot-команду на точном checkpoint, обновить PR #4 и проверить Docker на доступном хосте.
+
 ## Журнал — предметный backend
 
 - 2026-09-23, порция 1: добавлены чистые расчёты replay/caps, целей, прогресса и кандидатов; исходные JSON/CSV валидируются и импортируются через preview/token и атомарный commit. Каждая history-запись сохраняется по record_id; рост рассчитывается только для completed после review и до даты кита. Повторные mandatory не теряются.

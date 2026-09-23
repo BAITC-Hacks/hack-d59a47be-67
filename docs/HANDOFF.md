@@ -31,6 +31,29 @@ scripts/export-openapi
 
 Рабочий URL после `scripts/dev`: `http://127.0.0.1:8000/docs`. Один процесс, миграции без reset. Для контейнера: `COMMIT_SHA=$(git rev-parse HEAD) docker compose -f compose.yaml up --build`; постоянный `sqlite_data`, non-root, bind только `127.0.0.1:8000`. Docker на этой машине отсутствует, container build не проверен. GitHub Actions billing-blocked: локальные результаты не выдаются за зелёный CI.
 
+## Повторяемая совместная проверка до merge PR
+
+Обновите refs и запустите из backend-ветки с установленным Python 3.12 dev venv:
+
+```sh
+git fetch origin
+scripts/verify-integration --backend-ref HEAD --ai-ref origin/codex/ai-recommendations
+```
+
+Команда проверяет именно **закоммиченные** refs, строит виртуальное Git-дерево и экспортирует его во временную папку. Рабочие правки, .env и локальная БД не копируются; PR и refs не сливаются/не переключаются. При конфликте проверка останавливается. В отчёте печатаются точные SHA backend/AI/tree. Нужны обе ветки в локальном Git; загрузка зависимостей не выполняется автоматически.
+
+В изолированной сборке выполняются исходные тесты, backend/AI pytest, schemas/Ruff и `scripts/smoke --ai`. Последний запускает настоящий API/AI-модуль по TCP дважды, подменяя только remote selector в тестовом процессе: login → recommendations → completion → restart → idempotency replay/latest stale → logout. У процесса только временная синтетическая БД и фиктивная конфигурация; этот test entrypoint исключён из Docker image и не служит fallback приложения. Ключ и реальные данные для этой проверки не нужны.
+
+На машине с Docker:
+
+```sh
+scripts/verify-integration --ai-ref origin/codex/ai-recommendations --container
+# После объединения нужного кода также доступна самостоятельная проверка:
+scripts/check-container --require-ai
+```
+
+Контейнерная команда использует отдельный случайный Compose project и временные синтетические данные. Она не устанавливает Docker, не читает рабочий .env и не очищает существующие контейнеры/volumes. Без Docker завершается понятной ошибкой; это не успешный container build. Результат реальной сборки на текущей машине пока отсутствует.
+
 ## Контракты
 
 Единственный источник: `backend/app/contracts.py`. `contracts/API.md`, `contracts/AI_CONTRACT.md`, `contracts/openapi.json`; JSON Schema AI с прежними именами теперь генерируется из этих же моделей. Все `contracts/examples/*.synthetic.json` — независимые вымышленные примеры, не профили кита. Точечное расширение согласовано владельцем задачи: `docs/CONTRACT_CHANGE_PROPOSAL.md`.
