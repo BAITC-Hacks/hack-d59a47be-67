@@ -4,6 +4,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     DATABASE_PATH=/data/career_quest.sqlite3
 WORKDIR /app
+# The runtime lock includes the optional AI transport; AI itself remains disabled by default.
 COPY requirements.lock ./
 RUN pip install --no-cache-dir -r requirements.lock \
     && groupadd --gid 10001 app \

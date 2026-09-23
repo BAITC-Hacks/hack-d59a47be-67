@@ -29,6 +29,8 @@ MODELS = {
     "recommendation_request": c.RecommendationRequest,
     "ai_context": c.RecommendationContext,
     "ai_result": c.RecommendationResult,
+    "ai_enriched_context": c.RecommendationContext,
+    "ai_enriched_result": c.RecommendationResult,
     "ai_not_configured": c.RecommendationResult,
     "ai_no_candidates": c.RecommendationResult,
     "recommendation_response": c.RecommendationResponse,
@@ -86,9 +88,12 @@ def test_fastapi_accepts_iso_date_request_json():
     assert client.post("/recommendations", json={**payload, "limit": "3"}).status_code == 422
 
 
-def test_ai_fixture_references_only_allowed_candidates_and_facts():
-    context = c.RecommendationContext.model_validate(fixture("ai_context"))
-    result = c.RecommendationResult.model_validate(fixture("ai_result"))
+@pytest.mark.parametrize(
+    "context_name,result_name", [("ai_context", "ai_result"), ("ai_enriched_context", "ai_enriched_result")]
+)
+def test_ai_fixture_references_only_allowed_candidates_and_facts(context_name, result_name):
+    context = c.RecommendationContext.model_validate(fixture(context_name))
+    result = c.RecommendationResult.model_validate(fixture(result_name))
     assert len(result.recommendations) <= context.limit
     candidates = {candidate.event_id for candidate in context.eligible_candidates}
     evidence = {fact.evidence_id for fact in context.facts}

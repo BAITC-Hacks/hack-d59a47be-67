@@ -1,3 +1,74 @@
+# Проверка приложенного case_1 и локального запуска — 2026-09-23
+
+Проверена текущая backend-ветка `codex/backend-ai-handoff`, runtime commit `3b85babc78e6c522b6c5d04d42e5a16a37966570`. Изменений приложения для этой проверки не потребовалось; ниже только фактические результаты. Код AI/frontend, исходные файлы и рабочие записи не менялись.
+
+- В приложенном `case_1/career_quest_dataset/` присутствуют4 источника и3 README. SHA256 источников совпадают с `docs/data-audit.md`.200 сотрудников,40 мероприятий,60 навыков,32 целевых role/grade,2743 записи истории; дата среза2026-10-01. Отдельного ТЗ в папке нет; сохранённый оригинал — `docs/requirements/original-spec.txt`.
+- `scripts.audit_dataset.audit()` —64 508 проверок/0 нарушений. `domain.replay()` совпал с независимым аудитом у200/200;159 actionable/10 no_target/31 no_candidates.544 повторных mandatory назначения сохраняются. Отсутствие полезных кандидатов у31 профиля связано с правилами допуска/покрытием каталога, а не отсутствием данных.
+- Установленная `var/career_quest.sqlite3` проверена через read-only SQLite: source_json, history и оба каталога полностью равны нормализованным исходникам;4 migration checksums PASS; `quick_check=ok`, FK violations0; revision1.200 профилей/2743 history/0 accounts. БД и данные исключены из Git.
+- Во временной SQLite выполнены реальные `ImportService.preview/commit`, повтор импорта и миграций:3075 изменённых записей при первом импорте,0 при повторе, revision1 сохраняется. Через `TestClient(create_app(..., ai_enabled=False))` проверены200 HTTP-профилей, каталог,HR pagination/summary,login/logout/HttpOnly/CSRF,403 для чужого профиля и HR-запросов сотрудника,preview без записи и HTTP dry_run/commit повторного кита. Временные случайные учётки и вся тестовая БД удалены вместе с принадлежащим проверке TemporaryDirectory; рабочие учётки не создавались. Ни записи, ни пароли не выводились.
+- `scripts/verify-integration --backend-ref HEAD --ai-ref origin/codex/ai-recommendations`: backend3b85bab + AI f10006a, виртуальное tree30bb15b961516ba45ca2fa8f49de1beb700cec0f без конфликтов; **468 passed**,21 исходный тест,9 schema checks,Ruff и два TCP-запуска PASS. Только синтетический remote selector, без live LLM; одно известное Starlette/httpx warning.
+- При начале проверки API не слушал8000 (connection refused). Выполнено `AI_ENABLED=false scripts/dev`. После запуска: health/readiness/version/docs/OpenAPI200; `/api/me` без cookie401. Readiness: dataset loaded1.0:r1, AI not_configured/none. Проверенный локальный адрес — http://127.0.0.1:8000/docs. Процесс работает в текущей сессии; после остановки/reboot нужен `scripts/dev`.
+
+Для полного интерактивного demo в этой рабочей копии ещё нужны серверные учётки (`backend.app.cli create-account`), согласованное подключение PR#3/#4 и frontend. Здесь нет `.env` и AI-модуля, AI отключён; реальные профили не отправлялись провайдеру. Нет Docker CLI; переданный ARM64-отчёт Олега ниже не является новым запуском на этой машине. PR не сливались, публичный deploy не выполнялся.
+
+Ниже сохранены предыдущие проверки.
+
+---
+
+# Русские объяснения и принятие Docker patch — 2026-09-23
+
+Внешний `explanation.text` больше не склеивает английские JSON-facts. Backend строит русский текст из того же snapshot, сохраняет evidence_ids и внутренний AI-контекст. Уровни не округляются скрыто; history/candidate другого события отклоняются. Новые карточки сохраняют исходный текст при restart/stale; старые нужно запросить заново.
+
+- `make check`: **295 passed, 1 optional AI skip**, 21 исходный тест, 9 schema checks, Ruff PASS. Новые проверки: 12 explanation cases (точность, scopes/provenance, чужие evidence, restart/stale, параллельные запросы), 14 smoke evidence cases.
+- `.venv/bin/ruff format --check backend scripts/smoke.py scripts/check_contracts.py scripts/verify_integration.py scripts/check_container.py`: **36 файлов PASS**; `git diff --check` PASS. Промежуточная совместная копия AI29791f1 с изменениями объяснений:453 passed; это не финальный committed snapshot.
+- Принят [patch Олега](https://github.com/BAITC-Hacks/hack-d59a47be-67/blob/f10006a/backend/app/ai/verification/container-fixes.patch): исключение лишних AI-файлов из образа, semantic evidence проверки smoke вместо exact4. Последнее сравнение текста адаптировано к новому русскому formatter; возвращать машинные facts в HTTP не требуется.
+- [Docker-отчёт Олега](https://github.com/BAITC-Hacks/hack-d59a47be-67/blob/f10006a/backend/app/ai/DOCKER_REPORT.md) подтверждает ARM64 container acceptance, live OpenAI3/3 и frontend/completion/restart на backend a3696ba + AI29791f1 **с patch во временной копии**. Это переданный результат, не наш повторный запуск новой версии. Docker CLI/Desktop/daemon в текущей среде повторно не обнаружены; AMD64, новая container build и публичный deploy не заявляются.
+
+Схемы/OpenAPI, AI-код/тесты Олега и frontend не менялись. CI billing-blocked. Финальный `scripts/verify-integration --backend-ref HEAD --ai-ref origin/codex/ai-recommendations` завершился exit0: backend `1723fb21d008db31e87769d999068d7dbef2204f`, AI `f10006a13c056ae49983c6e8200711cea73afa6a`, виртуальное tree `1e1acb99690b578f39004923152720fa81ed8c3c` без конфликтов. **468 passed**, 21 исходный тест, 9 schema checks, Ruff и два TCP-запуска PASS. Настоящий AI-модуль использовал только синтетический selector; проверены русский текст/evidence, сохранённые карточки, restart, session, completion/idempotency replay после потери ответа и logout. После прерывания команду повторили до полученного полного результата; live-модель не вызывали. Одно известное upstream Starlette/httpx предупреждение.
+
+`scripts/check-container --require-ai` локально завершился exit2 / NOT RUN из-за отсутствия Docker. Изменения передаются через [PR #4](https://github.com/BAITC-Hacks/hack-d59a47be-67/pull/4), без merge. Для текущих refs остаётся контейнерный повтор на подходящем хосте.
+
+Ниже сохранены предыдущие проверки.
+
+---
+
+# Воспроизводимая интеграция и контейнерная приёмка — 2026-09-23
+
+Проверено командой `scripts/verify-integration --backend-ref HEAD --ai-ref origin/codex/ai-recommendations` на backend `960187ef069b552130f5cc51612d3193cfa23a87` и AI `8f0dc053b769a9b965fc648b9b67d3cd01a14981`. Виртуальное объединение без конфликтов: tree `c4fcd058af2986d6b8d2019180bf5d59edeb9b87`. Проверка экспортировала только tracked tree во временную папку, не переключала рабочую ветку и не сливала PR.
+
+- Совместный snapshot: **438 passed**,21 исходный тест,9 contract checks,Ruff PASS; TCP smoke дважды запускает настоящий API/AI-модуль и проверяет cards/evidence → completion → restart → точный idempotency replay/latest stale → logout. Подменён только remote selector; реальных ключей, LLM-вызовов и отправки профилей не было.
+- Backend отдельно: `make check` — **269 passed,1 optional AI skip**,21 исходный тест,9 checks,Ruff PASS; формат33 файлов проверен.25 новых тестов проверяют изоляцию окружения, loopback port, image allowlist и unavailable Docker path.
+- `scripts/check-container --require-ai` — **exit2 / NOT RUN**, Docker CLI/Desktop/daemon отсутствуют. Это НЕ пройденный container build. Скрипт подготовлен для реальной сборки/проверки non-root/содержимого образа/auth/SQLite и пересоздания контейнера с тем же named volume на машине с Docker; эти действия здесь не выполнялись.
+- `git diff --check` и protected-path diff PASS: frontend/, backend/app/ai/, Pydantic/HTTP схемы не менялись. Публичного деплоя и merge PR нет. CI всё ещё billing-blocked.
+
+Команды повторения и границы проверки описаны в docs/HANDOFF.md. На Docker-хосте: `scripts/verify-integration --ai-ref origin/codex/ai-recommendations --container`. Команда использует отдельный случайный Compose project и удаляет только созданные ею тестовые ресурсы; очистка существующих ресурсов/установка Docker не выполняются.
+
+Ниже сохранены предыдущие проверки.
+
+---
+
+# Backend-передача AI PR #3 — 2026-09-23
+
+Ветка `codex/backend-ai-handoff` от `origin/codex/architecture-foundation` (`e3dfc7e`, уже содержит опубликованный ранее PR #2). AI PR #3 (`8f0dc05`) проверен в отдельной detached working copy `/private/tmp/career-quest-pr3-integration`; поверх скопированы только изменения backend/инфраструктуры и новые тесты. AI-код и собственные тесты Олега не менялись, PR не сливались.
+
+Опубликован [PR #4](https://github.com/BAITC-Hacks/hack-d59a47be-67/pull/4). `git merge-tree --write-tree HEAD origin/codex/ai-recommendations` завершился успешно без конфликтов файлов, включая журнал AGENTS; проверка не меняла refs и не выполняла merge PR.
+
+- `make check` в backend-ветке: **244 passed, 1 skipped**, 21 исходный unit test, 9 проверок контрактов, Ruff PASS. Skip — только сквозной тест optional AI, которого в этой ветке пока нет.
+- `make check VENV_PYTHON=<absolute path to project .venv/bin/python>` в изолированной копии PR #3 с backend-дополнениями: **413 passed**, 21 исходный unit test, 9 проверок контрактов, Ruff PASS. Сетевой selection подменён; ни ключ, ни OpenAI для этих тестов не нужны.
+- `.venv/bin/ruff format --check backend scripts/smoke.py scripts/check_contracts.py`:29 files formatted; `git diff --check`:PASS. Одно известное upstream warning Starlette/httpx.
+- Чистый `/private/tmp/career-quest-ai-runtime-venv`: установка **только requirements.lock**, `pip check` без ошибок; импорт настоящего async AI PR #3, capability configured при enabled и not_configured при disabled. Провайдер не вызывался; dev-зависимостей нет.
+- Локальный read-only аудит контекстов исходного кита в временной БД:200 профилей,159 actionable контекстов проходят `backend.app.ai.validation.validate_context`; максимальный JSON контекста21089 bytes. Исходные записи и prepared contexts никуда не отправлялись и не печатались.
+
+Новые проверки доказывают выбор critical_skills из целевой роли/грейда (явной или следующей), отсутствие выдуманной критичности, сохранение всех ID большого списка, отдельные history-выборки события и других событий с теми же type+format, counts/даты/provenance/повторы/cutoff/нулевой sample, отсутствие личных идентификаторов. HTTP-тест использует профиль, где самый низкий навык некритичен, а меньший разрыв критичен; настоящий AI-модуль получает этот backend-контекст, затем проверяются resolved evidence, полные карточки, latest после restart и чужой доступ403. Подменённый selector доказывает совместимость и передачу фактов, **не качество live-ранжирования**.
+
+Минимальные общие fixtures сохранены: их структура используется тестами Олега. Расширенные примеры добавлены отдельно и проверяются теми же Pydantic-моделями. `backend/app/contracts.py`, OpenAPI, JSON Schema, frontend/ и backend/app/ai/ не менялись.
+
+Ограничения: Docker отсутствует, поэтому подготовленные allowlist/Compose/runtime pins не выдаются за проверенный container build. AI выключен по умолчанию, ключ задаётся оператором в runtime и не входит в образ/Git. Реальных LLM-вызовов на этой машине не было; сообщённые Олегом3/3 относятся к его прежним синтетическим fixtures. GitHub CI по-прежнему billing-blocked. Для рабочего совместного запуска после review нужны изменения и PR #3, и этой backend-ветки.
+
+Ниже сохранена приёмка предыдущего backend-этапа.
+
+---
+
 # Приёмка предметного backend — 2026-09-23
 
 Командная ветка `origin/codex/architecture-foundation` получена по URL пользователя. Её история присоединена локально; исходное ТЗ, подготовка/аудит данных, frontend и документы сохранены. Работа/PR — отдельная `codex/backend-foundation`; main/base не обновлялись напрямую.
