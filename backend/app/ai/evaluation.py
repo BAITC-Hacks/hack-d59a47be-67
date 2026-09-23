@@ -8,8 +8,8 @@ contain fixture IDs, selected event IDs, timings and fixed verdict codes only.
 The rubric tests choice, not wording: a critical target gap beats a weaker
 noncritical skill, equal gains use relevant participation/format evidence, and
 an excluded high-gain event must never displace a useful eligible candidate.
-The first two cases require richer backend facts than the current backend emits;
-their metadata records that limitation rather than claiming end-to-end coverage.
+These authored contexts alone do not prove backend integration. The separate
+backend_evaluation module exercises contexts prepared by the backend from PR #4.
 """
 
 from __future__ import annotations

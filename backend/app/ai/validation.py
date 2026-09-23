@@ -43,11 +43,12 @@ def _positive_skills(context: RecommendationContext, candidate: EligibleCandidat
 
 
 def _explanation(context: RecommendationContext, candidate: EligibleCandidate) -> Explanation:
-    """Pick one relevant fact per category, without truncating a supporting fact.
+    """Keep required categories and any additional event history that fits.
 
     Choosing the shortest fact in each category gives a deterministic bounded
     explanation whenever such a four-category explanation can fit the contract.
-    IDs break ties and have no assumed prefix or other semantic meaning.
+    Additional event and cohort facts preserve available participation evidence.
+    Neither prose nor ID prefixes are parsed; IDs only break length ties.
     """
     profile_subjects = {"profile", context.profile.profile_ref}
     affected = _positive_skills(context, candidate)
@@ -81,6 +82,17 @@ def _explanation(context: RecommendationContext, candidate: EligibleCandidate) -
     text = " ".join(fact.fact for fact in chosen)
     if len(text) > 2000:
         raise InvalidContext("Supporting evidence exceeds the explanation limit.")
+    selected_ids = {fact.evidence_id for fact in chosen}
+    for history in sorted(specific_history, key=lambda fact: (len(fact.fact), fact.evidence_id)):
+        if len(chosen) >= 50:
+            break
+        if history.evidence_id in selected_ids:
+            continue
+        expanded = text + " " + history.fact
+        if len(expanded) <= 2000:
+            chosen.append(history)
+            selected_ids.add(history.evidence_id)
+            text = expanded
     return Explanation(text=text, evidence_ids=[fact.evidence_id for fact in chosen])
 
 

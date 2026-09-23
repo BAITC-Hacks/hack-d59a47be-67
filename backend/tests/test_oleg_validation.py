@@ -103,6 +103,81 @@ def test_uses_complete_global_history_when_specific_one_exceeds_budget(payload):
     assert "long-history" not in evidence
 
 
+def test_includes_event_and_cohort_history_without_parsing_facts(payload):
+    for subject, evidence, text in (
+        (event_id(payload), "opaque-a", "No recorded participation in this event."),
+        (
+            event_id(payload),
+            "opaque-b",
+            "Three no-shows at other events of the same type and format; this is not a stable preference.",
+        ),
+        ("OTHER_EVENT", "opaque-c", "Unrelated event history."),
+    ):
+        payload["facts"].append(
+            {"kind": "history", "subject_id": subject, "evidence_id": evidence, "fact": text}
+        )
+    ctx = context(payload)
+    explanation = build_result(ctx, [event_id(payload)]).recommendations[0].explanation
+    evidence = {item.evidence_id: item for item in ctx.facts}
+    selected = [evidence[key] for key in explanation.evidence_ids]
+    assert explanation.evidence_ids[-1] == "opaque-b"
+    assert "opaque-a" in explanation.evidence_ids
+    assert "opaque-c" not in explanation.evidence_ids
+    assert [item.kind for item in selected] == ["goal", "gap", "history", "candidate", "history"]
+    assert explanation.text == " ".join(item.fact for item in selected)
+    assert len(explanation.text) <= 2000
+
+
+@pytest.mark.parametrize("overflow", [0, 1])
+def test_additional_history_respects_exact_text_budget_without_truncation(payload, overflow):
+    payload["facts"].append(
+        {
+            "kind": "history",
+            "subject_id": event_id(payload),
+            "evidence_id": "own-history",
+            "fact": "Recorded participation for this event.",
+        }
+    )
+    baseline = build_result(context(payload), [event_id(payload)]).recommendations[0].explanation
+    additional_text = "X" * (2000 - len(baseline.text) - 1 + overflow)
+    payload["facts"].append(
+        {
+            "kind": "history",
+            "subject_id": event_id(payload),
+            "evidence_id": "additional-history",
+            "fact": additional_text,
+        }
+    )
+    explanation = build_result(context(payload), [event_id(payload)]).recommendations[0].explanation
+    if overflow:
+        assert explanation == baseline
+    else:
+        assert explanation.text == baseline.text + " " + additional_text
+        assert len(explanation.text) == 2000
+        assert explanation.evidence_ids == [*baseline.evidence_ids, "additional-history"]
+
+
+def test_additional_history_keeps_evidence_limit_and_is_order_independent(payload):
+    for index in range(75):
+        payload["facts"].append(
+            {
+                "kind": "history",
+                "subject_id": event_id(payload),
+                "evidence_id": f"history-{index:02}",
+                "fact": "Recorded.",
+            }
+        )
+    ctx = context(payload)
+    first = build_result(ctx, [event_id(payload)])
+    ctx.facts.reverse()
+    assert build_result(ctx, [event_id(payload)]) == first
+    explanation = first.recommendations[0].explanation
+    assert len(explanation.evidence_ids) == len(set(explanation.evidence_ids)) == 50
+    assert explanation.evidence_ids[2] == "history-00"
+    assert explanation.evidence_ids[4:] == [f"history-{index:02}" for index in range(1, 47)]
+    assert len(explanation.text) <= 2000
+
+
 def test_does_not_truncate_long_supporting_fact(payload):
     fact(payload, "history")["fact"] = "X" * 2000
     with pytest.raises(InvalidContext, match="explanation limit"):
