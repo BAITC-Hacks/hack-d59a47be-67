@@ -1,0 +1,2 @@
+# Artifact/schema QA only. Runtime application dependencies are not chosen yet.
+jsonschema==4.26.0

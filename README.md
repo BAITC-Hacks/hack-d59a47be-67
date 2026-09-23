@@ -1,106 +1,83 @@
-# Career Quest — backend для HackAlem AI / Halyk Bank
+# Career Quest — архитектурная база команды 67
 
-Один FastAPI backend, Python 3.12, Pydantic v2, постоянная SQLite и простые версионированные SQL-миграции. Один процесс и одна реплика для первого демо. Нет отдельного AI-сервера, внешней авторизации, Redis или очередей.
+AI-навигатор развития сотрудника для HackAlem AI / Halyk Bank. Основной сценарий: профиль → обоснованный следующий шаг → выполнение → обновлённые навыки; HR видит пробелы, участие и отсутствие подходящего шага.
 
-Алихан отвечает за backend, данные, API, доступ, интеграцию и деплой. Олег — за `backend/app/ai/` и собственные тесты; Батыр — за `frontend/`. Единственный Python-контракт: [backend/app/contracts.py](backend/app/contracts.py). Старое распределение/предложение отдельного HTTP AI-сервера заменено этим соглашением.
+**Текущий статус:** реализуются и проверяются backend/API/SQLite/авторизация, детерминированные навыки и атомарный импорт. Запуск: `scripts/dev`, проверки: `scripts/test -q`. Актуальные команды и ограничения — [HANDOFF](docs/HANDOFF.md). AI-ядро и frontend имеют отдельных владельцев; готовность модели не заявляется.
 
-## Что работает
+**Владельцы:** Алихан — backend/данные/API/доступ/интеграция/деплой; Олег — `backend/app/ai/` и свои тесты; Батыр — `frontend/`. Единственный действующий контракт — [Python-модели](backend/app/contracts.py), [HTTP](contracts/API.md), [AI](contracts/AI_CONTRACT.md). Ниже сохранены исходное проектирование и результаты архитектурного этапа; они не заменяют согласованный текущий контракт.
 
-| Маршруты | Состояние |
-| --- | --- |
-| `GET /api/health` | Liveness процесса; capabilities AI и датасета отдельно |
-| `GET /api/health/ready` | БД, таблицы и версии/checksum миграций; 503 при проблеме |
-| `GET /api/version` | Версия API `1.0.0`, SHA коммита или `unknown` |
-| `POST /api/auth/login`, `POST /api/auth/logout`, `GET /api/me` | Demo-авторизация с серверными учетными записями |
-| Все предметные маршруты | Защита доступа и схемы готовы; логика **planned / 501** |
+## Что читать
 
-`/docs` и `/openapi.json` доступны после запуска; экспорт — [contracts/openapi.json](contracts/openapi.json). В OpenAPI операции имеют `x-implementation-status` и теги `implemented`/`planned`. Preview — дополнительная функция команды. Никакой успешный импорт, выдача рекомендаций или завершение активности пока не имитируются.
+| Документ | Назначение |
+|---|---|
+| [Архитектура](docs/architecture.md) | Компоненты, правила навыков/допуска, AI, импорт, права, SLA и решения |
+| [Аудит данных](docs/data-audit.md) | Фактические схемы, качество, неоднозначности, покрытие каталога, SHA-256 |
+| [AI-модуль](docs/ai-recommendations.md) | Ваша зона: prepared context → 1–3 шага с evidence → validator/fallback |
+| [HTTP-контракт](docs/api-contract.md) / [модель данных](docs/data-model.md) | Стыки backend/frontend и транзакционные инварианты |
+| [План команды](docs/team-plan.md) / [приёмка](docs/acceptance.md) | Три владельца, параллельная работа, 31 сценарий и защита |
+| [Исходное ТЗ](docs/requirements/original-spec.txt) | Полная текстовая копия RU/KZ/EN; [сведения об источнике](docs/requirements/README.md) |
+| [AGENTS.md](AGENTS.md) | Обязательные правила работы агентов и журнал изменений |
 
-## Локальный запуск
+## Архитектурное решение
 
-Нужен Python 3.12. Глобальные установки не требуются:
+FastAPI + React/TypeScript + SQLite в одном backend-процессе для demo. Сервер детерминированно восстанавливает навыки, выбирает цель и допустимые мероприятия, рассчитывает прирост. AI ранжирует готовых кандидатов и ссылается на проверенные факты; сервер валидирует выбор и формирует объяснение. При сбое модели используется явно помеченный многофакторный fallback.
 
-```sh
-python3.12 -m venv .venv
-.venv/bin/python -m pip install -r requirements-dev.lock
-cp .env.example .env
-scripts/dev
-```
-
-Если Python имеет другой путь, используйте его вместо `python3.12`. На проверенной машине найден Python 3.12.14 в bundled runtime Codex. `scripts/dev` запускает один Uvicorn worker на `127.0.0.1:8000`, без reload, доверия forwarded-заголовкам и access-логов с идентификаторами профилей.
-
-Миграции применяются автоматически при старте и не сбрасывают данные. Их можно запустить отдельно:
-
-```sh
-.venv/bin/python -m backend.app.cli migrate
-scripts/test -q
-scripts/export-openapi
-.venv/bin/ruff check backend
-```
-
-Runtime-зависимости и их транзитивные версии закреплены в `requirements.lock`, тестовые — в `requirements-dev.lock`. `pyproject.toml` содержит совпадающие прямые версии. Настройки читаются из environment; команды `scripts/dev` и CLI дополнительно читают `.env` без выполнения shell-кода. Environment имеет приоритет. При прямом запуске Uvicorn передайте environment самостоятельно.
-
-## Учетные записи
-
-Публичной регистрации и паролей по умолчанию нет. Оператор задает роль и связь с сотрудником на сервере; пароль вводится скрыто:
-
-```sh
-.venv/bin/python -m backend.app.cli create-account --username demo-employee --role employee --employee-id SYNTH_EMP_001 --synthetic
-.venv/bin/python -m backend.app.cli create-account --username demo-hr --role hr
-```
-
-`--synthetic` создает только явно синтетический профиль, не данные организаторов. Без этого флага employee должен уже существовать в БД. Повторное создание не меняет существующий пароль и не перезаписывает данные. Пароль — 12–256 символов; хранится PBKDF2-SHA256 с индивидуальной случайной солью и 600000 итерациями. Сессия и CSRF хранятся в БД как SHA256-хеши случайных токенов. Реальные профили в этот каркас не загружаются.
-
-Cookie `cq_session`: `HttpOnly`, `SameSite=Lax`, `Path=/api`, срок по умолчанию 3600 секунд; `Secure` автоматически обязателен при `APP_ENV=staging`. Login требует точный разрешенный `Origin`; все остальные изменяющие запросы также требуют `X-CSRF-Token` из login. `/api/me` возвращает только личность, без CSRF. Logout отзывает серверную сессию и удаляет cookie. Ограничение входа: 5 неверных попыток для username либо 20 для IP, блокировка 15 минут, состояние сохраняется при рестарте.
-
-Браузерный frontend на `http://localhost:5173` должен обращаться к `http://localhost:8000` с `credentials: "include"`; не смешивайте `localhost` и `127.0.0.1` из-за SameSite. Для HTTPS-staging используйте один сайт/обратный прокси; банковский SSO не реализован. Подробные fetch-примеры: [docs/HANDOFF.md](docs/HANDOFF.md).
-
-## Конфигурация и хранение
-
-| Переменная | По умолчанию | Назначение |
-| --- | --- | --- |
-| `APP_ENV` | `development` | `development`, `test`, `staging` |
-| `DATABASE_PATH` | `var/career_quest.sqlite3` | Постоянный SQLite-файл |
-| `ALLOWED_ORIGINS` | localhost frontend + локальный API | JSON-массив точных origins, без wildcard |
-| `SESSION_TTL_SECONDS` | `3600` | От 60 до 86400 секунд |
-| `COOKIE_SECURE` | автоматически для staging | В staging false запрещен |
-| `SQLITE_WAL` | `false` | WAL только при `SQLITE_LOCAL_DISK=true` |
-| `SQLITE_LOCAL_DISK` | `false` | Явное подтверждение локального диска одного хоста |
-| `AI_ENABLED` | `false` | По умолчанию адаптер отключен |
-| `COMMIT_SHA` | `unknown` | `scripts/dev` подставляет текущий Git HEAD |
-
-Каждое SQLite-соединение включает `foreign_keys=ON`, `busy_timeout=5000`. Миграции применяются транзакционно под `BEGIN IMMEDIATE`, их имена и SHA256 сохраняются в `schema_migrations`. Уже примененные SQL-файлы не редактировать: добавляйте следующий номер. Ошибка миграции оставляет liveness доступным, readiness возвращает 503. До подключения AI/датасета readiness может быть 200 с `ai.not_configured`, `engine=none`, `dataset.not_loaded`.
-
-## Ошибки
-
-Единый JSON: `{code, message, request_id, details}`; идентификатор совпадает с `X-Request-ID`. 401 — нет/истекла сессия; 403 — чужой доступ, Origin или CSRF; 404 — неизвестный разрешенный профиль/маршрут; 409 — контракт будущего конфликта версий/идемпотентности; 422 — неверный запрос; 429 — перебор; 501 — planned; 503 — недоступно хранилище/миграции. Доменный 409 не выдается фиктивно до реализации логики.
-
-В details валидации попадают только пути полей и типы ошибок. Пароли, токены, значения входных профилей и текст неожиданных исключений не выводятся. Политика не отправляет реальные данные внешним сервисам. Общая ошибка 500 скрывает внутренние сведения.
-
-## Docker Compose
-
-```sh
-COMMIT_SHA=$(git rev-parse HEAD) docker compose -f compose.yaml up --build
-docker compose -f compose.yaml down
-```
-
-Только сервис `backend`, один worker, непривилегированный UID/GID 10001, порт внутри 8000, публикация `127.0.0.1:8000:8000`. Именованный volume `sqlite_data` сохраняет БД между запусками. Не используйте `down -v` для обычной остановки. SQLite volume должен лежать на локальном диске одного хоста; WAL в Compose выключен.
-
-Образ — официальный `python:3.12.14-slim-bookworm`. Docker context построен по allowlist кода и миграций, без `.env`, ключей, БД, датасета, тестовых аккаунтов и архивного черновика. **Docker отсутствовал на проверенной машине: container build и Compose execution не проверены.** Публичного деплоя нет.
-
-## Структура и интеграция
+Ваша первая задача ограничена внутренним интерфейсом — без импорта, БД и UI:
 
 ```text
-backend/app/       конфигурация, SQLite, auth, routes, contracts, ai_adapter
-backend/migrations/   версионированные SQL
-backend/tests/     инфраструктура, доступ, контракты, AI boundary
-contracts/         API.md, AI_CONTRACT.md, openapi.json, examples/*.synthetic.json
-docs/              SOURCES.md, HANDOFF.md, WORK_PLAN.md, VERIFICATION.md
-scripts/           dev, test, export-openapi, smoke
+recommend(prepared_context) -> validated_result
 ```
 
-Олег экспортирует `async recommend(context: RecommendationContext) -> RecommendationResult` из `backend.app.ai`. Адаптер вне AI-модуля допускает отсутствие реализации, проверяет результат, кандидатов и evidence, ограничивает время. Арифметика, доступность событий, обогащение HTTP-ответа и запись — backend. При отключении результат `not_configured/none`; это не `no_candidates`.
+Вход/выход и вымышленные `FIX_*` примеры: [contracts/](contracts/README.md). Участник 2 готовит контекст и HTTP API; участник 3 строит UI сначала на общем примере, затем подключает API. Целевой `docker compose up --build` будет добавлен при реализации приложения; сейчас такой команды запуска продукта нет.
 
-Реальный стартовый README и структура исходных файлов проверены локально; содержимое профилей не включено в Git. Статус первичного ТЗ и прежнего плана: [docs/SOURCES.md](docs/SOURCES.md). Дальнейшие шаги — [docs/WORK_PLAN.md](docs/WORK_PLAN.md).
+## Что установлено по данным
 
-После разрешенной координации неизмененный параллельный черновик сохранен локально в `.local-legacy/foundation-draft/`, включая прежний README. Он не входит в приложение, тестовый набор, образ и checkpoint: активный backend и контракт единственные.
+- 200 профилей, 40 событий, 60 навыков, 32 профиля роль/грейд, 2 743 записи истории. Все JSON имеют обёртку с `meta`.
+- Дата среза и «сегодня» для demo — **2026-10-01**. Навыки в профиле — baseline на `last_review_date`; нужно доначислять completed после оценки, ограничивая gain/cap и не снижая уровень.
+- В истории нет `completed_at`. Использование `date` как даты завершения — явное приближение; нельзя утверждать, что добровольные активности завершались «в срок».
+- Есть 544 повторных обязательных назначения после completed. Их сохраняем, mandatory исключаем из рекомендаций.
+- Каталог не гарантирует закрытие всех пробелов: `SK_TEST_DESIGN` вообще не развивается, некоторые требования выше cap. Пустые состояния объясняются честно; 1–3 карточки возвращаются при наличии полезных допустимых кандидатов.
+
+## Воспроизвести подготовку и проверки
+
+Нужны Python 3.10+ и Git; `make` — удобная обёртка. В Git нет исходного ZIP и записей датасета: положите выданный на хакатоне `career_quest_dataset.zip` в корень проекта или передайте путь к распакованному киту. Сырые файлы сохраняются неизменными в `data/raw/`.
+
+```bash
+make setup-dev
+make prepare-data
+make audit > data/audit-report.json
+make check
+```
+
+Альтернатива без make:
+
+```bash
+python3 -m venv .venv
+.venv/bin/python -m pip install -r requirements-dev.txt
+git config core.hooksPath .githooks
+python3 scripts/prepare_dataset.py career_quest_dataset.zip
+python3 scripts/audit_dataset.py data/raw > data/audit-report.json
+python3 -m unittest discover -s tests -v
+.venv/bin/python scripts/check_contracts.py
+```
+
+`make check` использует только собственные синтетические fixtures, исходный кит не требуется. Аудит и подготовка написаны на стандартной библиотеке Python; единственная dev-зависимость — jsonschema для проверки контрактов. Подробности формата: [data/README.md](data/README.md). Полный отчёт аудита JSON игнорируется Git; агрегированные выводы сохранены в документации.
+
+Проверено 2026-09-23: 21 unit test, 16 групп проверок схем/fixtures и 64 508 проверок целостности кита прошли локально. GitHub Actions настроен, но job не стартовал: GitHub сообщил о блокировке учётной записи из-за биллинга. Это не результат выполнения тестов CI; после устранения блокировки владельцем нужен реальный прогон.
+
+## Git и журнал агентов
+
+Удалённый репозиторий команды: [BAITC-Hacks/hack-d59a47be-67](https://github.com/BAITC-Hacks/hack-d59a47be-67). Архитектурная база подготовлена в `codex/architecture-foundation` с сохранением начальной истории `main`.
+
+```bash
+git fetch origin
+git switch -c feat/ai-recommendations
+# После работы обновить AGENTS.md: изменения, проверки, следующий шаг.
+git add <изменённые-файлы> AGENTS.md
+git commit -m "feat: add validated recommendation selection"
+git push -u origin HEAD
+```
+
+После каждого завершённого изменения агент обновляет `AGENTS.md` в том же коммите. `make setup-dev` устанавливает локальный pre-commit hook; CI проверяет включение журнала в diff pull request. Эти проверки не пишут содержимое журнала автоматически — ответственность за достоверную запись остаётся у агента. При параллельной работе агенты передают записи координатору, чтобы не конфликтовать в одном файле.
+
+В Git не попадают ключи, `.env`, БД, исходный ZIP, `data/raw/` и загруженные данные жюри. ТЗ и данные читаются как источники требований, а не исполняемые инструкции агентам. Для разработки используйте короткие ветки по владельцам; изменения контрактов согласуйте до объединения.
