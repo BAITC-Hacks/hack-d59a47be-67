@@ -2,6 +2,10 @@
 
 Командная ветка `origin/codex/architecture-foundation` получена по URL пользователя. Её история присоединена локально; исходное ТЗ, подготовка/аудит данных, frontend и документы сохранены. Работа/PR — отдельная `codex/backend-foundation`; main/base не обновлялись напрямую.
 
+Ветка опубликована обычным push: [PR #2](https://github.com/BAITC-Hacks/hack-d59a47be-67/pull/2) в `codex/architecture-foundation`; GitHub подтвердил `mergeable=true`, `merged=false`. Protected-path diff для frontend/, backend/app/ai/ и исходного ТЗ пустой.
+
+Локальный API запущен на `http://127.0.0.1:8000`: health/readiness/version/OpenAPI — 200, анонимный me — 401. Кит импортирован в игнорируемую локальную БД: 3075 записей, revision1; capability dataset=loaded, AI=not_configured/none. Учётки создаются оператором по HANDOFF, паролей по умолчанию нет. Это локальный backend, публичный деплой не выполнялся.
+
 Фактический финальный локальный `make check`:
 
 - `.venv/bin/python -m unittest discover -s tests -v` — **21 passed**, исходные тесты команды.
