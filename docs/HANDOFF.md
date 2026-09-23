@@ -1,6 +1,6 @@
 # Передача backend Career Quest
 
-Алихан: backend/данные/API/права/интеграция/деплой. Олег: `backend/app/ai/` и собственные тесты. Батыр: `frontend/`. Код AI и frontend не изменён. PR направляется из отдельной backend-ветки в `codex/architecture-foundation`, без самостоятельного merge.
+Текущая общая версия объединяет backend, AI и frontend. Первоначальное распределение: Алихан — backend/данные/API, Олег — AI/приёмка, Батыр — UI. Финальную доработку всех компонентов пользователь поручил координатору. Актуальные результаты — [FINAL_REPORT](FINAL_REPORT.md), основной запуск — [README](../README.md). Ниже сохранены операционные команды и явно датированные исторические этапы.
 
 ## Запуск и проверки
 
@@ -9,7 +9,7 @@
 ```sh
 python3.12 -m venv .venv
 .venv/bin/python -m pip install -r requirements-dev.lock
-cp .env.example .env
+cp -n .env.example .env  # существующий .env сохраняется
 # Сначала validation; путь указывает на локальные 4 исходных файла, не ZIP:
 .venv/bin/python -m backend.app.cli import-kit /path/to/career_quest_dataset
 # Явный atomic commit после повторной validation:
@@ -22,14 +22,30 @@ scripts/dev
 Пароли CLI вводятся скрыто, 12–256 символов, общих паролей в Git нет. `--synthetic` создаёт только пустую синтетическую identity, а для предметных экранов нужен импорт полного синтетического профиля/кита. Менеджер из данных автоматически не получает HR-права.
 
 ```sh
-make check                # исходные 21 unit test + backend pytest + schemas + Ruff
+make check                # dataset tests + backend/AI pytest + schemas + Ruff
 scripts/smoke             # реальный TCP-сценарий, временная синтетическая БД, два запуска
 scripts/export-openapi
 .venv/bin/ruff format --check backend scripts/smoke.py scripts/check_contracts.py
 .venv/bin/python scripts/check_agent_log.py --base origin/codex/architecture-foundation
 ```
 
-Рабочий URL после `scripts/dev`: `http://127.0.0.1:8000/docs`. Один процесс, миграции без reset. Для контейнера: `COMMIT_SHA=$(git rev-parse HEAD) docker compose -f compose.yaml up --build`; постоянный `sqlite_data`, non-root, bind только `127.0.0.1:8000`. Docker на этой рабочей машине отсутствует; передан отдельный успешный ARM64-прогон Олега с инфраструктурным patch (см. ниже). GitHub Actions billing-blocked: локальные результаты не выдаются за зелёный CI.
+Рабочий URL после `scripts/dev`: `http://127.0.0.1:8000/docs`. Один процесс, миграции без reset. Для контейнера: `COMMIT_SHA=$(git rev-parse HEAD) docker compose -f compose.yaml up --build`; постоянный `sqlite_data`, non-root, bind только `127.0.0.1:8000`. Общий образ фактически проверен на Linux ARM64; актуальный результат — FINAL_REPORT. Исторические версии с patch описаны ниже. GitHub Actions billing-blocked: локальные результаты не выдаются за зелёный CI.
+
+## Первичная подготовка частного Docker
+
+Public-демо из корневого README готовит собственный каталог автоматически. Для частной базы с каталогом организаторов сначала выполните в корне:
+
+```sh
+docker compose build
+docker compose run --rm --volume /absolute/path/to/career_quest_dataset:/kit:ro backend python -m backend.app.cli import-kit /kit
+# После успешной проверки:
+docker compose run --rm --volume /absolute/path/to/career_quest_dataset:/kit:ro backend python -m backend.app.cli import-kit /kit --commit
+docker compose run --rm backend python -m backend.app.cli create-account --username demo-hr --role hr
+docker compose run --rm backend python -m backend.app.cli create-account --username demo-employee --role employee --employee-id EXISTING_EMPLOYEE_ID
+docker compose up --build
+```
+
+Замените путь и employee ID локальными значениями; путь с пробелами заключите в кавычки. В контейнер монтируется только каталог данных, read-only, без копирования в образ. CLI и сервер используют один `sqlite_data`. Пароли вводятся в терминале скрыто. Подготовка выполняется один раз; последующие запуски — одной командой `docker compose up --build`. Используйте `AI_ENABLED=false` для офлайн-проверки ограниченного кита; включение внешнего AI для таких данных требует разрешения организаторов.
 
 ## Повторяемая совместная проверка до merge PR
 
@@ -52,7 +68,7 @@ scripts/verify-integration --ai-ref origin/codex/ai-recommendations --container
 scripts/check-container --require-ai
 ```
 
-Контейнерная команда использует отдельный случайный Compose project и временные синтетические данные. Она не устанавливает Docker, не читает рабочий .env и не очищает существующие контейнеры/volumes. Без Docker завершается понятной ошибкой; это не успешный container build. На текущей машине повторная сборка недоступна. Олег передал [Docker-отчёт PR #3](https://github.com/BAITC-Hacks/hack-d59a47be-67/blob/f10006a/backend/app/ai/DOCKER_REPORT.md): ARM64 container acceptance, live OpenAI 3/3 синтетических сценария и frontend → API → completion → restart прошли на backend a3696ba + AI 29791f1 **с двумя правками во временной копии**. Эти правки приняты здесь: `.dockerignore` исключает вложенные AI-артефакты, smoke проверяет evidence по смыслу, а не ровно четыре ссылки. Сравнение текста smoke адаптировано к новому русскому formatter. Отчёт Олега относится к прежнему отображению текста; текущий commit требует повторного `--container` на Docker-хосте. AMD64/production не проверены.
+Контейнерная команда использует отдельный случайный Compose project и временные синтетические данные. Она не устанавливает Docker, не читает рабочий .env и не очищает существующие контейнеры/volumes. Без Docker завершается понятной ошибкой; это не успешный container build. Историческая передача до общей интеграции: на машине backend-участника Docker отсутствовал. Олег передал [Docker-отчёт PR #3](https://github.com/BAITC-Hacks/hack-d59a47be-67/blob/f10006a/backend/app/ai/DOCKER_REPORT.md): ARM64 container acceptance, live OpenAI 3/3 синтетических сценария и frontend → API → completion → restart прошли на backend a3696ba + AI 29791f1 **с двумя правками во временной копии**. Эти правки приняты здесь: `.dockerignore` исключает вложенные AI-артефакты, smoke проверяет evidence по смыслу, а не ровно четыре ссылки. Сравнение текста smoke адаптировано к новому русскому formatter. Этот ранний отчёт относится к прежнему отображению текста. Финальная общая версия повторно проверена в Docker и браузере без временных runtime-правок: см. [FINAL_REPORT](FINAL_REPORT.md). AMD64/production не проверены.
 
 ## Контракты
 
@@ -121,7 +137,7 @@ await fetch(`${base}/api/auth/logout`, {method: "POST", credentials: "include", 
 
 Это иллюстрация transport; валидные JSON-примеры есть в contracts/examples. Получите `preview_token`, `revision`, `counts`; отправьте те же files с `dry_run=false, preview_token`. Token живёт 15 минут и связан с точным содержимым/текущей revision. Ошибка любой строки отменяет всю партию. Новые профили и их история валидируются совместно. `record_id` — ключ; разные ID не дедуплицируются по employee/event/date. Повтор исходного импорта после локального completion/изменения goal не стирает локальные действия: исходные source_record/source_json сохраняются отдельно.
 
-Изменённые существующие employee_id/record_id конфликтуют; режим их исправления/replace ещё не реализован. skills.json и events.json заменяют соответствующий каталог целиком после preview/commit и проверки всех сохранённых ссылок. Preview предупреждает о пересчёте профилей по новому каталогу и истории; commit обновляет revision и делает рекомендации stale. HR summary сейчас содержит counts сотрудников/целей/завершений/симуляций; расширенная аналитика разрывов/участия из проектной записки остаётся следующим срезом.
+Изменённые существующие employee_id/record_id конфликтуют; режим их исправления/replace ещё не реализован. skills.json и events.json заменяют соответствующий каталог целиком после preview/commit и проверки всех сохранённых ссылок. Preview предупреждает о пересчёте профилей по новому каталогу и истории; commit обновляет revision и делает рекомендации stale. HR summary содержит общие counts. `GET /api/hr/analytics` возвращает частые разрывы навыков, участие по событиям и причины отсутствия актуальной рекомендации, включая missing/stale/unavailable/AI not configured. Он читает latest и профили в одной версии БД и не вызывает модель.
 
 ## Пользовательские объяснения
 
@@ -144,11 +160,11 @@ async def recommend(context: RecommendationContext) -> RecommendationResult:
 
 Context содержит обезличенный профиль, цель, версию и дату, вычисленные skills/gaps, допустимых полезных кандидатов с effects и facts/evidence_id. Выберите до трёх event_id; для каждого evidence_ids должны подтверждать минимум goal/grade, gap данного события и history (включая факт отсутствия истории). Backend проверяет ссылки и формирует русский HTTP-текст из тех же проверенных значений: технический JSON facts и свободные утверждения модели в карточку не попадают. Полные карточки сохраняются и возвращаются latest после перезапуска.
 
-HTTP статусы: `ok/oleg`, `unavailable/oleg`, `not_configured/none`, `no_candidates/none`, `no_target/none`; stale — отдельный boolean. Python RecommendationResult не расширялся no_target: без цели/кандидатов backend не вызывает AI. Никакой LLM-интеграции, внешней отправки данных или отдельного AI-сервера эта ветка не добавляет.
+HTTP статусы: `ok/oleg`, `unavailable/oleg`, `not_configured/none`, `no_candidates/none`, `no_target/none`; stale — отдельный boolean. Python RecommendationResult не расширялся no_target: без цели/кандидатов backend не вызывает AI. Общая версия содержит in-process AI-модуль; внешний вызов выполняется только при включённом AI и подходящем контексте.
 
-## Подключение реализации Олега из PR #3
+## AI: интегрированная реализация и история передачи
 
-AI реализован в [PR #3](https://github.com/BAITC-Hacks/hack-d59a47be-67/pull/3); backend-дополнения не копируют и не меняют его код. Для совместного запуска нужны обе порции изменений после review. Одно наличие настроек в backend-ветке без модуля по-прежнему даёт `not_configured/none`.
+AI реализован в [PR #3](https://github.com/BAITC-Hacks/hack-d59a47be-67/pull/3); backend-дополнения не копируют и не меняют его код. В итоговой общей версии обе порции изменений уже включены. Одно наличие настроек в backend-ветке без модуля по-прежнему даёт `not_configured/none`.
 
 Runtime `requirements.lock` теперь включает те же проверенные HTTP transport pins, что AI requirements Олега: httpx0.28.1, httpcore1.0.9, certifi2026.7.22. Docker использует этот единый runtime lock: дополнительный COPY отсутствующего AI requirements не нужен, Dockerfile не требует наличия optional AI при установке зависимостей; запуск без модуля сохраняет not_configured. `.dockerignore` разрешает только Python-файлы модуля и requirements.txt; AI fixtures/отчёты/README, данные и секреты в контекст не включаются.
 
@@ -165,10 +181,10 @@ Compose передаёт только эти явно перечисленные
 
 Backend дополнил facts критичными навыками именно выбранной цели и отдельными непересекающимися history-выборками для события и других событий того же type+format. Counts/даты/sample/provenance получены сервером, нулевые выборки не интерпретируются как предпочтения. Python- и HTTP-схемы неизменны; детали — `contracts/AI_CONTRACT.md`. Расширенные синтетические примеры — `contracts/examples/ai_enriched_context.synthetic.json` и `ai_enriched_result.synthetic.json`; прежний минимальный пример сохранён для потребителей и тестов Олега.
 
-Обычные проверки не отправляют данные в OpenAI. Реальный ключ с другой рабочей машины не переносился. Олег передал live 3/3 на синтетическом backend-контексте внутри ARM64 Docker и сквозную UI-приёмку (отчёт выше). В текущей рабочей среде Docker отсутствует и live-провайдер не вызывался; эти результаты не являются повторным container build новой версии русских объяснений.
+Обычные проверки не отправляют данные в OpenAI. Реальный ключ с другой рабочей машины не переносился. Олег передал live 3/3 на синтетическом backend-контексте внутри ARM64 Docker и сквозную UI-приёмку (отчёт выше). Это историческая передача с машины backend-участника без Docker. Итоговая версия повторно проверена в Docker и с настоящим провайдером на собственных данных; см. FINAL_REPORT.md.
 
 ## Время, навыки и ограничения
 
 Дата demo из metadata: 2026-10-01. Исторический date — proxy завершения, `completed_at=null`, `date_source=historical_proxy`. Начисляется каждый completed строго после last_review_date и до среза включительно; значения baseline не меняются. Новые completed_at используют серверные demo-часы Asia/Almaty, реальные UTC-часы сохраняются отдельно в recorded_at. На одинаковую дату новые факты сортируются по completed_at, не случайному ID. Gain/cap/0–5 никогда не снижают навык. Цель не расширяет текущую аудиторию события. Lead без явной цели — no_target.
 
-AI-ядро принадлежит Олегу и передано отдельным PR #3, frontend принадлежит Батыру; публичного деплоя нет. Проверенные результаты и ограничения среды — `VERIFICATION.md`. Исходные файлы/ZIP/жюри/БД/.env/секреты в Git и Docker image не входят.
+AI-ядро принадлежит Олегу и передано отдельным PR #3, frontend принадлежит Батыру; публичного деплоя нет. Итоговые результаты и ограничения среды — `FINAL_REPORT.md`; история backend-проверок — `VERIFICATION.md`. Исходные файлы/ZIP/жюри/БД/.env/секреты в Git и Docker image не входят.
