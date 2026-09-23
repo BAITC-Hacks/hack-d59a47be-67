@@ -1,0 +1,14 @@
+{
+  "items": [
+    {
+      "employee_id": "SYNTHETIC_EMPLOYEE_001",
+      "full_name": "Синтетический сотрудник 001",
+      "department": "Синтетический отдел",
+      "role": "Synthetic Analyst",
+      "grade": "Junior"
+    }
+  ],
+  "total": 1,
+  "limit": 20,
+  "offset": 0
+}

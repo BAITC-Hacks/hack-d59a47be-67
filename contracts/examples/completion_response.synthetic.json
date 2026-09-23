@@ -1,0 +1,17 @@
+{
+  "state_version": 1,
+  "completion": {
+    "completion_id": "synthetic-completion-001",
+    "event_id": "SYNTHETIC_EVENT_001",
+    "mode": "demo_simulation",
+    "completed_at": "2026-10-01T10:00:00Z",
+    "effects": [
+      {
+        "skill_id": "SYNTHETIC_SKILL_001",
+        "before": 1.0,
+        "after": 2.0,
+        "delta": 1.0
+      }
+    ]
+  }
+}

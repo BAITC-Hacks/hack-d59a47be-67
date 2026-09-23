@@ -1,0 +1,9 @@
+{
+  "dry_run": true,
+  "status": "validated",
+  "data_version": null,
+  "imported_records": 0,
+  "warnings": [
+    "Синтетический пример будущего ответа; importer пока возвращает 501."
+  ]
+}

@@ -1,0 +1,6 @@
+{
+  "dry_run": true,
+  "source_filename": "activity_history.csv",
+  "source_format": "csv",
+  "content": "record_id,employee_id,event_id,date,due_date,status,completion_pct,score,feedback_rating,assigned_by\nSYNTHETIC_RECORD_001,SYNTHETIC_EMPLOYEE_001,SYNTHETIC_EVENT_001,2026-09-20,,completed,100,90,5,self\n"
+}

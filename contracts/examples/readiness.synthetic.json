@@ -1,0 +1,14 @@
+{
+  "status": "ready",
+  "database": "ready",
+  "capabilities": {
+    "ai": {
+      "status": "not_configured",
+      "engine": "none"
+    },
+    "dataset": {
+      "status": "not_loaded",
+      "version": null
+    }
+  }
+}

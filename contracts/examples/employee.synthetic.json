@@ -1,0 +1,30 @@
+{
+  "data_version": "synthetic-fixture-v1",
+  "state_version": 0,
+  "profile": {
+    "employee_id": "SYNTHETIC_EMPLOYEE_001",
+    "full_name": "Синтетический сотрудник 001",
+    "department": "Синтетический отдел",
+    "role": "Synthetic Analyst",
+    "grade": "Junior"
+  },
+  "goal": {
+    "target_role": "Synthetic Analyst",
+    "target_grade": "Middle"
+  },
+  "current_skills": [
+    {
+      "skill_id": "SYNTHETIC_SKILL_001",
+      "level": 1.0
+    }
+  ],
+  "gaps": [
+    {
+      "skill_id": "SYNTHETIC_SKILL_001",
+      "current_level": 1.0,
+      "target_level": 3.0,
+      "gap": 2.0
+    }
+  ],
+  "history": []
+}

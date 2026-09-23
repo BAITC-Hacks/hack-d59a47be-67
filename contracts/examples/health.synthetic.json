@@ -1,0 +1,13 @@
+{
+  "status": "ok",
+  "capabilities": {
+    "ai": {
+      "status": "not_configured",
+      "engine": "none"
+    },
+    "dataset": {
+      "status": "not_loaded",
+      "version": null
+    }
+  }
+}

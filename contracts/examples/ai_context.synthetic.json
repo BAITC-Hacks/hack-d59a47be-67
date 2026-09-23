@@ -1,0 +1,61 @@
+{
+  "contract_version": "1",
+  "data_version": "synthetic-fixture-v1",
+  "state_version": 0,
+  "scenario_date": "2026-10-01",
+  "profile": {
+    "profile_ref": "synthetic-anonymous-001",
+    "role": "Synthetic Analyst",
+    "grade": "Junior"
+  },
+  "goal": {
+    "target_role": "Synthetic Analyst",
+    "target_grade": "Middle"
+  },
+  "current_skills": [
+    {
+      "skill_id": "SYNTHETIC_SKILL_001",
+      "level": 1.0
+    }
+  ],
+  "gaps": [
+    {
+      "skill_id": "SYNTHETIC_SKILL_001",
+      "current_level": 1.0,
+      "target_level": 3.0,
+      "gap": 2.0
+    }
+  ],
+  "eligible_candidates": [
+    {
+      "event_id": "SYNTHETIC_EVENT_001",
+      "title": "Синтетическое занятие",
+      "effects": [
+        {
+          "skill_id": "SYNTHETIC_SKILL_001",
+          "before": 1.0,
+          "after": 2.0,
+          "delta": 1.0
+        }
+      ],
+      "evidence_ids": [
+        "synthetic-event-001"
+      ]
+    }
+  ],
+  "facts": [
+    {
+      "evidence_id": "synthetic-gap-001",
+      "kind": "gap",
+      "subject_id": "SYNTHETIC_SKILL_001",
+      "fact": "Синтетический разрыв: текущий уровень 1, целевой 3, разрыв 2."
+    },
+    {
+      "evidence_id": "synthetic-event-001",
+      "kind": "candidate",
+      "subject_id": "SYNTHETIC_EVENT_001",
+      "fact": "Синтетическое занятие доступно; эффект навыка рассчитан backend: +1."
+    }
+  ],
+  "limit": 3
+}

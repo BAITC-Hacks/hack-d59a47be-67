@@ -1,0 +1,7 @@
+{
+  "expected_state_version": 0,
+  "goal": {
+    "target_role": "Synthetic Analyst",
+    "target_grade": "Middle"
+  }
+}

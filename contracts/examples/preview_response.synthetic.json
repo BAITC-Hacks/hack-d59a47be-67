@@ -1,0 +1,28 @@
+{
+  "data_version": "synthetic-fixture-v1",
+  "state_version": 0,
+  "scenario_date": "2026-10-01",
+  "persisted": false,
+  "effects": [
+    {
+      "skill_id": "SYNTHETIC_SKILL_001",
+      "before": 1.0,
+      "after": 2.0,
+      "delta": 1.0
+    }
+  ],
+  "projected_skills": [
+    {
+      "skill_id": "SYNTHETIC_SKILL_001",
+      "level": 2.0
+    }
+  ],
+  "projected_gaps": [
+    {
+      "skill_id": "SYNTHETIC_SKILL_001",
+      "current_level": 2.0,
+      "target_level": 3.0,
+      "gap": 1.0
+    }
+  ]
+}
