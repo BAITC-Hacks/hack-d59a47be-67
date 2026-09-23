@@ -1,5 +1,7 @@
 # Docker и единый демо-сценарий — 2026-09-23
 
+> Исторический отчёт предыдущих refs. Актуальная проверка без временных patch, с исправленными русскими объяснениями и mobile layout — [SYSTEM_REPORT.md](SYSTEM_REPORT.md).
+
 Контейнерная приёмка и сценарий frontend → Docker backend → живой OpenAI прошли **после двух правок во временной копии**. Исходный `scripts/verify-integration --ai-ref origin/codex/ai-recommendations --container` на проверенных коммитах завершился ошибкой; считать его зелёным до принятия исправлений нельзя. Готовый [patch для Алихана](verification/container-fixes.patch) меняет только `.dockerignore` и `scripts/smoke.py`. В командных ветках эти файлы не редактировались, PR не сливались, публичного деплоя не было.
 
 ## Версии и изоляция
