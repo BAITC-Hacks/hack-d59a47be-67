@@ -30,6 +30,9 @@ var/
 data/
 datasets/
 career_quest_dataset/
+*.zip
+judge-data/
+data/raw/
 *.sqlite3-*
 *.sqlite-*
 *.pem
