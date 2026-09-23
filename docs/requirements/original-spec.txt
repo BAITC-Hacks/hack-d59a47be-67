@@ -1,0 +1,331 @@
+RU
+ТЕХНИЧЕСКОЕ ЗАДАНИЕ
+
+
+1. Общие сведения
+Заказчик: АО Народный Банк Казахстана
+Хакатон: HackAlem AI
+Трек: Halyk Bank
+Название задачи: AI для корпоративных продуктов
+Тип задачи: Product-разработка, AI/LLM-engineering, Full-stack
+Инструменты: Разрешено использовать любые модели и сервисы: облачные и локальные LLM, STT, TTS.
+2. Проблема
+Компания ведёт два потока коммуникаций - внутрь, с сотрудниками, и наружу, с клиентами. Оба работают на устаревшей логике.
+Внутренний контур 
+Карьера сотрудника - это десятки событий: онбординг, обучение, аттестации, менторство, ротации. Они доходят до человека разрозненными уведомлениями с дедлайнами. Сотрудник не видит траектории и не понимает, что ему даст конкретная активность, поэтому проходит всё формально. Компания расходует бюджет на развитие полностью, но получает низкую завершаемость программ и слабую явку на добровольные активности.
+Внешний контур
+Голосовые роботы научились хорошо говорить и слышать. Но слой, выбирающий сценарий разговора, у большинства систем остаётся классификатором на энкодерной модели — обученным на фиксированных формулировках и ломающимся там, где начинается живая речь: смена темы посреди диалога, запрос между двумя сценариями, переход с русского на казахский внутри фразы. Каждый неверный выбор — перевод на оператора или потерянный клиент.
+Общее у двух задач: узкое место не в технологии, а в слое принятия решения. И в обоих случаях его сегодня можно построить на LLM, понимающей контекст, а не сопоставляющей формулировки с обучающей выборкой.
+3. Стейкхолдеры
+Пользователи: сотрудники компании; HR-специалисты и руководители подразделений; клиенты контакт-центра; операторы и супервизоры.
+Ключевые боли:
+- Как объяснить сотруднику, зачем ему конкретная активность и куда она ведёт?
+- Как сделать профессиональный рост видимым, чтобы он мотивировал?
+- Как научить робота понимать клиента, говорящего живым языком?
+- Как сделать это, не убив скорость — пауза дольше секунды в разговоре читается как сбой связи.
+4. Выбор кейса
+- Кейс 1: Career Quest - AI-навигатор развития сотрудника.
+- Кейс 2: Voice Router - голосовой робот с AI-слоем выбора сценария
+Зачёты раздельные, команды с разными кейсами между собой не сравниваются.
+
+
+КЕЙС: CAREER QUEST
+1.  Название. Career Quest - платформа геймификации жизненного цикла сотрудника.
+2.  Проблема. Сотрудник компании сталкивается с потоком разрозненных HR-событий без видимой связи с его развитием, из-за чего обучение проходится формально в день дедлайна, а добровольные активности собирают низкую явку при полностью израсходованном бюджете на развитие персонала.
+3.  Пользователь. Основной пользователь: сотрудник со стажем 1–5 лет.
+Его ключевой сценарий: видит свой профиль и траекторию, получает рекомендацию следующего шага с объяснением, что она ему даёт, выполняет активность, видит, как сдвинулся его прогресс.
+Второй пользователь: HR — видит, какие компетенции проседают и кто выпадает из развития.
+4.  Задача. Разработать веб-приложение с AI-слоем, которое на основе профиля, истории и требований следующего грейда подбирает сотруднику релевантные шаги развития и выдаёт рекомендацию с обоснованием и обновляемый прогресс по навыкам, а HR — срез по проседающим компетенциям.
+Ядро задачи — качество и объяснимость рекомендации, а не интерфейсная обвязка. Геймификация является надстройкой и в обязательную часть не входит.
+5.  Вход → выход. Вход: JSON/CSV - профили, события, история, навыки. Пример:
+    {
+"employee_id":"E0028",
+"role":"Backend Engineer",
+"grade":"Middle",
+"tenure_months":52,
+"skills": {
+"SK_PYTHON":3,
+"SK_SYSTEM_DESIGN":2,
+"SK_PUBLIC_SPEAKING":2
+}
+}.
+Объём: 200 профилей, 40 событий, 60 навыков, 24 мес. истории.
+Выход: профиль с траекторией; 1–3 рекомендованных шага с обоснованием («System Design — 2 при требуемых 4 для Senior; активность закрывает разрыв, предыдущие две пройдены в срок»); обновление прогресса после выполнения; HR-экран.
+Допустимая задержка: отклик интерфейса до 2 секунд, AI-рекомендация до 10 секунд.
+6.  Данные. 
+Способ доступа: стартовый кит, выдаётся в день хакатона.
+Состав:
+— employees.json — 200 профилей: роль, грейд, стаж, навыки 0–5
+— events.json — 40 событий: тип, аудитория, развиваемые навыки
+— activity_history.csv — 24 месяца участия, включая пропуски и отказы
+— skills.json — 60 навыков hard/soft, требования по грейдам
+Ограничения: данные синтетические, за пределы хакатона не выносятся. Расширение собственными данными разрешено при сохранении схемы. Правило роста навыка задано в датасете: у каждой активности в events.json указано, какие навыки она развивает, на сколько уровней (gain) и до какого максимума (max_level). Подробности в README стартового кита. Данные на английском, а также переводы на казахский и русский.
+7.  Must-have
+Требование
+	Проверка
+	Профиль и карьерная траектория
+	Открыть произвольного сотрудника — видны роль, грейд, навыки, пройденные активности и доступные следующие шаги.
+	AI-рекомендация след шага
+	Система предлагает 1–3 релевантных активности.
+	Объяснение рекомендации
+	Обоснование опирается минимум на три фактора — грейд, разрывы по навыкам, история участия, требования следующего уровня
+	Обновление прогресса
+	Отметить активность выполненной — сдвигается прогресс по навыку и траектория
+	Простой HR-view
+	Видно, какие навыки чаще проседают, у кого нет рекомендованного шага, участие по активностям
+	Проверочные профили. Жюри использует три одинаковых для всех команд профиля, составленных так, что однофакторное правило на них ошибается. Пример: у сотрудника ниже всего Public Speaking, но по истории он трижды пропускал подобные активности, а для перехода на следующий грейд критичен System Design. Рекомендация вида «бери минимальный навык» на таком профиле промахивается. Решение должно загружать дополнительные профили и историю в формате датасета: на защите жюри загружает проверочные профили.
+8.  Опционально. Внутренняя валюта и признание; каталог вознаграждений и обмен баллов; признание от коллег; менторские и командные механики; персональные вызовы; конструктор событий для HR; прогноз риска оттока; расширенный HR-дашборд; моделирование перехода на грейд; встраивание в мессенджер или календарь; мобильная адаптация; качественная локализация интерфейса на казахский и русский.
+9. Ограничения. 
+Нельзя: рекомендация по одному полю профиля под видом AI — обоснование обязано опираться на несколько факторов. Публичные рейтинги сотрудников по результативности: они мотивируют небольшую группу лидеров и демотивируют большинство, видящее недостижимый отрыв. Механика вокруг обязательных процессов, например очки за таймшиты. Реальные персональные данные.
+Учесть: 
+— Приватность: внутренний контур, данные о вовлечённости не видны другим сотрудникам без согласия
+— Безопасность: разграничение прав сотрудник/HR
+— Explainability: видно, почему предложен шаг и как рассчитано продвижение
+— Инфраструктура: запуск одной командой
+— Добровольность: принуждение является главным предиктором провала таких программ
+
+
+10. Артефакты. Репозиторий: да. README: да. 
+Критерий
+	Что оцениваем
+	Баллы
+	Соответствие задаче и работоспособность
+	Оценивается, насколько решение соответствует поставленной задаче и позволяет реализовать основной заявленный сценарий.
+	25
+	Техническая реализация
+	Оценивается качество технической реализации решения: выбранный подход, архитектура, взаимодействие компонентов, использование AI/agentic AI и других технологий. Учитывается соответствие фактической реализации заявленной логике проекта.
+	25
+	README и воспроизводимость
+	Оценивается, насколько документация позволяет понять устройство проекта, используемые технологии, порядок запуска и основной сценарий работы. Также учитывается возможность воспроизвести и проверить решение на основании материалов репозитория.
+	25
+	Ценность и применимость решения
+	Оценивается, насколько решение отвечает обозначенной проблеме. Учитывается практическая применимость представленного подхода.
+	15
+	Потенциал развития и оригинальность подхода
+	Оценивается потенциал дальнейшего развития решения, его применения в более широком масштабе, а также наличие обоснованных нестандартных или оригинальных подходов к реализации задачи.
+	10
+	Итого
+	—
+	100
+	 
+
+
+KZ
+ТЕХНИКАЛЫҚ ТАПСЫРМА
+ 
+1. Жалпы мәліметтер
+Тапсырыс беруші: «Қазақстан Халық Банкі» АҚ
+Хакатон: HackAlem AI
+Трек: Halyk Bank
+Тапсырманың атауы: Корпоративтік өнімдерге арналған AI
+Тапсырма түрі: Product-әзірлеу, AI/LLM-engineering, Full-stack
+Құралдар: Кез келген модельдер мен сервистерді пайдалануға рұқсат етіледі: бұлттық және жергілікті LLM, STT, TTS.
+2. Мәселе
+Компания екі коммуникация ағынын жүргізеді - ішкі, қызметкерлермен, және сыртқы, клиенттермен. Екеуі де ескірген логикамен жұмыс істейді.
+Ішкі контур
+Қызметкердің мансабы - ондаған оқиға: онбординг, оқыту, аттестаттау, тәлімгерлік, ротация. Олар адамға мерзімдері көрсетілген бытыраңқы хабарламалар түрінде жетеді. Қызметкер өз траекториясын көрмейді және нақты іс-шара оған не беретінін түсінбейді, сондықтан бәрін формалды түрде өтеді. Компания дамуға бөлінген бюджетті толық жұмсайды, бірақ бағдарламалардың аяқталу деңгейі төмен, ал ерікті іс-шараларға қатысу әлсіз.
+Сыртқы контур
+Дауыстық роботтар жақсы сөйлеуді және естуді үйренді. Бірақ көптеген жүйелерде сөйлесу сценарийін таңдайтын қабат әлі күнге дейін энкодерлік модельге негізделген классификатор болып қалуда — ол тұрақты тұжырымдарға үйретілген және тірі сөйлеу басталған жерде істен шығады: диалог ортасында тақырыптың ауысуы, екі сценарийдің арасындағы сұраныс, бір фраза ішінде орыс тілінен қазақ тіліне ауысу. Әрбір қате таңдау — операторға ауыстыру немесе жоғалған клиент.
+Екі міндеттің ортақ тұсы: тар орын технологияда емес, шешім қабылдау қабатында. Екі жағдайда да бүгін оны тұжырымдарды оқыту іріктемесімен салыстыратын емес, контекстті түсінетін LLM негізінде құруға болады.
+3. Стейкхолдерлер
+Пайдаланушылар: компания қызметкерлері; HR-мамандар және бөлімше басшылары; контакт-орталық клиенттері; операторлар мен супервизорлар.
+Негізгі қиындықтар:
+- Қызметкерге нақты іс-шараның не үшін қажет екенін және оның қайда апаратынын қалай түсіндіруге болады?
+- Кәсіби өсуді ынталандыратындай етіп қалай көрінетін етуге болады?
+- Роботты тірі тілде сөйлейтін клиентті түсінуге қалай үйретуге болады?
+- Мұны жылдамдықты жоғалтпай қалай жасауға болады — әңгімедегі бір секундтан ұзақ үзіліс байланыс ақауы ретінде қабылданады.
+4. Кейсті таңдау
+- 1-кейс: Career Quest - қызметкерді дамытудың AI-навигаторы.
+- 2-кейс: Voice Router - сценарий таңдаудың AI-қабаты бар дауыстық робот
+Сынақтар бөлек, әртүрлі кейстері бар командалар бір-бірімен салыстырылмайды.
+ 
+КЕЙС: CAREER QUEST
+1.  Атауы. Career Quest - қызметкердің өмірлік циклін геймификациялау платформасы.
+2.  Мәселе. Компания қызметкері өз дамуымен көрінетін байланысы жоқ бытыраңқы HR-оқиғалар ағынына тап болады, соның салдарынан оқыту мерзімнің соңғы күні формалды түрде өтеді, ал ерікті іс-шаралар персоналды дамытуға бөлінген бюджет толық жұмсалған кезде аз қатысушы жинайды.
+3.  Пайдаланушы. Негізгі пайдаланушы: еңбек өтілі 1–5 жыл қызметкер.
+Оның негізгі сценарийі: өз профилі мен траекториясын көреді, келесі қадам бойынша оның не беретіні түсіндірілген ұсыным алады, іс-шараны орындайды, прогресінің қалай жылжығанын көреді.
+Екінші пайдаланушы: HR — қандай құзыреттер төмендеп жатқанын және кімнің дамудан шығып қалғанын көреді.
+4.  Міндет. Профиль, тарих және келесі грейд талаптары негізінде қызметкерге дамудың релевантты қадамдарын іріктейтін және негіздемесі бар ұсыным мен дағдылар бойынша жаңартылатын прогресті, ал HR-ға төмендеген құзыреттер бойынша кесінді беретін AI-қабаты бар веб-қосымша әзірлеу.
+Міндеттің өзегі — интерфейстік қаптама емес, ұсынымның сапасы мен түсіндірмелілігі. Геймификация қондырма болып табылады және міндетті бөлікке кірмейді.
+5.  Кіріс → шығыс. Кіріс: JSON/CSV - профильдер, оқиғалар, тарих, дағдылар. Мысал:
+        {
+"employee_id":"E0028",
+"role":"Backend Engineer",
+"grade":"Middle",
+"tenure_months":52,
+"skills": {
+"SK_PYTHON":3,
+"SK_SYSTEM_DESIGN":2,
+"SK_PUBLIC_SPEAKING":2
+}
+}.
+Көлемі: 200 профиль, 40 оқиға, 60 дағды, 24 айлық тарих.
+Шығыс: траекториясы бар профиль; негіздемесі бар 1–3 ұсынылған қадам («System Design — Senior үшін талап етілетін 4-тің орнына 2; іс-шара олқылықты жабады, алдыңғы екеуі мерзімінде өтті»); орындалғаннан кейін прогресті жаңарту; HR-экран.
+Рұқсат етілген кідіріс: интерфейстің жауабы 2 секундқа дейін, AI-ұсыным 10 секундқа дейін.
+6.  Деректер.
+Қол жеткізу тәсілі: хакатон күні берілетін стартерлік жинақ (starter kit).
+Құрамы:
+— employees.json — 200 профиль: рөл, грейд, өтіл, 0–5 дағдылар
+— events.json — 40 оқиға: түрі, аудиториясы, дамытылатын дағдылар
+— activity_history.csv — өткізіп алулар мен бас тартуларды қоса алғанда, 24 айлық қатысу
+— skills.json — 60 hard/soft дағды, грейдтер бойынша талаптар
+Шектеулер: деректер синтетикалық, хакатоннан тыс шығарылмайды. Схема сақталған жағдайда өз деректеріңізбен кеңейтуге рұқсат етіледі. Дағдының өсу ережесі датасетте берілген: events.json-дағы әр іс-шарада ол қандай дағдыларды, қанша деңгейге (gain) және қандай ең жоғары деңгейге дейін (max_level) дамытатыны көрсетілген. Толығырақ стартерлік жинақтың README файлында. Деректер ағылшын тілінде, сондай-ақ қазақ және орыс тілдеріне аудармалары бар.
+7.  Must-have
+Талап
+	Тексеру
+	Профиль және мансаптық траектория
+	Кез келген қызметкерді ашу — рөлі, грейді, дағдылары, өткен іс-шаралары және қолжетімді келесі қадамдары көрінеді.
+	Келесі қадамның AI-ұсынымы
+	Жүйе 1–3 релевантты іс-шараны ұсынады.
+	Ұсынымды түсіндіру
+	Негіздеме кемінде үш факторға сүйенеді — грейд, дағдылар бойынша олқылықтар, қатысу тарихы, келесі деңгейдің талаптары
+	Прогресті жаңарту
+	Іс-шараны орындалды деп белгілеу — дағды бойынша прогресс пен траектория жылжиды
+	Қарапайым HR-view
+	Қандай дағдылар жиі төмендейтіні, кімде ұсынылған қадам жоқ екені, іс-шаралар бойынша қатысу көрінеді
+	Тексеру профильдері. Қазылар барлық командалар үшін бірдей, бір факторлы ереже қателесетіндей етіп құрастырылған үш профильді пайдаланады. Мысал: қызметкерде Public Speaking ең төмен, бірақ тарихы бойынша ол осындай іс-шараларды үш рет өткізіп алған, ал келесі грейдке өту үшін System Design шешуші маңызға ие. «Ең төмен дағдыны ал» түріндегі ұсыным мұндай профильде қателеседі. Шешім датасет форматындағы қосымша профильдер мен тарихты жүктей алуы тиіс: қорғау кезінде қазылар тексеру профильдерін жүктейді.
+8.  Опционалды. Ішкі валюта және мойындау; марапаттар каталогы және ұпайларды айырбастау; әріптестердің мойындауы; тәлімгерлік және командалық механикалар; жеке челлендждер; HR үшін оқиғалар конструкторы; кету қаупін болжау; кеңейтілген HR-дашборд; грейдке өтуді модельдеу; мессенджерге немесе күнтізбеге кіріктіру; мобильді бейімдеу; интерфейсті қазақ және орыс тілдеріне сапалы локализациялау.
+9. Шектеулер.
+Болмайды: AI атымен профильдің бір өрісі бойынша ұсыным беру — негіздеме бірнеше факторға сүйенуі міндетті. Қызметкерлердің нәтижелілігі бойынша көпшілік рейтингтері: олар көшбасшылардың шағын тобын ынталандырып, жетуге болмайтын алшақтықты көретін көпшілікті ынтасыздандырады. Міндетті процестер төңірегіндегі механика, мысалы, таймшиттер үшін ұпай беру. Нақты дербес деректер.
+Ескеру қажет:
+— Құпиялылық: ішкі контур, қатысу туралы деректер келісімсіз басқа қызметкерлерге көрінбейді
+— Қауіпсіздік: қызметкер/HR құқықтарын ажырату
+— Explainability: қадамның неліктен ұсынылғаны және ілгерілеудің қалай есептелгені көрінеді
+— Инфрақұрылым: бір командамен іске қосу
+— Еріктілік: мәжбүрлеу мұндай бағдарламалардың сәтсіздігінің басты болжамды факторы болып табылады
+ 
+10. Артефактілер. Репозиторий: иә. README: иә.
+________________
+
+
+
+
+Критерий
+	Нені бағалаймыз
+	Ұпай
+	Тапсырмаға сәйкестігі және жұмыс істеу қабілеті
+	Шешімнің қойылған тапсырмаға қаншалықты сәйкес келетіні және мәлімделген негізгі сценарийді іске асыруға мүмкіндік беретіні бағаланады.
+	25
+	Техникалық іске асыру
+	Шешімнің техникалық іске асырылу сапасы бағаланады: таңдалған тәсіл, архитектура, компоненттердің өзара әрекеттесуі, AI/agentic AI және басқа технологияларды пайдалану. Нақты іске асырудың жобаның мәлімделген логикасына сәйкестігі ескеріледі.
+	25
+	README және қайта іске қосу мүмкіндігі
+	Құжаттаманың жоба құрылымын, пайдаланылған технологияларды, іске қосу тәртібін және негізгі жұмыс сценарийін түсінуге қаншалықты мүмкіндік беретіні бағаланады. Сондай-ақ репозиторий материалдары негізінде шешімді қайта іске қосу және тексеру мүмкіндігі ескеріледі.
+	25
+	Шешімнің құндылығы және қолданылуы
+	Шешімнің көрсетілген мәселені қаншалықты шешетіні бағаланады. Ұсынылған тәсілдің практикалық қолданылуы ескеріледі.
+	15
+	Даму әлеуеті және тәсілдің бірегейлігі
+	Шешімді одан әрі дамыту және оны кең ауқымда қолдану әлеуеті, сондай-ақ тапсырманы іске асырудағы негізделген стандарттан тыс немесе бірегей тәсілдердің болуы бағаланады.
+	10
+	Барлығы
+	—
+	100
+	
+
+EN
+TECHNICAL SPECIFICATION
+ 
+1. General Information
+Client: Halyk Bank of Kazakhstan JSC
+Hackathon: HackAlem AI
+Track: Halyk Bank
+Task name: AI for Corporate Products
+Task type: Product development, AI/LLM engineering, Full-stack
+Tools: Any models and services may be used: cloud and local LLMs, STT, TTS.
+2. Problem
+The company runs two communication streams: internal, with employees, and external, with customers. Both run on outdated logic.
+Internal Loop
+An employee's career consists of dozens of events: onboarding, training, performance reviews, mentoring, rotations. They reach the person as scattered notifications with deadlines. The employee doesn't see a trajectory and doesn't understand what a given activity will give them, so they go through everything as a formality. The company spends its full development budget but gets low program completion rates and weak turnout for voluntary activities.
+External Loop
+Voice bots have learned to speak and listen well. But in most systems, the layer that selects the conversation scenario is still an encoder-based classifier: trained on fixed phrasings and breaking down where natural speech begins, such as a topic change mid-dialogue, a request that falls between two scenarios, or a switch from Russian to Kazakh within a single phrase. Every wrong choice means a transfer to an operator or a lost customer.
+What the two problems have in common: the bottleneck is not the technology but the decision-making layer. In both cases, it can now be built on an LLM that understands context rather than matching phrasings against a training set.
+3. Stakeholders
+Users: company employees; HR specialists and department heads; contact center customers; operators and supervisors.
+Key pain points:
+- How do you explain to an employee why a specific activity matters to them and where it leads?
+- How do you make professional growth visible so that it motivates?
+- How do you teach a bot to understand a customer who speaks naturally?
+- How do you do this without killing speed? A pause longer than one second in a conversation reads as a connection failure.
+4. Case Selection
+- Case 1: Career Quest - an AI navigator for employee development.
+- Case 2: Voice Router - a voice bot with an AI scenario-selection layer
+Cases are judged separately; teams working on different cases are not compared with each other.
+ 
+CASE: CAREER QUEST
+1.  Name. Career Quest - a platform for gamifying the employee lifecycle.
+2.  Problem. A company employee faces a stream of scattered HR events with no visible link to their development. As a result, training is completed as a formality on the deadline day, and voluntary activities have low turnout even though the staff development budget is fully spent.
+3.  User. Primary user: an employee with 1–5 years of tenure.
+Their key scenario: sees their profile and trajectory, receives a recommendation for the next step with an explanation of what it gives them, completes the activity, and sees how their progress has moved.
+Second user: HR — sees which competencies are lagging and who is dropping out of development.
+4.  Task. Develop a web application with an AI layer that, based on the profile, history and requirements of the next grade, selects relevant development steps for the employee and provides a recommendation with a rationale and updated skill progress, and gives HR a view of lagging competencies.
+The core of the task is the quality and explainability of the recommendation, not the interface wrapping. Gamification is an add-on and is not part of the mandatory scope.
+5.  Input → Output. Input: JSON/CSV - profiles, events, history, skills. Example:
+        {
+"employee_id":"E0028",
+"role":"Backend Engineer",
+"grade":"Middle",
+"tenure_months":52,
+"skills": {
+"SK_PYTHON":3,
+"SK_SYSTEM_DESIGN":2,
+"SK_PUBLIC_SPEAKING":2
+}
+}.
+Volume: 200 profiles, 40 events, 60 skills, 24 months of history.
+Output: a profile with a trajectory; 1–3 recommended steps with a rationale ("System Design — 2 vs. the 4 required for Senior; the activity closes the gap, the previous two were completed on time"); progress update after completion; an HR screen.
+Acceptable latency: interface response up to 2 seconds, AI recommendation up to 10 seconds.
+6.  Data.
+Access: starter kit, provided on the day of the hackathon.
+Contents:
+— employees.json — 200 profiles: role, grade, tenure, skills 0–5
+— events.json — 40 events: type, audience, skills developed
+— activity_history.csv — 24 months of participation, including no-shows and refusals
+— skills.json — 60 hard/soft skills, requirements by grade
+Constraints: the data is synthetic and may not be taken outside the hackathon. Extending it with your own data is allowed as long as the schema is preserved. The skill growth rule is defined in the dataset: each activity in events.json specifies which skills it develops, by how many levels (gain) and up to what maximum (max_level). Details are in the starter kit README. The data is in English, with translations into Kazakh and Russian.
+7.  Must-have
+Requirement
+	Verification
+	Profile and career trajectory
+	Open any employee — the role, grade, skills, completed activities and available next steps are visible.
+	AI recommendation of the next step
+	The system suggests 1–3 relevant activities.
+	Explanation of the recommendation
+	The rationale relies on at least three factors — grade, skill gaps, participation history, next-level requirements
+	Progress update
+	Mark an activity as completed — skill progress and the trajectory move
+	Simple HR view
+	Shows which skills lag most often, who has no recommended step, and participation by activity
+	Test profiles. The jury uses three profiles, the same for all teams, designed so that a single-factor rule gets them wrong. Example: an employee's lowest skill is Public Speaking, but their history shows they skipped similar activities three times, while System Design is critical for moving to the next grade. A "pick the lowest skill" recommendation misses on such a profile. The solution must be able to load additional profiles and history in the dataset format: at the defense, the jury uploads the test profiles.
+8.  Optional. Internal currency and recognition; a rewards catalog and point redemption; peer recognition; mentoring and team mechanics; personal challenges; an event builder for HR; attrition risk prediction; an extended HR dashboard; grade transition modeling; integration with a messenger or calendar; mobile adaptation; high-quality interface localization into Kazakh and Russian.
+9. Constraints.
+Not allowed: a recommendation based on a single profile field passed off as AI — the rationale must rely on several factors. Public employee performance rankings: they motivate a small group of leaders and demotivate the majority, who see an unreachable gap. Mechanics around mandatory processes, such as points for timesheets. Real personal data.
+Take into account:
+— Privacy: internal loop; engagement data is not visible to other employees without consent
+— Security: separation of employee/HR permissions
+— Explainability: it is visible why a step was suggested and how progress is calculated
+— Infrastructure: launch with a single command
+— Voluntariness: coercion is the main predictor of failure for such programs
+ 
+10. Deliverables. Repository: yes. README: yes.
+Criterion
+	What is evaluated
+	Points
+	Compliance with the task and functionality
+	The assessment considers how well the solution meets the assigned task and enables the main stated scenario to be implemented.
+	25
+	Technical implementation
+	The quality of the solution’s technical implementation is assessed, including the selected approach, architecture, interaction between components, and use of AI/agentic AI and other technologies. The consistency of the actual implementation with the stated project logic is taken into account.
+	25
+	README and reproducibility
+	The assessment considers whether the documentation makes it possible to understand the project structure, technologies used, launch procedure, and main operating scenario. The possibility of reproducing and checking the solution based on the repository materials is also taken into account.
+	25
+	Value and applicability of the solution
+	The assessment considers how well the solution addresses the stated problem. The practical applicability of the proposed approach is taken into account.
+	15
+	Development potential and originality of the approach
+	The assessment considers the potential for further development of the solution and its use at a broader scale, as well as the presence of well-founded unconventional or original approaches to implementing the task.
+	10
+	Total
+	—
+	100

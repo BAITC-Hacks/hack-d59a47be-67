@@ -1,0 +1,22 @@
+{
+  "schema_version": "1.0",
+  "context_id": "FIX_CONTEXT_001",
+  "data_revision": "FIX_DATA_001",
+  "policy_version": "heuristic-v1",
+  "status": "ready",
+  "source": "fallback",
+  "fallback_reason": "provider_unavailable",
+  "empty_reason": null,
+  "recommendations": [
+    {
+      "event_id": "FIX_EVENT_PATH",
+      "rank": 1,
+      "evidence_ids": [
+        "FIX_EVENT_PATH_E_GRADE",
+        "FIX_EVENT_PATH_E_GAP",
+        "FIX_EVENT_PATH_E_TARGET",
+        "FIX_EVENT_PATH_E_HISTORY"
+      ]
+    }
+  ]
+}

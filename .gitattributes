@@ -1,0 +1,2 @@
+# Preserve spacing in the archived source specification; do not lint its text.
+docs/requirements/original-spec.txt -whitespace

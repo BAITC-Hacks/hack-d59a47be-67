@@ -1,0 +1,30 @@
+# Local source kit: restricted to the hackathon, never publish records by default.
+/career_quest_dataset.zip
+*.zip
+/data/raw/
+/data/imports/
+/data/audit-report.json
+/data/*.db
+/data/*.db-*
+/data/*.sqlite*
+
+# Secrets and developer files
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+.DS_Store
+.idea/
+.vscode/
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+node_modules/
+dist/
+build/
+coverage/
+*.log
